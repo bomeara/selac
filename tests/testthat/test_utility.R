@@ -28,7 +28,7 @@ test_that("CreateNucleotideMutationMatrix", {
 test_that("CreateCodonMutationMatrix", {
 	codon.rates <- CreateCodonMutationMatrix(CreateNucleotideMutationMatrix())
 	expect_equal(64, dim(codon.rates)[2])
-	expect_equal(0, rowSums(codon.rates[7,]))
+	expect_equal(0, sum(codon.rates[7,]))
 })
 
 test_that("CreateCodonFixationRateMatrix", {

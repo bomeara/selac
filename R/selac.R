@@ -101,11 +101,11 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 }
 
 CodonNumericToString <- function(x) { #remember that codon numbers start at 1
-	return(words(length=3)[x])
+	return(n2s(x, levels=words(length=3), base4=FALSE))
 }
 
 CodonStringToNumeric <- function(x) { #remember that codon numbers start at 1
-	return(n2s(x, levels=words(length=3), base4=FALSE))
+	return(which(words(length=3)==x))
 }
 
 
@@ -285,7 +285,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 }
 
 #'Get likelihood for a given codon site given tree and Q matrix, assuming the optimal AA is known
-#' @param codon.data is data in corHMM format (one column species, one column state)
+#' @param codon.data is data in corHMM format (one column species, one column state, states from CodonStringToNumeric)
 #' @param phy is a phylo object
 #' @param Q_codon is the transition matrix Q for a given optimal aa at this site
 #' @param charnum is which character to use in the aa.data matrix
