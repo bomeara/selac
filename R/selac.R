@@ -79,6 +79,7 @@ CreateNucleotideMutationMatrix <- function(rates=c(1), model="JC") {
 #' @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
   codon.sets <- expand.grid(0:3, 0:3, 0:3)
+  codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
   n.codons <- dim(codon.sets)[1]
   codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
   rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -97,6 +98,14 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
   }
   diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
   return(codon.mutation.rates)
+}
+
+CodonNumericToString <- function(x) { #remember that codon numbers start at 1
+	return(words(length=3)[x])
+}
+
+CodonStringToNumeric <- function(x) { #remember that codon numbers start at 1
+	return(n2s(x, levels=words(length=3), base4=FALSE))
 }
 
 
@@ -213,6 +222,7 @@ GetProteinProteinDistance <- function(protein1, protein2,aa.distances){
 
 CreateCodonFixationRateMatrix <- function(aa_op, s, aa.distances, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=FALSE, numcode=1){
   codon.sets <- expand.grid(0:3, 0:3, 0:3)
+  codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
   n.codons <- dim(codon.sets)[1]
   codon.fixation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
   codon.names <- rep("", n.codons)
@@ -295,7 +305,7 @@ diag(x) <- 0
 	axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex=cex)
 
   for (i in sequence(dim(x)[2])) {
-  	for (j in sequence(dim(x)[2])) {
+  	for (j in sequence(dim(x)[1])) {
   		bg="black"
   		if(i%in% special || j %in% special) {
   			bg="red"
@@ -307,29 +317,44 @@ diag(x) <- 0
   }
 }
 
+GetGainLossRatios <- function(x) {
+  diag(x) <- 0
+  x<-x/max(x)
+  ratio.matrix <- x*0
+  for (i in sequence(dim(x)[2])) {
+  	for (j in sequence(dim(x)[1])) {
+  		if(i>j) {
+  		 	gain.rate <- x[j, i]
+  			loss.rate <- x[i, j]
+  			ratio<-gain.rate/(loss.rate+gain.rate)-0.5
+  			if(is.na(ratio)) {
+  				ratio <- 0
+  			}
+  			ratio.matrix[j,i]<-ratio
+  		}
+  	}
+  }
+  return(ratio.matrix)
+}
+
 #blue is proportional increase (largest circle means gain rate is positive, loss rate is zero)
 #red is proportional decrease (circle of 0.5 means loss rate is twice that of gain rate)
 PlotBubbleRatio <- function(x, main="", cex=1){
-diag(x) <- 0
-	x<-x/max(x)
-
-  plot(x=range(.5,.5+dim(x)[2]),y=-range(.5, .5+dim(x)[1]), xlab="", ylab="", type="n", main=main,xaxt='n',yaxt='n', asp=1,bty="n")
+  ratio.matrix<-GetGainLossRatios(x)
+    plot(x=range(.5,.5+dim(x)[2]),y=-range(.5, .5+dim(x)[1]), xlab="", ylab="", type="n", main=main,xaxt='n',yaxt='n', asp=1,bty="n")
   	axis(side=2, at=-sequence(dim(x)[1]), labels=rownames(x), las=2, cex=cex)
 	axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex=cex)
   for (i in sequence(dim(x)[2])) {
-  	for (j in sequence(dim(x)[2])) {
-  		if(j<i) {
-  		if(x[j,i]>0) {
+  	for (j in sequence(dim(x)[1])) {
+  		if(ratio.matrix[j,i]!=0) {
   			gain.rate <- x[j, i]
   			loss.rate <- x[i, j]
-  			ratio<-gain.rate/(loss.rate+gain.rate)-0.5
+  			ratio<-ratio.matrix[j,i]
   			bg="blue"
   			if (ratio < 0) {
   				bg="red"
   			}
-  			
-  			symbols(x=i, y=-j, circles=sqrt(abs(ratio))/2, inches=FALSE, add=TRUE, fg=bg, bg=bg)
-  		}
+  			symbols(x=i, y=-j, circles=0.5*sqrt(abs(ratio))/sqrt(max(abs(ratio.matrix))), inches=FALSE, add=TRUE, fg=bg, bg=bg)
   		}
   	}	
   }

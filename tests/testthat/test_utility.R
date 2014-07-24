@@ -35,4 +35,13 @@ test_that("CreateCodonFixationRateMatrix", {
 	aa.distances <- CreateAADistanceMatrix()
 	aa_op <- "M"
 	s <- 0.02
+	codon.fixation.rates <- CreateCodonFixationRateMatrix(aa_op, s, aa.distances)
+})
+
+test_that("CodonNumericToString", {
+	expect_equal(CodonNumericToString(3), "aag")
+})
+
+test_that("CodonStringToNumeric", {
+	expect_equal(CodonStringToNumeric("aag"), 3)
 })
