@@ -14,16 +14,25 @@
 #' @param aa.properties is matrix of composition, polarity, and volume parameters for amino acids (three letter codes as rownames); Grantham's is used if not user-supplied
 #' @param normalize determines whether the distance matrix is normalized so that the mean distance is 1
 #' @return aa.distances, the symmetric matrix of physiochemical distances between amino acids
-CreateAADistanceMatrix <- function(alpha, beta, gamma, aa.properties=NULL, normalize=TRUE) {
+CreateAADistanceMatrix <- function(alpha=1.829272, beta=0.101799, gamma=0.0003990333, aa.properties=NULL, normalize=TRUE) {
   if(is.null(aa.properties)) {
+#     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0, 
+# 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13, 
+# 12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5, 
+# 9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119, 
+# 111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L, 
+# 3L), .Dimnames = list(c("Ala", "Cys", "Asp", "Glu", "Phe", "Gly", 
+# "His", "Ile", "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", 
+# "Ser", "Thr", "Val", "Trp", "Tyr"), c("c", "p", "v"))) #properties from Grantham paper
+
     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0, 
 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13, 
 12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5, 
 9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119, 
 111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L, 
-3L), .Dimnames = list(c("Ala", "Cys", "Asp", "Glu", "Phe", "Gly", 
-"His", "Ile", "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", 
-"Ser", "Thr", "Val", "Trp", "Tyr"), c("c", "p", "v"))) #properties from Grantham paper
+3L), .Dimnames = list(c("A", "C", "D", "E", "F", "G", 
+"H", "I", "K", "L", "M", "N", "P", "Q", "R", 
+"S", "T", "V", "W", "Y"), c("c", "p", "v"))) #properties from Grantham paper
   }
   n.states <- dim(aa.properties)[1]
   if(n.states != 20) {
@@ -65,6 +74,7 @@ CreateNucleotideMutationMatrix <- function(rates=c(1), model="JC") {
 #'Create a codon mutation model, rows=from, cols=to, nuc order as in seqinr coding
 #'
 #' Note it does not assume a symmetric nucleotide matrix nor a symmetric codon mutation rate matrix
+#' Stop codons are included
 #' @param nuc.mutation.rates are the rates from (row) to (col) based on the nucleotide model
 #' @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
@@ -262,4 +272,65 @@ CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=2, Phi=0.5,q=4e-7,Ne=5
 GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, charnum=1, root.p=NULL, return.all=FALSE) {
 	result <- rayDISC(phy=phy, data=aa.data, ntraits=1, charnum=charnum, p=Q_aa, root.p=root.p)
 	ifelse(return.all, return(result), return(result$loglik))
+}
+
+#'Get likelihood for a given codon site given tree and Q matrix, assuming the optimal AA is known
+#' @param codon.data is data in corHMM format (one column species, one column state)
+#' @param phy is a phylo object
+#' @param Q_codon is the transition matrix Q for a given optimal aa at this site
+#' @param charnum is which character to use in the aa.data matrix
+#' @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
+#' @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
+GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(codon.data, phy, Q_codon, charnum=1, root.p=NULL, return.all=FALSE) {
+	result <- rayDISC(phy=phy, data=aa.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
+	ifelse(return.all, return(result), return(result$loglik))
+}
+
+PlotBubbleMatrix <- function(x, main="", special=Inf, cex=1){
+diag(x) <- 0
+	x<-x/max(x)
+
+  plot(x=range(.5,.5+dim(x)[2]),y=-range(.5, .5+dim(x)[1]), xlab="", ylab="", type="n", main=main,xaxt='n',yaxt='n', asp=1,bty="n")
+  	axis(side=2, at=-sequence(dim(x)[1]), labels=rownames(x), las=2, cex=cex)
+	axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex=cex)
+
+  for (i in sequence(dim(x)[2])) {
+  	for (j in sequence(dim(x)[2])) {
+  		bg="black"
+  		if(i%in% special || j %in% special) {
+  			bg="red"
+  		}
+  		if(x[j,i]>0) {
+  			symbols(x=i, y=-j, circles=sqrt(x[j,i])/(2.1*sqrt(max(x))), inches=FALSE, add=TRUE, fg=bg, bg=bg)
+  		}
+  	}	
+  }
+}
+
+#blue is proportional increase (largest circle means gain rate is positive, loss rate is zero)
+#red is proportional decrease (circle of 0.5 means loss rate is twice that of gain rate)
+PlotBubbleRatio <- function(x, main="", cex=1){
+diag(x) <- 0
+	x<-x/max(x)
+
+  plot(x=range(.5,.5+dim(x)[2]),y=-range(.5, .5+dim(x)[1]), xlab="", ylab="", type="n", main=main,xaxt='n',yaxt='n', asp=1,bty="n")
+  	axis(side=2, at=-sequence(dim(x)[1]), labels=rownames(x), las=2, cex=cex)
+	axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex=cex)
+  for (i in sequence(dim(x)[2])) {
+  	for (j in sequence(dim(x)[2])) {
+  		if(j<i) {
+  		if(x[j,i]>0) {
+  			gain.rate <- x[j, i]
+  			loss.rate <- x[i, j]
+  			ratio<-gain.rate/(loss.rate+gain.rate)-0.5
+  			bg="blue"
+  			if (ratio < 0) {
+  				bg="red"
+  			}
+  			
+  			symbols(x=i, y=-j, circles=sqrt(abs(ratio))/2, inches=FALSE, add=TRUE, fg=bg, bg=bg)
+  		}
+  		}
+  	}	
+  }
 }
