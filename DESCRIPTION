@@ -6,7 +6,7 @@ Date: 2014-07-24
 Author: JJ Chai, Brian O'Meara
 Maintainer: Brian O'Meara <omeara.brian@gmail.com>
 Description: Implements models for amino acid or codonevolution with selection
-Suggests: testthat
+Suggests: testthat, igraph, ape
 Depends: seqinr
 Imports: corHMM
 License: GPL
