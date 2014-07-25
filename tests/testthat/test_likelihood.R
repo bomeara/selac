@@ -5,6 +5,6 @@ test_that("GetLikelihoodSAC_CodonForSingleCharGivenOptimum", {
   chars <- DNAbinToCodonNumeric(Rampho)
   tree <- rcoal(n=dim(chars)[1], tip.label=chars[,1])
   Q_codon <- CreateCodonFixationRateMatrix(aa_op="M", s=2, aa.distances=CreateAADistanceMatrix())
-  likelihood <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(codon.data=chars, phy=tree, Q_codon=Q_codon)
+  likelihood <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(codon.data=chars, phy=tree, charnum=4, Q_codon=Q_codon)
   expect_is(likelihood, "numeric")
 })

@@ -292,7 +292,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 #' @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
 #' @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(codon.data, phy, Q_codon, charnum=1, root.p=NULL, return.all=FALSE) {
-	result <- rayDISC(phy=phy, data=aa.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
+	result <- rayDISC(phy=phy, data=codon.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
 	ifelse(return.all, return(result), return(result$loglik))
 }
 
@@ -359,3 +359,31 @@ PlotBubbleRatio <- function(x, main="", cex=1){
   	}	
   }
 }
+
+PlotTransitionNetwork <- function(x, main="") {
+	require(igraph)
+	diag(x) <- 0
+	x<-x/max(x)
+	g <- graph.adjacency(x, weighted=TRUE, mode="directed")
+	g.layout <- layout.fruchterman.reingold(g)
+	plot(g, layout=g.layout, edge.width=10*get.edge.attribute(g, "weight"), edge.curved=TRUE)
+}
+
+DNAbinToCodonNumeric <- function(x, frame=0, corHMM.format=TRUE) {
+	bound.characters <- sapply(as.character(x), paste, collapse="")
+	#following fn is derived from code for uco in seqinr
+	SplitToCodons <- function(seq.string, frame) {
+		seq.string<-strsplit(seq.string, split="")[[1]]
+		if (any(seq.string %in% LETTERS)) {
+    	    seq.string <- tolower(seq.string)
+   		 }
+   		 return(sapply(splitseq(seq = seq.string, frame = frame, word = 3), CodonStringToNumeric))
+   	}
+	split.characters <- t(sapply(bound.characters, SplitToCodons, frame=frame))
+	colnames(split.characters) <- sequence(dim(split.characters)[2])
+	if(corHMM.format) {
+		split.characters<-cbind(data.frame(Taxa=rownames(split.characters)), data.frame(split.characters))
+	}
+	return(split.characters)
+}
+
