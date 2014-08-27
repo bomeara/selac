@@ -280,8 +280,29 @@ CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=2, Phi=0.5,q=4e-7,Ne=5
 #' @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
 #' @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
 GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, charnum=1, root.p=NULL, return.all=FALSE) {
-	result <- rayDISC(phy=phy, data=aa.data, ntraits=1, charnum=charnum, p=Q_aa, root.p=root.p)
-	ifelse(return.all, return(result), return(result$loglik))
+#	result <- rayDISC(phy=phy, data=aa.data, ntraits=1, charnum=charnum, p=Q_aa, root.p=root.p, node.states="marginal")
+
+	#Makes dev.rayDISC available:
+	#dev.raydisc <- corHMM:::dev.raydisc
+	nb.tip<-length(phy$tip.label)
+	nb.node <- phy$Nnode
+	nl <- nrow(Q_aa)
+	#Now we need to build the matrix of likelihoods to pass to dev.raydisc:
+	liks <- matrix(0, nb.tip + nb.node, nl)
+	#Now loop through the tips.
+	for(i in 1:nb.tip){
+		#The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
+		#Note: We add charnum+1, because the first column in the data is the species labels:
+		if(!is.na(aa.data[i,charnum+1])){
+			liks[i,aa.data[i,charnum+1]] <- 1
+		}else{
+			#If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can modified later:
+			liks[i,] <- 1
+		}
+	}
+	#The result here is just the likelihood: 
+	result <- -dev.raydisc(p=NULL, phy=phy, liks=liks, Q=Q_aa, rate=NULL, root.p=NULL)
+	ifelse(return.all, stop("return all not currently implemented"), return(result))
 }
 
 #'Get likelihood for a given codon site given tree and Q matrix, assuming the optimal AA is known
@@ -292,8 +313,28 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 #' @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
 #' @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(codon.data, phy, Q_codon, charnum=1, root.p=NULL, return.all=FALSE) {
-	result <- rayDISC(phy=phy, data=codon.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
-	ifelse(return.all, return(result), return(result$loglik))
+	#result <- rayDISC(phy=phy, data=codon.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
+	#Makes dev.rayDISC available:
+	#dev.raydisc <- corHMM:::dev.raydisc
+	nb.tip<-length(phy$tip.label)
+	nb.node <- phy$Nnode
+	nl <- nrow(Q_codon)
+	#Now we need to build the matrix of likelihoods to pass to dev.raydisc:
+	liks <- matrix(0, nb.tip + nb.node, nl)
+	#Now loop through the tips.
+	for(i in 1:nb.tip){
+		#The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
+		#Note: We add charnum+1, because the first column in the data is the species labels:
+		if(!is.na(codon.data[i,charnum+1])){
+			liks[i,codon.data[i,charnum+1]] <- 1
+		}else{
+			#If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can modified later:
+			liks[i,] <- 1
+		}
+	}
+	#The result here is just the likelihood: 
+	result <- -dev.raydisc(p=NULL, phy=phy, liks=liks, Q=Q_codon, rate=NULL, root.p=NULL)
+	ifelse(return.all, stop("return all not currently implemented"), return(result))
 }
 
 PlotBubbleMatrix <- function(x, main="", special=Inf, cex=1){

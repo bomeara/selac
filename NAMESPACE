@@ -1,2 +1,2 @@
 exportPattern("^[[:alpha:]]+")
-import(seqinr, igraph, corHMM)
+import(seqinr, corHMM)
