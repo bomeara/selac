@@ -220,7 +220,7 @@ GetProteinProteinDistance <- function(protein1, protein2,aa.distances){
   return(d)
 }
 
-CreateCodonFixationRateMatrix <- function(aa_op, s, aa.distances, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=FALSE, numcode=1){
+CreateCodonFixationRateMatrix <- function(aa_op, s, aa.distances, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
   codon.sets <- expand.grid(0:3, 0:3, 0:3)
   codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
   n.codons <- dim(codon.sets)[1]
@@ -312,7 +312,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 #' @param charnum is which character to use in the aa.data matrix
 #' @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
 #' @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
-GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(codon.data, phy, Q_codon, charnum=1, root.p=NULL, return.all=FALSE) {
+GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, return.all=FALSE) {
 	#result <- rayDISC(phy=phy, data=codon.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
 	#Makes dev.rayDISC available:
 	#dev.raydisc <- corHMM:::dev.raydisc
@@ -336,6 +336,23 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(codon.data, phy, Q_c
 	result <- -dev.raydisc(p=NULL, phy=phy, liks=liks, Q=Q_codon, rate=NULL, root.p=NULL)
 	ifelse(return.all, stop("return all not currently implemented"), return(result))
 }
+
+GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot <- function(codon.data, phy, Q_codon, root.p=NULL, return.all=FALSE) {
+	return(sum(sapply(seq(from=1, to=dim(codon.data)[2]-1, by=1), GetLikelihoodSAC_CodonForSingleCharGivenOptimum, codon.data=codon.data, phy=phy, Q_codon=Q_codon, root.p=root.p, return.all=return.all)))
+}
+
+GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_codon_array, root.p_array=NULL) {
+	numsites <- dim(codon.data)[2]-1
+	final.likelihood.vector <- rep(NA, numsites)
+	if(is.null(root.p_array)) {
+		root.p_array<-matrix(NULL, ncol=numsites, nrow=1)
+	}
+	for (i in sequence(numsites)) {
+		final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data, phy=phy, Q_codon=Q_codon_array[,,i], root.p=root.p_array[,i], return.all=FALSE)
+	}
+	return(sum(final.likelihood.vector))
+}
+
 
 PlotBubbleMatrix <- function(x, main="", special=Inf, cex=1){
 diag(x) <- 0
@@ -428,3 +445,6 @@ DNAbinToCodonNumeric <- function(x, frame=0, corHMM.format=TRUE) {
 	return(split.characters)
 }
 
+EstimateParametersCodon <- function(codon.data, phy, root=c("optimize", "majrule", "equilibrium"), optimal.aa=c("optimize", "majrule")) {
+	
+}
