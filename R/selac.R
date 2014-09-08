@@ -108,6 +108,16 @@ CodonStringToNumeric <- function(x) { #remember that codon numbers start at 1
 	return(which(words(length=3)==x))
 }
 
+ConvertCodonNumericDataToAAData <- function(codon.data, numcode=1) {
+	aa.data <- codon.data
+	for (row.index in sequence(dim(codon.data)[1])) {
+		for (col.index in 2:(dim(codon.data)[2])) {
+			aa.data[row.index, col.index] <- TranslateCodon(CodonNumericToString(codon.data[row.index, col.index]), numcode=numcode)
+		}
+	}
+	return(aa.data)
+}
+
 
 #Problem with this is that it requires an assumption about frequencies. Flat
 #  amino acid frequencies != flat codon frequences != frequencies of codons at
@@ -353,6 +363,24 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 	return(sum(final.likelihood.vector))
 }
 
+GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, aa.properties=NULL) {
+	C.Phi.q.s<-x[1]
+	C=2
+	Phi.q.s <- C.Phi.q.s / C
+	Phi <- 0.5
+	q.s <- Phi.q.s / Phi
+	q <- 4e-7
+	s <- q.s / q
+	alpha <- x[2]
+	beta <- x[3]
+	gamma <- x[4]
+	Ne <- x[5]
+	aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=TRUE)
+	Q_codon_array <- simplify2array(lapply(aa.optim_array, CreateCodonFixationRateMatrix, s=s, aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode ))
+	return(GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array))
+
+}
+
 
 PlotBubbleMatrix <- function(x, main="", special=Inf, cex=1){
 diag(x) <- 0
@@ -445,6 +473,22 @@ DNAbinToCodonNumeric <- function(x, frame=0, corHMM.format=TRUE) {
 	return(split.characters)
 }
 
-EstimateParametersCodon <- function(codon.data, phy, root=c("optimize", "majrule", "equilibrium"), optimal.aa=c("optimize", "majrule")) {
-	
+GetMaxName <-  function(x) {
+	return(names(table(x))[(which.is.max(table(x)))]) #note that this breaks ties at random
+}
+
+
+EstimateParametersCodon <- function(codon.data, phy, root=c("optimize", "majrule", "equilibrium"), optimal.aa=c("optimize", "majrule"), numcode=1, aa.properties=NULL) {
+	results <- c()
+	nsites <- dim(codon.data)[2] - 1
+	codon.root <- rep(NA, nsites)
+	aa.optim <- rep(NA, nsites)
+	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=numcode)
+	codon.root <- apply(codon.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+	results <- c()
+	if(root=="majrule" &&  optimal.aa=="majrule") {
+		results <- nloptr(x0=c(2*0.5*(4e-7) * 0.5, 1.829272, 0.101799, 0.0003990333, 5e6), eval_f = GetLikelihoodSAC_CodonForManyCharGivenAllParams, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim, root.p_array=codon.root, numcode=numcode, aa.properties=aa.properties)
+	}
+	return(results)
 }
