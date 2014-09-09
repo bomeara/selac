@@ -214,6 +214,10 @@ GetProteinProteinDistance <- function(protein1, protein2,aa.distances){
   if(length(protein1)!=length(protein2)) #throw error if length of proteins are not the same
     stop("error: 2 proteins are of different lengths!")
   site_d <- function(k){
+  	if(protein1[k]=="*" || protein2[k]=="*") {
+  		warning("You have a stop codon in your sequence. This was treated as having a very large difference from other amino acids, but you probably want to exclude such sites. It may also be that your numcode is not appropriate for your data, and perhaps you want one that works for invertebrate mitochondria, chloroplasts, etc.")
+  		return(100*max(aa.distances))
+  	}
     if((is.na(protein1[k])) & (!is.na(protein2[k]))){
       return(mean(aa.distances[,protein2[k]]))
     }
@@ -228,6 +232,42 @@ GetProteinProteinDistance <- function(protein1, protein2,aa.distances){
   }
   d <- sapply(c(1:length(protein1)),site_d,simplify=TRUE) 
   return(d)
+}
+
+FastCreateAllCodonFixationRateMatrices <- function(s, aa.distances, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, flee.stop.codon.rate=1000) {
+  codon.sets <- expand.grid(0:3, 0:3, 0:3)
+  codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+  n.codons <- dim(codon.sets)[1]
+  codon.names <- rep("", n.codons)
+  for (i in sequence(n.codons)) {
+  	codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+  }
+  codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
+  unique.aa <- unique(codon.aa)
+  codon.fixation.rates <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+  for (i in sequence(n.codons)) {
+    for (j in sequence(n.codons)) {
+    	if(sum(codon.sets[i,] == codon.sets[j,])>=2) { #match at two or three sites of three
+    		for (k in sequence(length(unique.aa))) {
+				aa1 <- codon.aa[i]
+				aa2 <- codon.aa[j]
+				if(aa1!="*" && aa2!="*" && unique.aa[k]!="*") { #says we cannot mutate to stop codons and stop codons can never be optimal
+					d1 <- GetProteinProteinDistance(protein1=aa1, protein2=unique.aa[k], aa.distances=aa.distances)
+					d2 <- GetProteinProteinDistance(protein1=aa2, protein2=unique.aa[k], aa.distances=aa.distances)
+					codon.fixation.rates[i,j, k] <- GetPairwiseProteinFixationProbabilitySingleSite(d1, d2, s=s, C=C, Phi=Phi, q=q, Ne=Ne)
+				} else {
+					if(s==0) { #handles stop codon case where neutral, so could possibly go into and out of stop codons
+						codon.fixation.rates[i,j, k] <- 1/(2*Ne)
+					} else {
+						if(aa2!="*" && unique.aa[k]!="*") {
+							codon.fixation.rates[i,j, k] <- flee.stop.codon.rate #if we are somehow in a stop codon, have a very high rate of moving away from this
+						}
+					}
+				}
+			}
+		}
+    }
+  }
 }
 
 CreateCodonFixationRateMatrix <- function(aa_op, s, aa.distances, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
@@ -363,7 +403,10 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 	return(sum(final.likelihood.vector))
 }
 
-GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, aa.properties=NULL) {
+GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, aa.properties=NULL, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+	if(logspace) {
+		x<-exp(x)
+	}
 	C.Phi.q.s<-x[1]
 	C=2
 	Phi.q.s <- C.Phi.q.s / C
@@ -377,7 +420,16 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 	Ne <- x[5]
 	aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=TRUE)
 	Q_codon_array <- simplify2array(lapply(aa.optim_array, CreateCodonFixationRateMatrix, s=s, aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode ))
-	return(GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array))
+	likelihood <- GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array)
+	if(neglnl) {
+		likelihood <- -1 * likelihood
+	}
+	if(verbose) {
+		results.vector <- c(likelihood, C, Phi, q, s, alpha, beta, gamma, Ne)
+		names(results.vector) <- c("likelihood", "C", "Phi", "q", "s", "alpha", "beta", "gamma", "Ne")
+		print(results.vector)
+	}
+	return(likelihood)
 
 }
 
@@ -488,7 +540,9 @@ EstimateParametersCodon <- function(codon.data, phy, root=c("optimize", "majrule
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
 	results <- c()
 	if(root=="majrule" &&  optimal.aa=="majrule") {
-		results <- nloptr(x0=c(2*0.5*(4e-7) * 0.5, 1.829272, 0.101799, 0.0003990333, 5e6), eval_f = GetLikelihoodSAC_CodonForManyCharGivenAllParams, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim, root.p_array=codon.root, numcode=numcode, aa.properties=aa.properties)
+		results <- nloptr(x0=log(c(2*0.5*(4e-7) * 0.5, 1.829272, 0.101799, 0.0003990333, 5e6)), eval_f = GetLikelihoodSAC_CodonForManyCharGivenAllParams, opts=list("algorithm"="NLOPT_LN_NEWUOA"), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim, root.p_array=codon.root, numcode=numcode, aa.properties=aa.properties, logspace=TRUE, verbose=TRUE, neglnl=TRUE)
 	}
+	results$solution <- exp(results$solution) #since we optimized in log space
+	results$objective <- -(results$objective) #to go from neglnl to lnl
 	return(results)
 }

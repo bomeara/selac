@@ -30,6 +30,7 @@ test_that("EstimateParametersCodon", {
   library(ape)
   Rampho <- read.GenBank(ref)
   Rampho <- as.list(as.matrix(cbind(Rampho))[1:8, -1]) #drop first site so start at codon pos 1
+  Rampho <- as.list(as.matrix(cbind(Rampho))[1:8, 1:36]) #for speed, look at first few aa only
   chars <- DNAbinToCodonNumeric(Rampho)
   tree <- rcoal(n=dim(chars)[1], tip.label=chars[,1])
   results <- EstimateParametersCodon(codon.data=chars, phy=tree, root="majrule", optimal.aa="majrule", numcode=2)
