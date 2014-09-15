@@ -399,7 +399,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 		root.p_array<-matrix(NULL, ncol=numsites, nrow=1)
 	}
 	for (i in sequence(numsites)) {
-		final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data, phy=phy, Q_codon=Q_codon_array[,,aa.optim_array(i)], root.p=root.p_array[,i], return.all=FALSE)
+		final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data, phy=phy, Q_codon=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[,i], return.all=FALSE)
 	}
 	return(sum(final.likelihood.vector))
 }
