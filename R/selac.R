@@ -234,7 +234,7 @@ GetProteinProteinDistance <- function(protein1, protein2,aa.distances){
   return(d)
 }
 
-FastCreateAllCodonFixationRateMatrices <- function(s, aa.distances, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, flee.stop.codon.rate=1000) {
+FastCreateAllCodonFixationRateMatrices <- function(s=0.01, aa.distances=CreateAADistanceMatrix(), C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, flee.stop.codon.rate=1000) {
   codon.sets <- expand.grid(0:3, 0:3, 0:3)
   codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
   n.codons <- dim(codon.sets)[1]
@@ -268,6 +268,7 @@ FastCreateAllCodonFixationRateMatrices <- function(s, aa.distances, C=2, Phi=0.5
 		}
     }
   }
+  return(codon.fixation.rates)
 }
 
 CreateCodonFixationRateMatrix <- function(aa_op, s, aa.distances, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
@@ -391,14 +392,14 @@ GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot <- function(codon.
 	return(sum(sapply(seq(from=1, to=dim(codon.data)[2]-1, by=1), GetLikelihoodSAC_CodonForSingleCharGivenOptimum, codon.data=codon.data, phy=phy, Q_codon=Q_codon, root.p=root.p, return.all=return.all)))
 }
 
-GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_codon_array, root.p_array=NULL) {
+GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_codon_array, root.p_array=NULL, aa.optim_array) {
 	numsites <- dim(codon.data)[2]-1
 	final.likelihood.vector <- rep(NA, numsites)
 	if(is.null(root.p_array)) {
 		root.p_array<-matrix(NULL, ncol=numsites, nrow=1)
 	}
 	for (i in sequence(numsites)) {
-		final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data, phy=phy, Q_codon=Q_codon_array[,,i], root.p=root.p_array[,i], return.all=FALSE)
+		final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data, phy=phy, Q_codon=Q_codon_array[,,aa.optim_array(i)], root.p=root.p_array[,i], return.all=FALSE)
 	}
 	return(sum(final.likelihood.vector))
 }
@@ -419,8 +420,9 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 	gamma <- x[4]
 	Ne <- x[5]
 	aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=TRUE)
-	Q_codon_array <- simplify2array(lapply(aa.optim_array, CreateCodonFixationRateMatrix, s=s, aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode ))
-	likelihood <- GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array)
+	Q_codon_array <- FastCreateAllCodonFixationRateMatrices(s=s, aa.distances=aa.distances , C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=1000) 
+	#Q_codon_array <- simplify2array(lapply(aa.optim_array, CreateCodonFixationRateMatrix, s=s, aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode ))
+	likelihood <- GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array)
 	if(neglnl) {
 		likelihood <- -1 * likelihood
 	}
