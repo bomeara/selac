@@ -542,7 +542,7 @@ EstimateParametersCodon <- function(codon.data, phy, root=c("optimize", "majrule
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
 	results <- c()
 	if(root=="majrule" &&  optimal.aa=="majrule") {
-		results <- nloptr(x0=log(c(2*0.5*(4e-7) * 0.5, 1.829272, 0.101799, 0.0003990333, 5e6)), eval_f = GetLikelihoodSAC_CodonForManyCharGivenAllParams, opts=list("algorithm"="NLOPT_LN_NEWUOA"), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim, root.p_array=codon.root, numcode=numcode, aa.properties=aa.properties, logspace=TRUE, verbose=TRUE, neglnl=TRUE)
+		results <- nloptr(x0=log(c(2*0.5*(4e-7) * 0.5, 1.829272, 0.101799, 0.0003990333, 5e6)), eval_f = GetLikelihoodSAC_CodonForManyCharGivenAllParams, opts=list("algorithm"="NLOPT_LN_BOBYQA"), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim, root.p_array=codon.root, numcode=numcode, aa.properties=aa.properties, logspace=TRUE, verbose=TRUE, neglnl=TRUE)
 	}
 	results$solution <- exp(results$solution) #since we optimized in log space
 	results$objective <- -(results$objective) #to go from neglnl to lnl
