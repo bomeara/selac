@@ -7,6 +7,7 @@ test_that("GetLikelihoodSAC_CodonForSingleCharGivenOptimum", {
   chars <- DNAbinToCodonNumeric(Rampho)
   tree <- rcoal(n=dim(chars)[1], tip.label=chars[,1])
   Q_codon <- CreateCodonFixationRateMatrix(aa_op="M", s=2, aa.distances=CreateAADistanceMatrix(), numcode=2) #vertebrate mt
+  stop("Need to add codon substitution rate")
   likelihood <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=4, codon.data=chars, phy=tree, Q_codon=Q_codon)
   expect_is(likelihood, "numeric")
 })
@@ -20,6 +21,8 @@ test_that("GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot", {
   chars <- DNAbinToCodonNumeric(Rampho)
   tree <- rcoal(n=dim(chars)[1], tip.label=chars[,1])
   Q_codon <- CreateCodonFixationRateMatrix(aa_op="M", s=2, aa.distances=CreateAADistanceMatrix(), numcode=2) #vertebrate mt
+    stop("Need to add codon substitution rate")
+
   likelihood <- GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot(codon.data=chars, phy=tree, Q_codon=Q_codon)
   expect_is(likelihood, "numeric")
 })

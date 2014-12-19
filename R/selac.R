@@ -441,8 +441,8 @@ diag(x) <- 0
 	x<-x/max(x)
 
   plot(x=range(.5,.5+dim(x)[2]),y=-range(.5, .5+dim(x)[1]), xlab="", ylab="", type="n", main=main,xaxt='n',yaxt='n', asp=1,bty="n")
-  	axis(side=2, at=-sequence(dim(x)[1]), labels=rownames(x), las=2, cex=cex)
-	axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex=cex)
+  	axis(side=2, at=-sequence(dim(x)[1]), labels=rownames(x), las=2, cex.axis=cex)
+	axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex.axis=cex)
 
   for (i in sequence(dim(x)[2])) {
   	for (j in sequence(dim(x)[1])) {
