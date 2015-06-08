@@ -1,9 +1,9 @@
 Package: selac
 Type: Package
 Title: Selection models for amino acid and/or codon evolution
-Version: 1.0
-Date: 2014-08-27
-Author: JJ Chai, Brian O'Meara
+Version: 1.2
+Date: 2015-06-08
+Author: Jeremy Beaulieu, JJ Chai, Brian O'Meara
 Maintainer: Brian O'Meara <omeara.brian@gmail.com>
 Description: Implements models for amino acid or codonevolution with selection
 Suggests: testthat, igraph, ape
