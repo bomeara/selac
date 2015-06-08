@@ -3,10 +3,10 @@ Type: Package
 Title: Selection models for amino acid and/or codon evolution
 Version: 1.2
 Date: 2015-06-08
-Author: Jeremy Beaulieu, JJ Chai, Brian O'Meara
-Maintainer: Brian O'Meara <omeara.brian@gmail.com>
-Description: Implements models for amino acid or codonevolution with selection
+Author: Jeremy M. Beaulieu, JJ Chai, Brian O'Meara
+Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
+Description: Implements models for amino acid or codon evolution with selection
 Suggests: testthat, igraph, ape
-Depends: seqinr, nloptr, nnet
-Imports: corHMM
+Depends: seqinr, nloptr, nnet 
+Imports: expm, parallel, phangorn
 License: GPL
