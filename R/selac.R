@@ -1584,11 +1584,7 @@ EstimateParametersCodon <- function(codon.data, phy, edge.length="optimize", opt
 
 EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", optimal.aa="optimize", nuc.model="JC", gold.yang=FALSE, include.gamma=FALSE, ncats=4, numcode=1, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25) {
 	cat("Initializing data and model parameters...", "\n")
-	rows.to.sample <- sample(1:30, 3)
-	aa.properties <- GenerateAAProperties(rows.to.sample)
-	#partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
-	load("yeast.25.selac.Rsave")
-	partitions <- results$partitions
+	partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
 	if(is.null(n.partitions)){
 		n.partitions <- length(partitions)
 	}else{
@@ -1634,8 +1630,6 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 			aa.optim.list[[partition.index]] <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule		
 		}
 	}
-	load("yeast.25.selac.Rsave")
-	aa.optim.list = results$aa.optim
 	opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "1000000", "ftol_rel" = max.tol)
 	results.final <- c()
 	if(nuc.model == "JC"){
