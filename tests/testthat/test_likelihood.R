@@ -67,11 +67,12 @@ test_that("GTR+GAMMA_likelihood", {
 })
 
 test_that("selac_likelihood", {
+	set.seed(4)
 	tree <- read.tree("../data/rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("../data/gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-	chars <- DNAbinToNucleotideNumeric(yeast.gene)
+	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) 
@@ -81,16 +82,17 @@ test_that("selac_likelihood", {
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName)
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
 	selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 0.0003990333, 5e6, .25, .25, .25)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, include.gamma=FALSE, ncats=4, logspace=TRUE, verbose=FALSE)
-	comparison <- identical(round(selac, 3), -9225.953)
+	comparison <- identical(round(selac, 3), -6793.578)
 	expect_true(comparison)
 })
 
 test_that("selac+GAMMA_likelihood", {
+	set.seed(4)
 	tree <- read.tree("../data/rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("../data/gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-	chars <- DNAbinToNucleotideNumeric(yeast.gene)
+	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) 
@@ -99,8 +101,8 @@ test_that("selac+GAMMA_likelihood", {
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data$unique.site.patterns, numcode=1)
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName)
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
-	selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 0.0003990333, 5e6, .25, .25, .25, .5)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, include.gamma=TRUE, ncats=4, logspace=TRUE, verbose=FALSE)
-	comparison <- identical(round(selac, 3), -9043.913)
+	selac_gamma <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 0.0003990333, 5e6, .25, .25, .25, .5)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, include.gamma=TRUE, ncats=4, logspace=TRUE, verbose=FALSE)
+	comparison <- identical(round(selac_gamma, 3), -6769.561)
 	expect_true(comparison)
 })
 
