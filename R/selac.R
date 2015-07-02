@@ -751,7 +751,6 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 	alpha <- x[2]
 	beta <- x[3]
 	gamma = volume.scale.par
-	print(gamma)
 	Ne <- x[4]
 	if(nuc.model == "JC") {
 		base.freqs=c(x[5:7], 1-sum(x[5:7]))
