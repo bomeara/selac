@@ -1460,7 +1460,6 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 	if(optimal.aa=="majrule" | optimal.aa=="optimize") {
 		codon.index.matrix = CreateCodonMutationMatrixIndex()		
 		cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
-		print(cpv.starting.parameters)
 		if(include.gamma == TRUE){
 			if(nuc.model == "JC"){
 				ip = c(2*0.5*(4e-7) * 0.5, cpv.starting.parameters[1], cpv.starting.parameters[2], 5e6, 0.25, 0.25, 0.25, 1)
