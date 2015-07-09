@@ -75,14 +75,17 @@ test_that("selac_likelihood", {
 	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
-	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) 
+	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+	aa.optim.full.list <- aa.optim
 	empirical.codon.freq <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=1)
-	codon.data <- SitePattern(codon.data)
-	aa.data <- ConvertCodonNumericDataToAAData(codon.data$unique.site.patterns, numcode=1)
-	aa.optim <- apply(aa.data[, -1], 2, GetMaxName)
+	aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
+	colnames(aa.optim.frame.to.add) <- colnames(codon.data)
+	codon.data <- rbind(codon.data, aa.optim.frame.to.add)
+	codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
+	aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
-	selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 5e6, .25, .25, .25)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, include.gamma=FALSE, ncats=4, logspace=TRUE, verbose=FALSE)
-	comparison <- identical(round(selac, 3), -6793.578)
+	selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 5e6, .25, .25, .25)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, volume.scale.par=0.0003990333, include.gamma=FALSE, ncats=4, logspace=TRUE, verbose=FALSE)
+	comparison <- identical(round(selac, 3), -6793.662)
 	expect_true(comparison)
 })
 
@@ -95,14 +98,17 @@ test_that("selac+GAMMA_likelihood", {
 	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
-	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) 
+	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+	aa.optim.full.list <- aa.optim
 	empirical.codon.freq <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=1)
-	codon.data <- SitePattern(codon.data)
-	aa.data <- ConvertCodonNumericDataToAAData(codon.data$unique.site.patterns, numcode=1)
-	aa.optim <- apply(aa.data[, -1], 2, GetMaxName)
+	aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
+	colnames(aa.optim.frame.to.add) <- colnames(codon.data)
+	codon.data <- rbind(codon.data, aa.optim.frame.to.add)
+	codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
+	aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
-	selac_gamma <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 5e6, .25, .25, .25, .5)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, include.gamma=TRUE, ncats=4, logspace=TRUE, verbose=FALSE)
-	comparison <- identical(round(selac_gamma, 3), -6769.561)
+	selac_gamma <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 5e6, .25, .25, .25, .5)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, volume.scale.par=0.0003990333, include.gamma=TRUE, ncats=4, logspace=TRUE, verbose=FALSE)
+	comparison <- identical(round(selac_gamma, 3), -6769.826)
 	expect_true(comparison)
 })
 
