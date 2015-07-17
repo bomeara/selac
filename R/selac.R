@@ -1782,6 +1782,4 @@ print.selac <- function(x,...){
 ######################################################################################################################################
 ######################################################################################################################################
 
-#1. Adding in a change seed argument either on function call or internally. The reason being is that given the use of the "which.max" function ties are broken at random. So unless the user knows the seed that was used the results from run to run will not be the same. May cause panic among the massess...
-
 
