@@ -772,12 +772,12 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 		rates.k <- DiscreteGamma(alpha, ncats)
 		final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)		
 		for(k in sequence(ncats)){
-			Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(s=s*rates.k[k], aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=1000)
+			Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(s=s*rates.k[k], aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=0.9999999)
 			final.likelihood.mat[k,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode)
 		}
 		likelihood <- sum(log(colMeans(exp(final.likelihood.mat))) * codon.data$site.pattern.counts)
 	}else{
-		Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(s=s, aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=1000)
+		Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(s=s, aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=0.9999999)
 		final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode)
 		likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
 	}
@@ -1488,12 +1488,13 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		np = max(index.matrix)
 		s <- 0
 		#base.freqs = empirical.base.freq
-		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = -2*loglik+(2*np*(sum(nsites.vector)/(sum(nsites.vector) - np - 1))), mle.pars=mle.pars.mat, s=s, partitions=partitions, opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, max.tol=max.tol) 
+		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = -2*loglik+(2*np*(sum(nsites.vector)/(sum(nsites.vector) - np - 1))), mle.pars=mle.pars.mat, s=s, partitions=partitions, opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol) 
 		class(obj) = "selac"				
 	}
 	if(optimal.aa=="majrule" | optimal.aa=="optimize") {
 		codon.index.matrix = CreateCodonMutationMatrixIndex()		
 		cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
+		print(cpv.starting.parameters)
 		if(include.gamma == TRUE){
 			if(nuc.model == "JC"){
 				ip = c(2*0.5*(4e-7) * 0.5, cpv.starting.parameters[1], cpv.starting.parameters[2], 5e6, 0.25, 0.25, 0.25, 1)
@@ -1690,7 +1691,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		q <- 4e-7
 		s <- q.s / q
 		###########################
-		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = -2*loglik+(2*np*(sum(nsites.vector)/(sum(nsites.vector) - np - 1))), mle.pars=mle.pars.mat, s=s, partitions=partitions, opts=opts, phy=phy, nsites=nsites.vector, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, max.tol=max.tol) 
+		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = -2*loglik+(2*np*(sum(nsites.vector)/(sum(nsites.vector) - np - 1))), mle.pars=mle.pars.mat, s=s, partitions=partitions, opts=opts, phy=phy, nsites=nsites.vector, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol) 
 		class(obj) = "selac"		
 	}
 	return(obj)
@@ -1704,6 +1705,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 ######################################################################################################################################
 ######################################################################################################################################
 
+####This needs serious work####
 print.selac <- function(x,...){
 	ntips=Ntip(x$phy)
 	output<-data.frame(x$loglik,x$AIC,x$AICc,ntips,x$nsites, row.names="")
