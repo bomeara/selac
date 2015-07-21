@@ -1494,13 +1494,12 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		np = max(index.matrix)
 		s <- 0
 		#base.freqs = empirical.base.freq
-		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = -2*loglik+(2*np*(sum(nsites.vector)/(sum(nsites.vector) - np - 1))), mle.pars=mle.pars.mat, s=s, partitions=partitions, opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol) 
+		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, s=s, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol) 
 		class(obj) = "selac"				
 	}
 	if(optimal.aa=="majrule" | optimal.aa=="optimize") {
 		codon.index.matrix = CreateCodonMutationMatrixIndex()		
 		cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
-		print(cpv.starting.parameters)
 		if(include.gamma == TRUE){
 			if(nuc.model == "JC"){
 				ip = c(2*0.5*(4e-7) * 0.5, cpv.starting.parameters[1], cpv.starting.parameters[2], 5e6, 0.25, 0.25, 0.25, 1)
@@ -1540,11 +1539,11 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
 							index.matrix[partition.index,] <- index.matrix.tmp							
 						}else{
-							ip.vector = c(ip.vector, ip[1],ip[5], ip[6], ip[7], ip[8])
-							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], upper[8]))
-							lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], lower[8]))
+							ip.vector = c(ip.vector, ip[1],ip[5], ip[6], ip[7])
+							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7]))
+							lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7]))
 							index.matrix.tmp = numeric(8+length(phy$edge.length))
-							#This fixes alpha, beta, gamma, Ne, and the edge lengths across all partitions:
+							#This fixes s, alpha, beta, gamma, Ne, and the edge lengths across all partitions:
 							index.matrix.tmp[2:4] = 2:4
 							index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
 							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
@@ -1745,7 +1744,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		q <- 4e-7
 		s <- q.s / q
 		###########################
-		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = -2*loglik+(2*np*(sum(nsites.vector)/(sum(nsites.vector) - np - 1))), mle.pars=mle.pars.mat, s=s, partitions=partitions, opts=opts, phy=phy, nsites=nsites.vector, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol) 
+		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, s=s, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, aa.properties=aa.properties, empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol) 
 		class(obj) = "selac"		
 	}
 	return(obj)
@@ -1762,67 +1761,42 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 ####This needs serious work####
 print.selac <- function(x,...){
 	ntips=Ntip(x$phy)
-	output<-data.frame(x$loglik,x$AIC,x$AICc,ntips,x$nsites, row.names="")
-	names(output)<-c("-lnL","AIC","AICc","ntax", "nsites")
+	output<-data.frame(x$loglik,x$AIC,ntips,sum(x$nsites), row.names="")
+	names(output)<-c("-lnL","AIC", "ntax", "nsites")
 	cat("\nFit\n")
 	print(output)
-	if(x$aa.optim.type=="none"){
-		cat("\n")
-		cat("\nSubstitution Parameters\n")
-		if(x$include.gamma == TRUE){
-			output<-data.frame(x$alpha,x$ncats,row.names="")
-			names(output)<-c("alpha","ncats")
-			print(output)
-			cat("\n")
-			cat("\nQ\n")
-			nucleotide.mat <- CreateNucleotideMutationMatrix(x$mle.pars[2:length(x$mle.pars)], model=x$nuc.model)
-			print(nucleotide.mat)
-			cat("\nBase frequencies\n")
-			base.freqs <- data.frame(t(x$base.freqs), row.names="")
-			names(base.freqs) <- c("A","C","G","T")
-			print(base.freqs)
-		}else{
-			output<-data.frame(NA,NA,row.names="")
-			names(output)<-c("alpha","ncats")
-			print(output)
-			cat("\n")
-			cat("\nQ\n")
-			nucleotide.mat <- CreateNucleotideMutationMatrix(x$mle.pars[1:length(x$mle.pars)], model=x$nuc.model)
-			print(nucleotide.mat)
-			cat("\nBase frequencies\n")
-			base.freqs <- data.frame(t(x$base.freqs), row.names="")
-			names(base.freqs) <- c("A","C","G","T")
-			print(base.freqs)
-		}
-		cat("\n")		
-	}else{
+	cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=x$aa.properties)	
+	if(x$aa.optim.type=="majrule" | x$aa.optim.type=="optimize"){
 		if(x$nuc.model == "JC"){
 			cat("\n")
-			cat("\nSelection Parameters\n")
-			output<-data.frame(x$s,x$mle.pars[2],x$mle.pars[3],x$mle.pars[4],x$mle.pars[5],row.names="")
-			names(output)<-c("s","alpha","beta","gamma","Ne")
+			cat("\nSELAC Parameters\n")
+			if(x$include.gamma==TRUE){
+				output<-data.frame(x$s[1],x$mle.pars[1,2],x$mle.pars[1,3],cpv.starting.parameters[3], x$mle.pars[1,4], x$mle.pars[1,8], row.names="")
+				names(output)<-c("s","c","p","v","Ne","gamma")					
+			}else{
+				output<-data.frame(x$s[1],x$mle.pars[1,2],x$mle.pars[1,3],cpv.starting.parameters[3], x$mle.pars[1,4], row.names="")
+				names(output)<-c("s","c","p","v","Ne")				
+			}
 			print(output)
 			cat("\n")
-			cat("\nQ\n")
-			nucleotide.mat <- CreateNucleotideMutationMatrix(1, model=x$nuc.model)
-			print(nucleotide.mat)
-			cat("\nBase frequencies\n")
-			base.freqs <- data.frame(t(x$base.freqs), row.names="")
-			names(base.freqs) <- c("A","C","G","T")
+			cat("\nBase frequencies per partition\n")
+			tmp <- cbind(x$mle.pars[,5:7], 1-colSums(t(x$mle.pars[,5:7])))
+			base.freqs <- data.frame(t(tmp), row.names=c("A","C","G","T"))
 			print(base.freqs)
 		}else{
 			cat("\n")
-			cat("\nSelection Parameters\n")
-			output<-data.frame(x$s,x$mle.pars[2],x$mle.pars[3],x$mle.pars[4],x$mle.pars[5],row.names="")
-			names(output)<-c("s","alpha","beta","gamma","Ne")
+			cat("\nSELAC parameters\n")
+			if(x$include.gamma==TRUE){
+				output<-data.frame(x$s[1],x$mle.pars[1,2],x$mle.pars[1,3],cpv.starting.parameters[3], x$mle.pars[1,4], x$mle.pars[1,8], row.names="")
+				names(output)<-c("s","c","p","v","Ne","gamma")					
+			}else{
+				output<-data.frame(x$s[1],x$mle.pars[1,2],x$mle.pars[1,3],cpv.starting.parameters[3], x$mle.pars[1,4], row.names="")
+				names(output)<-c("s","c","p","v","Ne")				
+			}
 			print(output)
 			cat("\n")
-			cat("\nQ\n")
-			nucleotide.mat <- CreateNucleotideMutationMatrix(x$mle.pars[9:length(x$mle.pars)], model=x$nuc.model)
-			print(nucleotide.mat)
-			cat("\nBase frequencies\n")
-			base.freqs <- data.frame(t(x$base.freqs), row.names="")
-			names(base.freqs) <- c("A","C","G","T")
+			tmp <- cbind(x$mle.pars[,5:7], 1-colSums(t(x$mle.pars[,5:7])))
+			base.freqs <- data.frame(t(tmp), row.names=c("A","C","G","T"))
 			print(base.freqs)
 		}
 		cat("\n")
