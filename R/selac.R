@@ -1368,8 +1368,14 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 ######################################################################################################################################
 ######################################################################################################################################
 
-EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="JC", gold.yang=FALSE, include.gamma=FALSE, ncats=4, numcode=1, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
+EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="JC", gold.yang=FALSE, include.gamma=FALSE, ncats=4, numcode=1, aa.properties=NULL, global.sensitivity=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
+	
+	if(global.sensitivity == FALSE){
+		stop("You've chosen a feature that is currently not allowed")
+	}
+
 	cat("Initializing data and model parameters...", "\n")
+	
 	partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
 	if(is.null(n.partitions)){
 		n.partitions <- length(partitions)
@@ -1523,27 +1529,51 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 				lower.vector = c(lower, rep(-21, length(phy$edge.length)))
 				if(edge.linked == TRUE){
 					for(partition.index in 2:n.partitions){
-						ip.vector = c(ip.vector, ip[1],ip[5],ip[6],ip[7], ip[8])
-						upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], upper[8]))
-						lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], lower[8]))
-						index.matrix.tmp = numeric(8+length(phy$edge.length))
-						#This fixes alpha, beta, gamma, Ne, and the edge lengths across all partitions:
-						index.matrix.tmp[2:4] = 2:4
-						index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
-						index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-						index.matrix[partition.index,] <- index.matrix.tmp
+						if(global.sensitivity == TRUE){
+							ip.vector = c(ip.vector, ip[5], ip[6], ip[7])
+							upper.vector = c(upper.vector, c(upper[5], upper[6], upper[7]))
+							lower.vector = c(lower.vector, c(lower[5], lower[6], lower[7]))
+							index.matrix.tmp = numeric(8+length(phy$edge.length))
+							#This fixes s, alpha, beta, gamma, Ne, and the edge lengths across all partitions:
+							index.matrix.tmp[c(1:4,8)] = c(1:4,8)
+							index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp							
+						}else{
+							ip.vector = c(ip.vector, ip[1],ip[5], ip[6], ip[7], ip[8])
+							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], upper[8]))
+							lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], lower[8]))
+							index.matrix.tmp = numeric(8+length(phy$edge.length))
+							#This fixes alpha, beta, gamma, Ne, and the edge lengths across all partitions:
+							index.matrix.tmp[2:4] = 2:4
+							index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp
+						}
 					}					
 				}else{
 					for(partition.index in 2:n.partitions){
-						phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
-						ip.vector = c(ip.vector, ip[1],ip[5],ip[6],ip[7], ip[8], phy$edge.length)
-						upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], upper[8], rep(log(5), length(phy$edge.length))))
-						lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], lower[8], rep(-21, length(phy$edge.length))))
-						index.matrix.tmp = numeric(8+length(phy$edge.length))
-						#This fixes alpha, beta, gamma, and Ne across all partitions:
-						index.matrix.tmp[2:4] = 2:4
-						index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-						index.matrix[partition.index,] <- index.matrix.tmp
+						if(global.sensitivity == TRUE){
+							phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+							ip.vector = c(ip.vector, ip[5], ip[6], ip[7], phy$edge.length)
+							upper.vector = c(upper.vector, c(upper[5], upper[6], upper[7], rep(log(5), length(phy$edge.length))))
+							lower.vector = c(lower.vector, c(lower[5], lower[6], lower[7], rep(-21, length(phy$edge.length))))
+							index.matrix.tmp = numeric(8+length(phy$edge.length))
+							#This fixes s, alpha, beta, gamma, and Ne across all partitions:
+							index.matrix.tmp[c(1:4,8)] = c(1:4,8)
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp							
+						}else{
+							phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+							ip.vector = c(ip.vector, ip[1],ip[5],ip[6],ip[7], ip[8], phy$edge.length)
+							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], upper[8], rep(log(5), length(phy$edge.length))))
+							lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], lower[8], rep(-21, length(phy$edge.length))))
+							index.matrix.tmp = numeric(8+length(phy$edge.length))
+							#This fixes g, alpha, beta, gamma, and Ne across all partitions:
+							index.matrix.tmp[2:4] = 2:4
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp
+						}
 					}
 				}
 				if(optimal.aa == "optimize"){
@@ -1614,27 +1644,51 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 				lower.vector = c(lower, rep(-21, length(phy$edge.length)))
 				if(edge.linked == TRUE){
 					for(partition.index in 2:n.partitions){
-						ip.vector = c(ip.vector, ip[1],ip[5],ip[6],ip[7])
-						upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7]))
-						lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7]))
-						index.matrix.tmp = numeric(7+length(phy$edge.length))
-						#This fixes alpha, beta, gamma, Ne, and the edge lengths across all partitions:
-						index.matrix.tmp[2:4] = 2:4
-						index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
-						index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-						index.matrix[partition.index,] <- index.matrix.tmp
+						if(global.sensitivity == TRUE){
+							ip.vector = c(ip.vector, ip[5],ip[6],ip[7])
+							upper.vector = c(upper.vector, c(upper[5], upper[6], upper[7]))
+							lower.vector = c(lower.vector, c(lower[5], lower[6], lower[7]))
+							index.matrix.tmp = numeric(7+length(phy$edge.length))
+							#This fixes s, alpha, beta, gamma, Ne, and the edge lengths across all partitions:
+							index.matrix.tmp[1:4] = 1:4
+							index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp														
+						}else{
+							ip.vector = c(ip.vector, ip[1], ip[5], ip[6], ip[7])
+							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7]))
+							lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7]))
+							index.matrix.tmp = numeric(7+length(phy$edge.length))
+							#This fixes alpha, beta, gamma, Ne, and the edge lengths across all partitions:
+							index.matrix.tmp[2:4] = 2:4
+							index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp							
+						}
 					}					
 				}else{
 					for(partition.index in 2:n.partitions){
-						phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
-						ip.vector = c(ip.vector, ip[1],ip[5],ip[6],ip[7], phy$edge.length)
-						upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], rep(log(5), length(phy$edge.length))))
-						lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], rep(-21, length(phy$edge.length))))
-						index.matrix.tmp = numeric(7+length(phy$edge.length))
-						#This fixes alpha, beta, gamma, and Ne across all partitions:
-						index.matrix.tmp[2:4] = 2:4
-						index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-						index.matrix[partition.index,] <- index.matrix.tmp
+						if(global.sensitivity == TRUE){
+							phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+							ip.vector = c(ip.vector, ip[5],ip[6],ip[7], phy$edge.length)
+							upper.vector = c(upper.vector, c(upper[5], upper[6], upper[7], rep(log(5), length(phy$edge.length))))
+							lower.vector = c(lower.vector, c(lower[5], lower[6], lower[7], rep(-21, length(phy$edge.length))))
+							index.matrix.tmp = numeric(7+length(phy$edge.length))
+							#This fixes alpha, beta, gamma, and Ne across all partitions:
+							index.matrix.tmp[1:4] = 1:4
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp							
+						}else{
+							phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+							ip.vector = c(ip.vector, ip[1],ip[5],ip[6],ip[7], phy$edge.length)
+							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], rep(log(5), length(phy$edge.length))))
+							lower.vector = c(lower.vector, c(lower[1], lower[5], lower[6], lower[7], rep(-21, length(phy$edge.length))))
+							index.matrix.tmp = numeric(7+length(phy$edge.length))
+							#This fixes alpha, beta, gamma, and Ne across all partitions:
+							index.matrix.tmp[2:4] = 2:4
+							index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+							index.matrix[partition.index,] <- index.matrix.tmp
+						}
 					}
 				}
 				if(optimal.aa == "optimize"){
