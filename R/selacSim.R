@@ -33,7 +33,7 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
 }
 
 
-SelacSimulator <- function(nsites, phy, pars, aa.distances, aa.optim_array, empirical.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model){
+SelacSimulator <- function(nsites, phy, pars, aa.optim_array, empirical.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model){
 	#Start organizing the user input parameters:
 	C.Phi.q.s <- pars[1]
 	C=2
