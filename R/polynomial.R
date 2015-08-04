@@ -1,7 +1,7 @@
 
 ######################################################################################################################################
 ######################################################################################################################################
-### Simulation run
+### Simulation run -- not 100% sure on this.
 ######################################################################################################################################
 ######################################################################################################################################
 
@@ -18,13 +18,13 @@ for(i in 1:100){
 
 colMeans(res)
 #Let us look at one of the data sets:
-tmp.trait.x <- tmp.trait
-tmp.trait.y <- 1/(1+exp(-tmp.trait))
+tmp.trait.x <- tmp.trait[,1]
+tmp.trait.y <- tmp.trait[,2]
 plot(tmp.trait.x, tmp.trait.y, ylab="Probability", xlab="simulated data")
 interval.sample <- seq(-2.5, 2.5, by=.05)
 new.x = GetFittedValues(interval.sample, xi=res[100,1],alpha=res[100,2],phi=res[100,3], k=1)
-new.y = 1 / (1+exp(-interval.sample))
-points(interval.sample, new.y, col="red")
+new.y = 1 / (1+exp(-new.x))
+points(new.x, new.y, col="red")
 text(0,.90, "Observed")
 text(0,.85, "Fitted", col="red")
 
@@ -34,9 +34,9 @@ text(0,.85, "Fitted", col="red")
 ######################################################################################################################################
 ######################################################################################################################################
 
-#To simulate probabilities assuming k=1, I believe we simply need to do the following:
+#To simulate data that somewhat resembles what we want, I believe we simply need to do the following:
 #1/(1+e^-mi(theta), where mi(theta) = bk,0 + bk,1x + bk,2x^2 + bk,3x^3 + ... + ak,2kx^2k+1, where bk,0=xi, bk,j=ak,(j-1)/j, j = 1,2, ... , 2k+1.
-#where you simply randomly choose values from a normal (or any other distribution) and solve for their probability.
+#where you simply randomly choose values from a normal (or any other distribution), transform, and then solve for their probability.
 
 SimulateMonoPolyData <- function(nsize=100, xi=0, alpha=-0.5, beta=.1, k=1){
     #Note lambda is assumed to equal 1 automatically.
@@ -45,23 +45,11 @@ SimulateMonoPolyData <- function(nsize=100, xi=0, alpha=-0.5, beta=.1, k=1){
     coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, phi.vec=phi, k=k)
     mi <- xi + (coef.vec[1,1]/2)*theta + (coef.vec[2,1]/3)*(theta^2) + (coef.vec[3,1]/4)*(theta^3)
     p.theta = 1 / (1+exp(-mi))
-    trait.mat <- matrix(0, nsize, 2)
-    trait.mat[,1] = theta
+    trait.mat <- matrix(0, nsize, 3)
+    trait.mat[,1] = mi
     trait.mat[,2] = p.theta
+    trait.mat[,3] = theta
     return(trait.mat)
-}
-
-
-#To simulate raw values assuming k=1, I believe we simply need to do the following:
-#mi(theta) = bk,0 + bk,1x + bk,2x^2 + bk,3x^3 + ... + ak,2kx^2k+1, where bk,0=xi, bk,j=ak,(j-1)/j, j = 1,2, ... , 2k+1.
-#where you simply randomly choose values from a normal (or any other distribution). I ordered from smallest to largest -- looks right, but weird.
-SimulateMonoPolyValue <- function(nsize=100, xi=0, alpha=-0.5, beta=.1, k=1){
-    #Note lambda is assumed to equal 1 automatically.
-    theta = rtruncnorm(nsize, a=-2.5, b=2.5, mean = 0, sd = 1)
-    phi = (alpha)^2 + beta
-    coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, phi.vec=phi, k=k)
-    mi <- xi + (coef.vec[1,1]/2)*theta + (coef.vec[2,1]/3)*(theta^2) + (coef.vec[3,1]/4)*(theta^3)
-    return(mi[order(mi)])
 }
 
 
