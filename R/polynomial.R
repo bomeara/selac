@@ -10,14 +10,20 @@
 
 res<-c()
 for(i in 1:100){
-    tmp.trait <- SimulateMonoPolyValue()
+    tmp.trait <- SimulateMonoPolyData()
     res<-rbind(res, OptimizePolynomialVariables(tmp.trait, k=1)$k.1)
 }
+
 colMeans(res)
-plot(tmp.trait)
-points(GetFittedValues(tmp.trait,xi=res[100,1],alpha=res[100,2],phi=res[100,3], k=1))
-text(10,3.7, "Fitted", col="red")
-text(10,4, "Observed")
+#Let us look at one of the data sets:
+tmp.trait.x <- tmp.trait
+tmp.trait.y <- 1/(1+exp(-tmp.trait))
+plot(tmp.trait.x, tmp.trait.y)
+new.x = GetFittedValues(tmp.trait,xi=res[100,1],alpha=res[100,2],phi=res[100,3], k=1)
+new.y = 1 / (1+exp(-new.x))
+points(new.x, new.y, col="red")
+text(0,.90, "Observed")
+text(0,.85, "Fitted", col="red")
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -27,16 +33,19 @@ text(10,4, "Observed")
 
 #To simulate probabilities assuming k=1, I believe we simply need to do the following:
 #1/(1+e^-mi(theta), where mi(theta) = bk,0 + bk,1x + bk,2x^2 + bk,3x^3 + ... + ak,2kx^2k+1, where bk,0=xi, bk,j=ak,(j-1)/j, j = 1,2, ... , 2k+1.
-#where you simply randomly choose values from a normal (or any other distribution). I ordered from smallest to largest -- looks right, but weird.
+#where you simply randomly choose values from a normal (or any other distribution) and solve for their probability.
 
-SimulateMonoPolyProbs <- function(nsize=100, xi=0, alpha=-0.5, beta =.1, k=1){
+SimulateMonoPolyData <- function(nsize=100, xi=0, alpha=-0.5, beta=1, k=1){
     #Note lambda is assumed to equal 1 automatically.
     theta = rnorm(nsize)
     phi = (alpha)^2 + beta
     coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, phi.vec=phi, k=k)
     mi <- xi + (coef.vec[1,1]/2)*theta + (coef.vec[2,1]/3)*(theta^2) + (coef.vec[3,1]/4)*(theta^3)
     p.theta = 1 / (1+exp(-mi))
-    return(p.theta[order(p.theta)])
+    trait.mat <- matrix(0, nsize, 2)
+    trait.mat[,1] = mi
+    trait.mat[,2] = p.theta
+    return(trait.mat)
 }
 
 
