@@ -49,18 +49,27 @@ SimulateMonoPolyValue <- function(nsize=100, xi=0, alpha=-0.5, beta=.1, k=1){
     return(mi[order(mi)])
 }
 
+
+#This provides the fitted values from the model fit.
+GetFittedValues <- function(x, xi=0.174812746, alpha=-0.5227861745, phi=0.0003913984, k=1){
+    coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, phi.vec=phi, k=k)
+    mi <- xi + (coef.vec[1,1]/2)*x + (coef.vec[2,1]/3)*(x^2) + (coef.vec[3,1]/4)*(x^3)
+    return(mi)
+}
+
+
 ######################################################################################################################################
 ######################################################################################################################################
 ### Functions for calculating the polynomial 
 ######################################################################################################################################
 ######################################################################################################################################
 
+library(nloptr)
 #pg 30: "The optimal estimates for the monotonic polynomial will be searched for at each stage of k. Usually we start k=0, where the positive polynomial is a real positive constant lambda. JMB NOTE in our case k=0, lambda=1 -- makes things easier. Also note that beta, which is parameter 3, must be >0."
 OptimizePolynomialVariables <- function(x, k){
 	k.pars.list <- NULL
 	k.sequence <- 1:k
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "100000", "ftol_rel" = .Machine$double.eps^0.25)
-    
     #Step 1: Optimize for k=1, assumes lambda=1. Parameter order: xik, alphak, phik:
     get.k1.pars <- nloptr(x0=c(0, -1/2, 1), eval_f = PolynomialLikelihoodFunction, ub=c(100, 100, 100), lb=c(-100, -100, 1e-100), opts=opts, x=x, k=k.sequence[1], k.minus.1.p=NULL, k.minus.2.p=NULL)
 	k.pars.list$k.1 = get.k1.pars$solution
