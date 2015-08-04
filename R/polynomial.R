@@ -68,36 +68,44 @@ GetFittedValues <- function(x, xi=0.174812746, alpha=-0.5227861745, phi=0.000391
 ######################################################################################################################################
 
 library(nloptr)
-#pg 30: "The optimal estimates for the monotonic polynomial will be searched for at each stage of k. Usually we start k=0, where the positive polynomial is a real positive constant lambda. JMB NOTE in our case k=0, lambda=1 -- makes things easier. Also note that beta, which is parameter 3, must be >0."
+#pg 30: "The optimal estimates for the monotonic polynomial will be searched for at each stage of k. Usually we start k=0, where the positive polynomial is a real positive constant lambda. JMB NOTE in our case k=0, lambda=1 -- makes things easier. Also note that phi, which is parameter 3, must be >0."
 OptimizePolynomialVariables <- function(x, k){
-	k.pars.list <- NULL
-	k.sequence <- 1:k
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "100000", "ftol_rel" = .Machine$double.eps^0.25)
-    #Step 1: Optimize for k=1, assumes lambda=1. Parameter order: xik, alphak, phik:
-    get.k1.pars <- nloptr(x0=c(0, -1/2, 1), eval_f = PolynomialLikelihoodFunction, ub=c(100, 100, 100), lb=c(-100, -100, 1e-100), opts=opts, x=x, k=k.sequence[1], k.minus.1.p=NULL, k.minus.2.p=NULL)
-	k.pars.list$k.1 = get.k1.pars$solution
-    k.pars.list$k.1.lik = -get.k1.pars$objective
-
-    ###Not necessary yet:
-    #Step 2: Optimize for k=2, if necessary:
-    #if(!is.na(k.sequence[2] == 2)){
-    #	get.k2.pars <- optim(c(1, 1, 2), fn=PolynomialLikelihoodFunction, method="L-BFGS-B", upper=c(Inf, Inf, Inf), lower=c(-Inf, -Inf, 1e-10), x=x, k=k.sequence[2], k.minus.1.p=k.pars.list$k.1, k.minus.2.p=NULL)
-    #	k.pars.list$k.2 <- get.k2.pars$par
-    #}
-    #Step 3: Optimize for k=3, if necessary:
-    #if(!is.na(k.sequence[3] == 3)){
-    #	get.k3.pars <- optim(c(1, 1, 2), fn=PolynomialLikelihoodFunction, method="L-BFGS-B", upper=c(Inf, Inf, Inf), lower=c(-Inf, -Inf, 1e-10), x=x, k=k.sequence[3], k.minus.1.p=k.pars.list$k.1, k.minus.2.p=k.pars.list$k.2)
-    #	k.pars.list$k.3 <- get.k3.pars$par
-    #}
-    #####################
-    
+    k.pars.list <- NULL
+    if(k==0){
+        get.k0.pars <- nloptr(x0=0, eval_f = PolynomialLikelihoodFunction, ub=c(100), lb=c(-100), opts=opts, x=x, k=0, k.minus.1.p=NULL, k.minus.2.p=NULL)
+        k.pars.list$k.0 = get.k0.pars$solution
+        k.pars.list$k.0.lik = -get.k0.pars$objective
+    }else{
+        k.sequence <- 1:k
+        #Step 1: Optimize for k=1, assumes lambda=1. Parameter order: xik, alphak, phik:
+        get.k1.pars <- nloptr(x0=c(0, -1/2, 1), eval_f = PolynomialLikelihoodFunction, ub=c(100, 100, 100), lb=c(-100, -100, 1e-100), opts=opts, x=x, k=k.sequence[1], k.minus.1.p=NULL, k.minus.2.p=NULL)
+        k.pars.list$k.1 = get.k1.pars$solution
+        k.pars.list$k.1.lik = -get.k1.pars$objective
+        
+        ###Not necessary yet:
+        #Step 2: Optimize for k=2, if necessary:
+        #if(!is.na(k.sequence[2] == 2)){
+        #	get.k2.pars <- optim(c(1, 1, 2), fn=PolynomialLikelihoodFunction, method="L-BFGS-B", upper=c(Inf, Inf, Inf), lower=c(-Inf, -Inf, 1e-10), x=x, k=k.sequence[2], k.minus.1.p=k.pars.list$k.1, k.minus.2.p=NULL)
+        #	k.pars.list$k.2 <- get.k2.pars$par
+        #}
+        #Step 3: Optimize for k=3, if necessary:
+        #if(!is.na(k.sequence[3] == 3)){
+        #	get.k3.pars <- optim(c(1, 1, 2), fn=PolynomialLikelihoodFunction, method="L-BFGS-B", upper=c(Inf, Inf, Inf), lower=c(-Inf, -Inf, 1e-10), x=x, k=k.sequence[3], k.minus.1.p=k.pars.list$k.1, k.minus.2.p=k.pars.list$k.2)
+        #	k.pars.list$k.3 <- get.k3.pars$par
+        #}
+        #####################
+    }
 	return(k.pars.list)
 }
 
 
 #pg 29: "Let fk(x) be the density function derived from Fk(x), i.e., fk(x) = h(m_2k_1(x)) * m'k(x). The ML estimates will be obtained by minimizing the negative log likelihood function F=-sum(log(fk(xj)))."
 PolynomialLikelihoodFunction <- function(p, x, k, k.minus.1.p, k.minus.2.p){
-	if(k == 1){
+    if(k == 0){
+        coef.vec <- 1
+    }
+    if(k == 1){
 		coef.vec <- CalculatePolynomialCoefficients(alpha.vec=c(p[2]), phi.vec=c(p[3]), k)
 	}
     
@@ -114,7 +122,6 @@ PolynomialLikelihoodFunction <- function(p, x, k, k.minus.1.p, k.minus.2.p){
 	for(j in 1:length(x)){
         res <- c(res, MonotonicPolynomialTransform(x[j], p[1], coef.vec, k) * PositivePolynomialTransform(x[j], coef.vec, k))
     }
-    
 	if(any(res <= 0 )){
 		return(10000000000)
 	}else{
@@ -148,7 +155,7 @@ PositivePolynomialTransform <- function(x, coef.vec, k){
 #pg. 24 "Eq. 3.2.7: m2k_1 = bk,0 + bk,1x + bk,2x^2 + bk,3x^3 + ... + ak,2kx^2k+1, where bk,0=xi, bk,j=ak,(j-1)/j, j = 1,2, ... , 2k+1."
 MonotonicPolynomialTransform <- function(x, xi, coef.vec, k){
     if(k == 0){
-        mk2_1 <- xi + 1
+        mk2_1 <- xi + 1*x
     }
     if(k == 1){
 		mk2_1 <- xi + (coef.vec[1,1]/2)*x + (coef.vec[2,1]/3)*(x^2) + (coef.vec[3,1]/4)*(x^3)
