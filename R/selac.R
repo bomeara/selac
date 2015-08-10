@@ -54,7 +54,7 @@ library(parallel)
 # @param aa.properties is matrix of composition, polarity, and volume parameters for amino acids (three letter codes as rownames); Granthams is used if not user-supplied
 # @param normalize determines whether the distance matrix is normalized so that the mean distance is 1
 # @return aa.distances, the symmetric matrix of physiochemical distances between amino acids
-CreateAADistanceMatrix <- function(alpha=1.829272, beta=0.101799, gamma=0.0003990333, aa.properties=NULL, normalize=TRUE) {
+CreateAADistanceMatrixOriginal <- function(alpha=1.829272, beta=0.101799, gamma=0.0003990333, aa.properties=NULL, normalize=TRUE) {
 	if(is.null(aa.properties)) {
 #     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0, 
 # 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13, 
@@ -81,6 +81,44 @@ CreateAADistanceMatrix <- function(alpha=1.829272, beta=0.101799, gamma=0.000399
 	for (i in sequence(n.states)) {
 		for (j in sequence(n.states)) {
 			aa.distances[i, j] <- (alpha*(aa.properties[i,1] - aa.properties[j,1])^2 + beta*(aa.properties[i,2]-aa.properties[j,2])^2+gamma*(aa.properties[i,3]-aa.properties[j,3])^2)^(1/2)
+		}
+	}
+	if(normalize) {
+		aa.distances <- aa.distances / (sum(aa.distances) / (n.states*n.states - n.states)) #normalize so mean is 1 across the non-diagonal entries	
+	}
+	rownames(aa.distances) <- rownames(aa.properties)
+	colnames(aa.distances) <- rownames(aa.properties)
+	return(aa.distances)
+}
+
+
+CreateAADistanceMatrix <- function(alpha=1.829272, beta=0.101799, gamma=0.0003990333, aa.properties=NULL, normalize=TRUE, poly.params) {
+	if(is.null(aa.properties)) {
+#     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0, 
+# 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13, 
+# 12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5, 
+# 9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119, 
+# 111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L, 
+# 3L), .Dimnames = list(c("Ala", "Cys", "Asp", "Glu", "Phe", "Gly", 
+# "His", "Ile", "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg", 
+# "Ser", "Thr", "Val", "Trp", "Tyr"), c("c", "p", "v"))) #properties from Grantham paper		
+		aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0, 
+									 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13, 
+									 12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5, 
+									 9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119, 
+									 111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L, 
+																								  3L), .Dimnames = list(c("A", "C", "D", "E", "F", "G", 
+																														  "H", "I", "K", "L", "M", "N", "P", "Q", "R", 
+																														  "S", "T", "V", "W", "Y"), c("c", "p", "v"))) #properties from Grantham paper
+	}
+	n.states <- dim(aa.properties)[1]
+	if(n.states != 20) {
+		warning(paste("aa.properties given", n.states, "states, normally there are 20 amino acids"))
+	}
+	aa.distances <- matrix(0,nrow=n.states,ncol=n.states)
+	for (i in sequence(n.states)) {
+		for (j in sequence(n.states)) {
+			aa.distances[i, j] <- PolynomialScaling((alpha*(aa.properties[i,1] - aa.properties[j,1])^2 + beta*(aa.properties[i,2]-aa.properties[j,2])^2+gamma*(aa.properties[i,3]-aa.properties[j,3])^2)^(1/2), poly.params)
 		}
 	}
 	if(normalize) {
