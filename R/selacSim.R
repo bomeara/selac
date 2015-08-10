@@ -16,7 +16,7 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
 	phy <- reorder(phy, "postorder")
     ntips <- length(phy$tip.label)
     N <- dim(phy$edge)[1]
-    ROOT <- ntips + 1
+    ROOT <- ntips + 1 #perhaps use an accessor to get the root node id
 	#Generate vector that contains the simulated states:
     sim.codon.data.site <- integer(ntips + phy$Nnode)
     sim.codon.data.site[ROOT] <- as.integer(root.value)
@@ -33,7 +33,8 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
 }
 
 
-SelacSimulator <- function(nsites, phy, pars, aa.optim_array, empirical.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model){
+SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model){
+	nsites <- length(aa.optim_array)
 	#Start organizing the user input parameters:
 	C.Phi.q.s <- pars[1]
 	C=2
@@ -44,7 +45,7 @@ SelacSimulator <- function(nsites, phy, pars, aa.optim_array, empirical.codon.fr
 	s <- q.s / q
 	alpha <- pars[2]
 	beta <- pars[3]
-	gamma <- GetAADistanceStartingParameters(aa.properties)[3]
+	gamma <- GetAADistanceStartingParameters(aa.properties)[3] #BCO: Make sure alpha beta and gamma are all communicated here: pass in gamma directly
 	Ne <- pars[4]
 
 	#Generate our nucleotide matrix:
@@ -76,7 +77,7 @@ SelacSimulator <- function(nsites, phy, pars, aa.optim_array, empirical.codon.fr
 	}
 	
 	#Generate matrix of root frequencies for each optimal AA:
-	root.p_array <- matrix(empirical.codon.frequencies, nrow=dim(Q_codon_array)[2], ncol=21)
+	root.p_array <- matrix(root.codon.frequencies, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
 	root.p_array <- t(root.p_array)
 	root.p_array <- root.p_array / rowSums(root.p_array)
 	rownames(root.p_array) <- unique.aa
@@ -111,9 +112,9 @@ SelacSimulator <- function(nsites, phy, pars, aa.optim_array, empirical.codon.fr
 #codon.data <- codon.data[phy$tip.label,]
 #aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
 #aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
-#empirical.codon.freq <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=1)
+#root.codon.freq <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=1)
 
-#tmp <- SelacSimulator(nsites=10, phy=phy, pars=c(1e-9,.4,.1,5e6,.25,.25,.25), aa.distances, aa.optim_array=aa.optim, empirical.codon.frequencies=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC")
+#tmp <- SelacSimulator(nsites=10, phy=phy, pars=c(1e-9,.4,.1,5e6,.25,.25,.25), aa.distances, aa.optim_array=aa.optim, root.codon.frequencies=root.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC")
 
 
 
