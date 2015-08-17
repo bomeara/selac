@@ -85,7 +85,7 @@ test_that("selac_likelihood", {
 	aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
 	selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 5e6, .25, .25, .25)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, volume.scale.par=0.0003990333, include.gamma=FALSE, ncats=4, logspace=TRUE, verbose=FALSE)
-	comparison <- identical(round(selac, 3), -6793.662)
+	comparison <- identical(round(selac, 3), -6793.072)
 	expect_true(comparison)
 })
 
@@ -108,7 +108,7 @@ test_that("selac+GAMMA_likelihood", {
 	aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
 	selac_gamma <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(1e-7, 1.829272, 0.101799, 5e6, .25, .25, .25, .5)), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC", codon.index.matrix, volume.scale.par=0.0003990333, include.gamma=TRUE, ncats=4, logspace=TRUE, verbose=FALSE)
-	comparison <- identical(round(selac_gamma, 3), -6769.826)
+	comparison <- identical(round(selac_gamma, 3), -6769.203)
 	expect_true(comparison)
 })
 

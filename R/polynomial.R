@@ -1,32 +1,4 @@
 
-######################################################################################################################################
-######################################################################################################################################
-### Simulation run -- not 100% sure on this.
-######################################################################################################################################
-######################################################################################################################################
-
-#Step 1: Simulate trait values.
-#Step 2: Optimize model parameters.
-library(truncnorm)
-library(nloptr)
-
-res<-c()
-for(i in 1:100){
-    tmp.trait <- SimulateMonoPolyData()
-    res<-rbind(res, OptimizePolynomialVariables(tmp.trait[,1], k=1)$k.1)
-}
-
-colMeans(res)
-#Let us look at one of the data sets:
-tmp.trait.x <- tmp.trait[,1]
-tmp.trait.y <- tmp.trait[,2]
-plot(tmp.trait.x, tmp.trait.y, ylab="Probability", xlab="simulated data")
-interval.sample <- seq(-2.5, 2.5, by=.05)
-new.x = GetFittedValues(interval.sample, xi=res[100,1],alpha=res[100,2],phi=res[100,3], k=1)
-new.y = 1 / (1+exp(-new.x))
-points(new.x, new.y, col="red")
-text(0,.90, "Observed")
-text(0,.85, "Fitted", col="red")
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -41,8 +13,7 @@ text(0,.85, "Fitted", col="red")
 SimulateMonoPolyData <- function(nsize=100, xi=0, alpha=-0.5, beta=.1, k=1){
     #Note lambda is assumed to equal 1 automatically.
     theta = rtruncnorm(nsize, a=-2.5, b=2.5, mean = 0, sd = 1)
-    phi = (alpha)^2 + beta
-    coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, phi.vec=phi, k=k)
+    coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, beta.vec=beta, k=k)
     mi <- xi + (coef.vec[1,1]/2)*theta + (coef.vec[2,1]/3)*(theta^2) + (coef.vec[3,1]/4)*(theta^3)
     p.theta = 1 / (1+exp(-mi))
     trait.mat <- matrix(0, nsize, 3)
@@ -54,8 +25,9 @@ SimulateMonoPolyData <- function(nsize=100, xi=0, alpha=-0.5, beta=.1, k=1){
 
 
 #This provides the fitted values from the model fit.
-GetFittedValues <- function(x, xi=0.174812746, alpha=-0.5227861745, phi=0.0003913984, k=1){
-    coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, phi.vec=phi, k=k)
+GetFittedValues <- function(x, xi=0.174812746, alpha=-0.5227861745, beta=0.0003913984, k=1){
+    phi.vec = alpha^2 + beta
+	coef.vec = CalculatePolynomialCoefficients(alpha.vec=alpha, beta.vec=beta, k=k)
     mi <- xi + (coef.vec[1,1]/2)*x + (coef.vec[2,1]/3)*(x^2) + (coef.vec[3,1]/4)*(x^3)
     return(mi)
 }
@@ -79,7 +51,7 @@ OptimizePolynomialVariables <- function(x, k){
     }else{
         k.sequence <- 1:k
         #Step 1: Optimize for k=1, assumes lambda=1. Parameter order: xik, alphak, phik:
-        get.k1.pars <- nloptr(x0=c(0, -1/2, 1), eval_f = PolynomialLikelihoodFunction, ub=c(100, 100, 100), lb=c(-100, -100, 1e-100), opts=opts, x=x, k=k.sequence[1], k.minus.1.p=NULL, k.minus.2.p=NULL)
+        get.k1.pars <- nloptr(x0=c(0, 1), eval_f = PolynomialLikelihoodFunction, ub=c(100, 100), lb=c(-100, 1e-100), opts=opts, x=x, k=k.sequence[1], k.minus.1.p=NULL, k.minus.2.p=NULL)
         k.pars.list$k.1 = get.k1.pars$solution
         k.pars.list$k.1.lik = -get.k1.pars$objective
         
@@ -106,7 +78,7 @@ PolynomialLikelihoodFunction <- function(p, x, k, k.minus.1.p, k.minus.2.p){
         coef.vec <- 1
     }
     if(k == 1){
-		coef.vec <- CalculatePolynomialCoefficients(alpha.vec=c(p[2]), phi.vec=c(p[3]), k)
+		coef.vec <- CalculatePolynomialCoefficients(alpha.vec=c(-1/2), beta.vec=c(p[2]), k)
 	}
     
     ###Not necessary yet:
@@ -158,7 +130,7 @@ MonotonicPolynomialTransform <- function(x, xi, coef.vec, k){
         mk2_1 <- xi + 1*x
     }
     if(k == 1){
-		mk2_1 <- xi + (coef.vec[1,1]/2)*x + (coef.vec[2,1]/3)*(x^2) + (coef.vec[3,1]/4)*(x^3)
+		mk2_1 <- xi + coef.vec[1,1]*x + (coef.vec[2,1]/2)*(x^2) + (coef.vec[3,1]/3)*(x^3)
 	}
     
     ##Not necessary yet:
@@ -175,11 +147,12 @@ MonotonicPolynomialTransform <- function(x, xi, coef.vec, k){
 
 
 #Using matrix algebra from pg. 28.
-CalculatePolynomialCoefficients <- function(alpha.vec, phi.vec, k){
+CalculatePolynomialCoefficients <- function(alpha.vec, beta.vec, k){
     #coef.mat is the matrix of coefficients:
 	coef.vec <- 1
     #k.set is a sequence of k ending with the max k which is specified at the function call:
 	k.set = 1:k
+	phi.vec = alpha.vec^2 + beta.vec
     #Matrix multiplication order does not matter for answer, but order matters for efficiency:
 	for(k.index in 1:k){
 		coef.vec <- CreatePolynomialMatrix(alpha.vec[k.index], phi.vec[k.index], k.set[k.index]) %*% coef.vec
@@ -204,6 +177,36 @@ CreatePolynomialMatrix <- function(alpha, phi, k){
 	}
 	return(T.mat.k)	
 }
+
+
+######################################################################################################################################
+######################################################################################################################################
+### Simulation run -- not 100% sure on this.
+######################################################################################################################################
+######################################################################################################################################
+
+#Step 1: Simulate trait values.
+#Step 2: Optimize model parameters.
+library(truncnorm)
+library(nloptr)
+
+res<-c()
+for(i in 1:100){
+    tmp.trait <- SimulateMonoPolyData()
+    res<-rbind(res, OptimizePolynomialVariables(tmp.trait[,1], k=1)$k.1)
+}
+
+colMeans(res)
+#Let us look at one of the data sets:
+tmp.trait.x <- tmp.trait[,1]
+tmp.trait.y <- tmp.trait[,2]
+plot(tmp.trait.x, tmp.trait.y, ylab="Probability", xlab="simulated data")
+interval.sample <- seq(-2.5, 2.5, by=.05)
+new.x = GetFittedValues(interval.sample, xi=res[100,1],alpha=-.5, beta=res[100,2], k=1)
+new.y = 1 / (1+exp(-new.x))
+points(new.x, new.y, col="red")
+text(0,.90, "Observed")
+text(0,.85, "Fitted", col="red")
 
 
 ######################################################################################################################################
