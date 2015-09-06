@@ -845,20 +845,15 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 		shape = x[length(x)]
 		x = x[-length(x)]
 	}
-	#C.Phi.q.s<-x[1]
 	C=2
-	#Phi.q.s <- C.Phi.q.s / C
 	Phi <- 0.5
-	#q.s <- Phi.q.s / Phi
 	q <- 4e-7
-	#s <- q.s / q
 	alpha <- x[1]
 	beta <- x[2]
 	gamma = x[3]
 	Ne <- x[4]
 	
 	if(k.levels > 0){
-		aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=x[8:9], k=k.levels)
 		if(nuc.model == "JC") {
 			base.freqs=c(x[5:7], 1-sum(x[5:7]))
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -871,7 +866,6 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[10:length(x)], model=nuc.model)
 		}		
 	}else{
-		aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
 		if(nuc.model == "JC") {
 			base.freqs=c(x[5:7], 1-sum(x[5:7]))
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -887,16 +881,26 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 	#codon_mutation_matrix = CreateCodonMutationMatrix(nuc.mutation.rates) #We now make an index matrix first then just place the nucleotide rates into it:
 	codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
 	nsites <- dim(codon.data$unique.site.patterns)[2]-1
-
+	
 	if(include.gamma==TRUE){
 		rates.k <- DiscreteGamma(shape, ncats)
 		final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)		
 		for(k in sequence(ncats)){
-			Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=0.9999999)
+			if(k.levels > 0){
+				aa.distances <- CreateAADistanceMatrix(alpha=alpha*rates.k[k], beta=beta*rates.k[k], gamma=gamma*rates.k[k], aa.properties=aa.properties, normalize=FALSE, poly.params=x[8:9], k=k.levels)
+			}else{
+				aa.distances <- CreateAADistanceMatrix(alpha=alpha*rates.k[k], beta=beta*rates.k[k], gamma=gamma*rates.k[k], aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+			}
+			Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=0.9999999)
 			final.likelihood.mat[k,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode)
 		}
 		likelihood <- sum(log(colMeans(exp(final.likelihood.mat))) * codon.data$site.pattern.counts)
 	}else{
+		if(k.levels > 0){
+			aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=x[8:9], k=k.levels)
+		}else{
+			aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+		}		
 		Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=0.9999999)
 		final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode)
 		likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
@@ -1001,20 +1005,15 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_
 		shape = x[length(x)]
 		x = x[-length(x)]
 	}
-	#C.Phi.q.s<-x[1]
 	C=2
-	#Phi.q.s <- C.Phi.q.s / C
 	Phi <- 0.5
-	#q.s <- Phi.q.s / Phi
 	q <- 4e-7
-	#s <- q.s / q
 	alpha <- x[1]
 	beta <- x[2]
 	gamma = x[3]
 	Ne <- x[4]
-
+	
 	if(k.levels > 0){
-		aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=x[8:9], k=k.levels)
 		if(nuc.model == "JC") {
 			base.freqs=c(x[5:7], 1-sum(x[5:7]))
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -1027,7 +1026,6 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[10:length(x)], model=nuc.model)
 		}		
 	}else{
-		aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=0)
 		if(nuc.model == "JC") {
 			base.freqs=c(x[5:7], 1-sum(x[5:7]))
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -1065,13 +1063,23 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_
 				rates.k <- DiscreteGamma(shape, ncats)
 				final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)		
 				for(k in sequence(ncats)){
-					Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=1000) 
+					if(k.levels > 0){
+						aa.distances <- CreateAADistanceMatrix(alpha=alpha*rates.k[k], beta=beta*rates.k[k], gamma=gamma*rates.k[k], aa.properties=aa.properties, normalize=FALSE, poly.params=x[8:9], k=k.levels)
+					}else{
+						aa.distances <- CreateAADistanceMatrix(alpha=alpha*rates.k[k], beta=beta*rates.k[k], gamma=gamma*rates.k[k], aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+					}							
+					Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=1000) 
 					tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode)
 					tmp[is.na(tmp)] = -10000000000
 					final.likelihood.mat[k,] = tmp
 				}
 				optimal.aa.likelihood.mat[i,] <- log(colMeans(exp(final.likelihood.mat)))
 			}else{
+				if(k.levels > 0){
+					aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=x[8:9], k=k.levels)
+				}else{
+					aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+				}						
 				Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, flee.stop.codon.rate=1000) 
 				tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode)
 				tmp[is.na(tmp)] = -10000000000
