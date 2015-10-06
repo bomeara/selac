@@ -285,8 +285,9 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
 # @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrixIndex <- function() {
 	nuc.rates.index = matrix(1:16, 4, 4)
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -314,8 +315,9 @@ CreateCodonMutationMatrixIndex <- function() {
 # @param nuc.mutation.rates are the rates from (row) to (col) based on the nucleotide model
 # @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -347,8 +349,9 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs) {
 	kappa.par = x[1]
 	omega.par = x[2]
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -550,8 +553,9 @@ GetProteinProteinDistance <- function(protein1, protein2, aa.distances){
 
 
 FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.names <- rep("", n.codons)
 	for (i in sequence(n.codons)) {
@@ -588,6 +592,55 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 	return(codon.fixation.probs)
 }
 
+CreateAAFixationMatrixForEverything <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE) {
+	states <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
+	fixation.array <- array(data=0, dim=rep(length(states)+include.stop.codon,3)) #adding the boolean to leave space for a stop codon if needed
+	for (row.index in sequence(length(states))) {
+		for (col.index in sequence(length(states))) {
+			for (optimal.index in sequence(length(states))) {
+				fixation.array[row.index, col.index, optimal.index] <- GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(protein1=states[row.index], protein2=states[optimal.index], aa.distances=aa.distances),  GetProteinProteinDistance(protein1=states[col.index], protein2=states[optimal.index], aa.distances=aa.distances), nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid)
+				
+			}
+		}
+	}
+	if(include.stop.codon) {
+		states <- c(states, "*")	
+	}
+	dimnames(fixation.array) <- list(states, states, states)
+	return(fixation.array)
+}
+
+QuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
+	colnames(codon.sets) <- c("first", "second", "third")
+	n.codons <- dim(codon.sets)[1]
+	codon.names <- rep("", n.codons)
+	aa.fixation.probs <- CreateAAFixationMatrixForEverything(aa.distances=aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid) 
+	for (i in sequence(n.codons)) {
+		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+	}
+	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
+	unique.aa <- unique(codon.aa)
+	
+	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+	for (i in sequence(n.codons)) {
+		for (j in sequence(n.codons)) {
+			if(sum(codon.sets[i,] == codon.sets[j,])>1 ) { #match at two or more sites
+				for (k in sequence(length(unique.aa))) {
+					aa1 <- codon.aa[i]
+					aa2 <- codon.aa[j]
+					codon.fixation.probs[i,j, k] <-aa.fixation.probs[aa1, aa2, unique.aa[k]]
+				}
+			}
+		}
+	}
+	codon.fixation.probs[,,"*"] = 0 
+	return(codon.fixation.probs)
+}
+
+
 
 DiagArray <- function (dim){
     n <- dim[2]
@@ -597,8 +650,9 @@ DiagArray <- function (dim){
 
 
 FastCreateAllCodonFixationProbabilityMatricesSetToOne <- function(numcode=1) {
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.names <- rep("", n.codons)
 	for (i in sequence(n.codons)) {
@@ -612,8 +666,9 @@ FastCreateAllCodonFixationProbabilityMatricesSetToOne <- function(numcode=1) {
 
 
 CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.fixation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	codon.names <- rep("", n.codons)
@@ -663,6 +718,12 @@ CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=2, Phi=0.5,q=4e-7,Ne=5
 	return(mat)
 }
 
+CreateCodonSets <- function() {
+	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
+	colnames(codon.sets) <- c("first", "second", "third")
+	return(codon.sets)
+}
 
 # Get likelihood for a given AA site given tree and Q matrix, assuming the optimal AA is known
 # @param aa.data is data in corHMM format (one column species, one column state)
@@ -1386,8 +1447,9 @@ SitePattern <- function(codon.data, corHMM.format=TRUE, includes.optimal.aa=FALS
 
 
 GetMatrixAANames <-function(numcode){
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	codon.set.translate <- apply(codon.sets, 2, n2s)
 	codon.name <- apply(codon.set.translate, 1, paste, collapse="")
 	codon.aa <- sapply(codon.name,TranslateCodon, numcode=numcode)
@@ -1398,8 +1460,9 @@ GetMatrixAANames <-function(numcode){
 
 
 CodonEquilibriumFrequencies <- function(codon.data, aa.opt.vector, numcode){
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	codon.set.translate <- apply(codon.sets, 2, n2s)
 	codon.name <- apply(codon.set.translate, 1, paste, collapse="")
 	aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
