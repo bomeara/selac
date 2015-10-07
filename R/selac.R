@@ -15,6 +15,7 @@ library(nloptr)
 library(seqinr)
 library(phangorn)
 library(parallel)
+library(Rcpp)
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -553,9 +554,9 @@ GetProteinProteinDistance <- function(protein1, protein2, aa.distances){
 
 
 FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+#	codon.sets <- CreateCodonSets()
+	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.names <- rep("", n.codons)
 	for (i in sequence(n.codons)) {
@@ -640,6 +641,58 @@ QuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distanc
 	return(codon.fixation.probs)
 }
 
+cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(NumericMatrix codon_sets, StringVector aa, NumericMatrix aa_distances, int nsites, double C, double Phi, double q, double Ne, bool include_stop_codon,  int numcode, bool diploid, Function GetProteinProteinDistance, Function GetPairwiseProteinFixationProbabilitySingleSite, int optimalaa_offset0index) {
+	NumericMatrix codon_fixation_probs_aa(codon_sets.nrow(), codon_sets.nrow());
+//	Rcpp::Rcout << "ok";
+//	Rcout << aa;
+	for (int i=0; i<codon_sets.nrow(); ++i) {
+		for(int j=0; j<codon_sets.nrow(); ++j) {
+			int mismatches=0;
+			for(int pos=0; pos<3; ++pos) {
+				if(codon_sets(i, pos)==codon_sets(j, pos)) {
+					mismatches++;	
+				}	
+			}
+			if(mismatches<2) {
+				StringVector proteinI(1);
+				StringVector proteinJ(1);
+				StringVector proteinOptimal(1);
+				proteinI(0) = aa(i);
+				proteinJ(0) = aa(j);
+				proteinOptimal(0) = aa(optimalaa_offset0index);
+				codon_fixation_probs_aa(i,j) = as<double>(GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(_["protein1"]=proteinI, _["protein2"]=proteinOptimal, _["aa.distances"]=aa_distances),  GetProteinProteinDistance(_["protein1"]=proteinJ, _["protein2"]=proteinOptimal, _["aa.distances"]=aa_distances), _["nsites"]=nsites, _["C"]=C, _["Phi"]=Phi, _["q"]=q, _["Ne"]=Ne, _["diploid"]=diploid));
+				//codon_fixation_probs_aa(i,j) = as<double>(GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(_["protein1"]=aa(i), _["protein2"]=aa(optimalaa_offset0index), _["aa.distances"]=aa_distances),  GetProteinProteinDistance(_["protein1"]=aa(j), _["protein2"]=aa(optimalaa_offset0index), _["aa.distances"]=aa_distances), _["nsites"]=nsites, _["C"]=C, _["Phi"]=Phi, _["q"]=q, _["Ne"]=Ne, _["diploid"]=diploid));
+			}
+		}
+	} 
+	return(codon_fixation_probs_aa);
+}')
+
+
+#result <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1)
+
+
+
+CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
+	colnames(codon.sets) <- c("first", "second", "third")
+	n.codons <- dim(codon.sets)[1]
+	codon.names <- rep("", n.codons)
+	aa.fixation.probs <- CreateAAFixationMatrixForEverything(aa.distances=aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid) 
+	for (i in sequence(n.codons)) {
+		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+	}
+	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
+	unique.aa <- unique(codon.aa)
+	
+	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+	for (k in sequence(length(unique.aa))) {
+		codon.fixation.probs[,,k] <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1) #k-1 due to C++ counting from zero
+	}
+	return(codon.fixation.probs)
+}
 
 
 DiagArray <- function (dim){
@@ -722,6 +775,7 @@ CreateCodonSets <- function() {
 	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
 	colnames(codon.sets) <- c("first", "second", "third")
+	codon.sets <- as.matrix(codon.sets)
 	return(codon.sets)
 }
 
