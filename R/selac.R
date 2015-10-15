@@ -287,8 +287,6 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
 CreateCodonMutationMatrixIndex <- function() {
 	nuc.rates.index = matrix(1:16, 4, 4)
 	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -317,8 +315,6 @@ CreateCodonMutationMatrixIndex <- function() {
 # @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -351,8 +347,6 @@ CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs) {
 	kappa.par = x[1]
 	omega.par = x[2]
 	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
 	rownames(codon.mutation.rates) <- rep("",n.codons)
@@ -403,8 +397,27 @@ CodonStringToNumeric <- function(x) { #remember that codon numbers start at 1
 	return(triplet)
 }
 
+
+CodonStringToCharacter <- function(x) { #remember that codon numbers start at 1
+	triplet <- x
+	if(length(triplet) == 0){
+		triplet <- NA
+	}
+	return(triplet)
+}
+
+
 NucleotideStringToNumeric <- function(x) { #remember that codon numbers start at 1
 	singlet <- which(words(length=1)==x)
+	if(length(singlet) == 0){
+		singlet <- NA
+	}
+	return(singlet)
+}
+
+
+NucleotideStringToCharacter <- function(x) { #remember that codon numbers start at 1
+	singlet <- x
 	if(length(singlet) == 0){
 		singlet <- NA
 	}
@@ -480,7 +493,7 @@ CompareVectors <- function(cd1,cd2){
 }
 
 
-GetPairwiseProteinFixationProbabilityArbitraryLength <- function(protein1, protein2, protein_op, s, aa.distances, nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6){
+GetPairwiseProteinFixationProbabilityArbitraryLength <- function(protein1, protein2, protein_op, s, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6){
 	d1 <- GetProteinProteinDistance(protein1,protein_op,aa.distances)
 	d2 <- GetProteinProteinDistance(protein2,protein_op,aa.distances)
 	if(length(d1)!=length(d2)) #throw error if length of proteins are not the same
@@ -503,7 +516,7 @@ GetPairwiseProteinFixationProbabilityArbitraryLength <- function(protein1, prote
 }
 
 
-GetPairwiseProteinFixationProbabilitySingleSite <- function(d1, d2, nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, diploid=TRUE){
+GetPairwiseProteinFixationProbabilitySingleSite <- function(d1, d2, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, diploid=TRUE){
 	if(diploid==TRUE){
 		b = 1
 	}else{
@@ -553,65 +566,67 @@ GetProteinProteinDistance <- function(protein1, protein2, aa.distances){
 }
 
 
-FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-#	codon.sets <- CreateCodonSets()
-	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
-	n.codons <- dim(codon.sets)[1]
-	codon.names <- rep("", n.codons)
-	for (i in sequence(n.codons)) {
-		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
-	}
-	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
-	unique.aa <- unique(codon.aa)
-	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
-	for (i in sequence(n.codons)) {
-		for (j in sequence(n.codons)) {
-			if(sum(codon.sets[i,] == codon.sets[j,])>=2) { #match at two or three sites of three
-				for (k in sequence(length(unique.aa))) {
-					aa1 <- codon.aa[i]
-					aa2 <- codon.aa[j]
-					if(aa1!="*" && aa2!="*" && unique.aa[k]!="*") { #says we cannot mutate to stop codons and stop codons can never be optimal
-						d1 <- GetProteinProteinDistance(protein1=aa1, protein2=unique.aa[k], aa.distances=aa.distances)
-						d2 <- GetProteinProteinDistance(protein1=aa2, protein2=unique.aa[k], aa.distances=aa.distances)
-						codon.fixation.probs[i,j, k] <- GetPairwiseProteinFixationProbabilitySingleSite(d1, d2, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid)
-					}else {
-#						We have dropped s from the model as it is now explained through grantham like distances:
-#						if(s==0) { #handles stop codon case where neutral, so could possibly go into and out of stop codons
-#							codon.fixation.probs[i,j, k] <- 0
-#						}else {
-							if(aa2!="*" && unique.aa[k]!="*") {
-								codon.fixation.probs[i,j, k] <- 0 #Old = if we are somehow in a stop codon, have a very high rate of moving away from this; New = make is zero because in theory our model should use selection to kill these but infinite selection is rather harsh.
-#							}
-						}
-					}
-				}
-			}
-		}
-	}
-	codon.fixation.probs[,,"*"] = 0 
-	return(codon.fixation.probs)
+#FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+##	codon.sets <- CreateCodonSets()
+#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
+#	n.codons <- dim(codon.sets)[1]
+#	codon.names <- rep("", n.codons)
+#	for (i in sequence(n.codons)) {
+#		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+#	}
+#	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
+#	unique.aa <- unique(codon.aa)
+#	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+#	for (i in sequence(n.codons)) {
+#		for (j in sequence(n.codons)) {
+#			if(sum(codon.sets[i,] == codon.sets[j,])>=2) { #match at two or three sites of three
+#				for (k in sequence(length(unique.aa))) {
+#					aa1 <- codon.aa[i]
+#					aa2 <- codon.aa[j]
+#					if(aa1!="*" && aa2!="*" && unique.aa[k]!="*") { #says we cannot mutate to stop codons and stop codons can never be optimal
+#						d1 <- GetProteinProteinDistance(protein1=aa1, protein2=unique.aa[k], aa.distances=aa.distances)
+#						d2 <- GetProteinProteinDistance(protein1=aa2, protein2=unique.aa[k], aa.distances=aa.distances)
+#						codon.fixation.probs[i,j, k] <- GetPairwiseProteinFixationProbabilitySingleSite(d1, d2, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid)
+#					}else {
+##						We have dropped s from the model as it is now explained through grantham like distances:
+##						if(s==0) { #handles stop codon case where neutral, so could possibly go into and out of stop codons
+##							codon.fixation.probs[i,j, k] <- 0
+##						}else {
+#							if(aa2!="*" && unique.aa[k]!="*") {
+#								codon.fixation.probs[i,j, k] <- 0 #Old = if we are somehow in a stop codon, have a very high rate of moving away from this; New = make is zero because in theory our model should use selection to kill these but infinite selection is rather harsh.
+##							}
+#						}
+#					}
+#				}
+#			}
+#		}
+#	}
+#	codon.fixation.probs[,,"*"] = 0
+#	return(codon.fixation.probs)
+#}
+
+
+CreateAAFixationMatrixForEverything <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE) {
+    states <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
+    fixation.array <- array(data=0, dim=rep(length(states)+include.stop.codon,3)) #adding the boolean to leave space for a stop codon if needed
+    for (row.index in sequence(length(states))) {
+        for (col.index in sequence(length(states))) {
+            for (optimal.index in sequence(length(states))) {
+                fixation.array[row.index, col.index, optimal.index] <- GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(protein1=states[row.index], protein2=states[optimal.index], aa.distances=aa.distances),  GetProteinProteinDistance(protein1=states[col.index], protein2=states[optimal.index], aa.distances=aa.distances), nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid)
+                
+            }
+        }
+    }
+    if(include.stop.codon) {
+        states <- c(states, "*")
+    }
+    dimnames(fixation.array) <- list(states, states, states)
+    return(fixation.array)
 }
 
-CreateAAFixationMatrixForEverything <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE) {
-	states <- c("A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y")
-	fixation.array <- array(data=0, dim=rep(length(states)+include.stop.codon,3)) #adding the boolean to leave space for a stop codon if needed
-	for (row.index in sequence(length(states))) {
-		for (col.index in sequence(length(states))) {
-			for (optimal.index in sequence(length(states))) {
-				fixation.array[row.index, col.index, optimal.index] <- GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(protein1=states[row.index], protein2=states[optimal.index], aa.distances=aa.distances),  GetProteinProteinDistance(protein1=states[col.index], protein2=states[optimal.index], aa.distances=aa.distances), nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid)
-				
-			}
-		}
-	}
-	if(include.stop.codon) {
-		states <- c(states, "*")	
-	}
-	dimnames(fixation.array) <- list(states, states, states)
-	return(fixation.array)
-}
 
-QuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
 	codon.sets <- CreateCodonSets()
 #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 #	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
@@ -641,6 +656,7 @@ QuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distanc
 	return(codon.fixation.probs)
 }
 
+##Work in progress##
 cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(NumericMatrix codon_sets, StringVector aa, NumericMatrix aa_distances, int nsites, double C, double Phi, double q, double Ne, bool include_stop_codon,  int numcode, bool diploid, Function GetProteinProteinDistance, Function GetPairwiseProteinFixationProbabilitySingleSite, int optimalaa_offset0index) {
 	NumericMatrix codon_fixation_probs_aa(codon_sets.nrow(), codon_sets.nrow());
 //	Rcpp::Rcout << "ok";
@@ -673,7 +689,7 @@ cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(Nu
 
 
 
-CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
 	codon.sets <- CreateCodonSets()
 #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 #	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
@@ -718,7 +734,7 @@ FastCreateAllCodonFixationProbabilityMatricesSetToOne <- function(numcode=1) {
 }
 
 
-CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=2, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
+CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=4, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
 	codon.sets <- CreateCodonSets()
 #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 #	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
@@ -759,7 +775,7 @@ CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites,
 }
 
 
-CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=2, Phi=0.5,q=4e-7,Ne=5e6){
+CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=4, Phi=0.5,q=4e-7,Ne=5e6){
 	m = 20
 	mat <- matrix(0,nrow=m,ncol=m)#set diagonal entries to be 0 at first
 	for(i in 1:(m-1)){
@@ -822,20 +838,6 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 # @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
 # @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, return.all=FALSE) {
-	#result <- rayDISC(phy=phy, data=codon.data, ntraits=1, charnum=charnum, p=Q_codon, root.p=root.p)
-	#Makes dev.rayDISC available:
-	#dev.raydisc <- corHMM:::dev.raydisc
-	#Check for any missing data -- all taxa missing data for a site are simply removed and the likelihood is inferred from the reduced dataset. Consider, for example, that a taxon is missing the first codon position base. Many different AA could fit that and so it drives likelihood optimum towards low s.
-	
-	### Old way of dealing with missing data -- we would just remove the taxa. Now we set it as ambiguous and ignore it during our tree traversal of the final likelihood.
-	#	if(any(is.na(codon.data[,charnum+1]))){
-	#		print(charnum)
-	#		bad.taxa = which(is.na(codon.data[,charnum+1]))
-	#		phy = drop.tip(phy, phy$tip.label[bad.taxa])
-	#		codon.data = codon.data[-bad.taxa,]
-	#	}
-	###
-	
 	nb.tip<-length(phy$tip.label)
 	nb.node <- phy$Nnode
 	nl <- nrow(Q_codon[[1]])
@@ -874,7 +876,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 	#Q_array codon mutation matrix multiplication here -- need to do this here because we need our scaling factor:
 	for(k in 1:21){ 
 		if(diploid == TRUE){
-			Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+			Q_codon_array[,,unique.aa[k]] = (2 * Ne) * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
 		}else{
 			Q_codon_array[,,unique.aa[k]] = Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
 		}
@@ -1189,7 +1191,6 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_
 			optimal.aa.likelihood.mat[i,] <- rep(-10000000000, nsites)
 		}else{
 			aa.optim_array = rep(unique.aa[i], nsites)
-			print(aa.optim_array)
 			if(include.gamma==TRUE){
 				rates.k <- DiscreteGamma(shape, ncats)
 				final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)		
@@ -1309,21 +1310,25 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, n.p
 }
 
 
-ComputeStartingBranchLengths <- function(phy, chars=NULL) {
-	phy <- compute.brlen(phy, method="Grafen")
-	if(!is.null(chars)) {
-		dna.distances <- dist(chars[,-1], diag=TRUE, upper=TRUE)/length(chars[,-1])
-		max.root.tip.distance <- max(dna.distances)/2 
-		#Note: /2 b/c distance is from tip to root to tip; we only want from the tip to the root. This might not be the true max length (if tree isnt ultrametric) but it gets us in right ballpark to start 
-		max.branching.times <- max(branching.times(phy))
-		phy$edge.length <- phy$edge.length * max.root.tip.distance / max.branching.times
-	} else {
-		rescaling=phy$edge.length[1]
-		phy$edge.length <- phy$edge.length / rescaling 
-		#so that the first brlen is fixed at 1
-	}
-	return(phy)
+
+ComputeStartingBranchLengths <- function(phy, data){
+	data.mat <- DNAbinToNucleotideCharacter(data)
+	new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON",edge.length=1,Nnode=1L)
+	class(new.tip) <- "phylo"
+	phy.with.outgroup <- bind.tree(phy, new.tip,where="root")
+	new.tip.data <- matrix(c("FAKEY_MCFAKERSON", rep("-", dim(data.mat)[2]-1)), dim(data.mat)[2], 1)
+	new.tip.df <- as.data.frame(t(new.tip.data))
+	rownames(new.tip.df) <- "FAKEY_MCFAKERSON"
+	colnames(new.tip.df) <- colnames(data.mat)
+	data.with.outgroup <- rbind(data.mat, new.tip.df)
+	dat <- as.matrix(data.with.outgroup[,-1])
+	dat <- phyDat(dat,type="DNA")
+	mpr.tre <- acctran(phy.with.outgroup, dat)
+	mpr.tre$edge.length <- mpr.tre$edge.length/dim(data.mat[,-1])[2]
+	mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
+    return(mpr.tre.pruned)
 }
+
 
 
 DiscreteGamma <- function (shape, ncats){
@@ -1434,6 +1439,26 @@ DNAbinToCodonNumeric <- function(x, frame=0, corHMM.format=TRUE) {
 	return(split.characters)
 }
 
+							   
+DNAbinToCodonCharacter <- function(x, frame=0, corHMM.format=TRUE) {
+	bound.characters <- sapply(as.character(x), paste, collapse="")
+	#following fn is derived from code for uco in seqinr
+	SplitToCodons <- function(seq.string, frame) {
+		seq.string<-strsplit(seq.string, split="")[[1]]
+		if (any(seq.string %in% LETTERS)) {
+			seq.string <- tolower(seq.string)
+		}
+		return(sapply(splitseq(seq = seq.string, frame = frame, word = 3), CodonStringToCharacter))
+	}
+	split.characters <- t(sapply(bound.characters, SplitToCodons, frame=frame))
+	colnames(split.characters) <- sequence(dim(split.characters)[2])
+	if(corHMM.format) {
+		split.characters <- cbind(data.frame(Taxa=rownames(split.characters)), data.frame(split.characters))
+	}
+	split.characters[is.na(split.characters)] = 65
+	return(split.characters)
+}
+
 
 DNAbinToNucleotideNumeric <- function(x, frame=0, corHMM.format=TRUE) {
 	bound.characters <- sapply(as.character(x), paste, collapse="")
@@ -1444,6 +1469,26 @@ DNAbinToNucleotideNumeric <- function(x, frame=0, corHMM.format=TRUE) {
 			seq.string <- tolower(seq.string)
 		}
 		return(sapply(splitseq(seq = seq.string, frame = frame, word = 1), NucleotideStringToNumeric))
+	}
+	split.characters <- t(sapply(bound.characters, SplitToCodons, frame=frame))
+	colnames(split.characters) <- sequence(dim(split.characters)[2])
+	if(corHMM.format) {
+		split.characters<-cbind(data.frame(Taxa=rownames(split.characters)), data.frame(split.characters))
+	}
+	split.characters[is.na(split.characters)] = 65
+	return(split.characters)
+}
+
+
+DNAbinToNucleotideCharacter <- function(x, frame=0, corHMM.format=TRUE) {
+	bound.characters <- sapply(as.character(x), paste, collapse="")
+	#following fn is derived from code for uco in seqinr
+	SplitToCodons <- function(seq.string, frame) {
+		seq.string<-strsplit(seq.string, split="")[[1]]
+		if (any(seq.string %in% LETTERS)) {
+			seq.string <- tolower(seq.string)
+		}
+		return(sapply(splitseq(seq = seq.string, frame = frame, word = 1), NucleotideStringToCharacter))
 	}
 	split.characters <- t(sapply(bound.characters, SplitToCodons, frame=frame))
 	colnames(split.characters) <- sequence(dim(split.characters)[2])
@@ -1502,8 +1547,6 @@ SitePattern <- function(codon.data, corHMM.format=TRUE, includes.optimal.aa=FALS
 
 GetMatrixAANames <-function(numcode){
 	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	codon.set.translate <- apply(codon.sets, 2, n2s)
 	codon.name <- apply(codon.set.translate, 1, paste, collapse="")
 	codon.aa <- sapply(codon.name,TranslateCodon, numcode=numcode)
@@ -1515,8 +1558,6 @@ GetMatrixAANames <-function(numcode){
 
 CodonEquilibriumFrequencies <- function(codon.data, aa.opt.vector, numcode){
 	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
 	codon.set.translate <- apply(codon.sets, 2, n2s)
 	codon.name <- apply(codon.set.translate, 1, paste, collapse="")
 	aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
@@ -1569,17 +1610,19 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 		#the ancestral node at row i is called focal
 		focal <- anc[i]
 		#Get descendant information of focal
-		desRows<-which(phy$edge[,1]==focal)
-		desNodes<-phy$edge[desRows,2]
+		desRows <- which(phy$edge[,1]==focal)
+		desNodes <- phy$edge[desRows,2]
 		for (desIndex in sequence(length(desRows))){
 			expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+			#tmp <- eigen(Q.scaled)
+			#expQt[[desNodes[desIndex]]] <- tmp$vectors %*% diag(exp(tmp$values * phy$edge.length[desRows[desIndex]])) %*% solve(tmp$vectors)
 		}
 	}
 	return(expQt)
 }
 
 
-#Step 2: Finish likelihood by taking our already exponentiated Q down the tee and simply re-traverse the tree and multiply by the observed likelihood. 
+#Step 2: Finish likelihood by taking our already exponentiated Q down the tree and simply re-traverse the tree and multiply by the observed likelihood.
 FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){	
 	nb.tip <- length(phy$tip.label)
 	nb.node <- phy$Nnode
@@ -1598,14 +1641,14 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 		for (desIndex in sequence(length(desRows))){
 			if(desNodes[desIndex] <= nb.tip){
 				if(sum(liks[desNodes[desIndex],]) < 2){
-					v <- v * Q[[desNodes[desIndex]]] %*% liks[desNodes[desIndex],]
+					v <- v * (Q[[desNodes[desIndex]]] %*% liks[desNodes[desIndex],])
 				}
 			}else{
-				v <- v * Q[[desNodes[desIndex]]] %*% liks[desNodes[desIndex],]	
+				v <- v * (Q[[desNodes[desIndex]]] %*% liks[desNodes[desIndex],])
 			}
 		}
 		comp[focal] <- sum(v)
-		liks[focal, ] <- v/comp[focal]
+		liks[focal,] <- v/comp[focal]
 	}
 	#Specifies the root:
 	root <- nb.tip + 1L
@@ -1614,7 +1657,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 		return(10000000000)
 	}
 	else{
-		loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+        loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
 		if(is.infinite(loglik)){return(10000000000)}
 	}
 	loglik
@@ -1644,6 +1687,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 	nsites.vector <- c()
 	if(optimal.aa == "none"){
 		empirical.base.freq.list <- as.list(numeric(n.partitions))
+		starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge.length))
 		for (partition.index in sequence(n.partitions)) {
 			gene.tmp <- read.dna(partitions[partition.index], format='fasta')
 			if(!is.null(fasta.rows.to.keep)){
@@ -1651,6 +1695,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 			}else{
 				gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
 			}
+			starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp)$edge.length
 			nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
 			nucleotide.data <- nucleotide.data[phy$tip.label,]
 			nsites.vector = c(nsites.vector, dim(nucleotide.data)[2] - 1)
@@ -1663,6 +1708,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		}
 	}else{
 		empirical.codon.freq.list <- as.list(numeric(n.partitions))
+		starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge.length))
 		aa.optim.list <- as.list(numeric(n.partitions))
 		aa.optim.full.list <- as.list(numeric(n.partitions))
 		for (partition.index in sequence(n.partitions)) {
@@ -1672,6 +1718,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 			}else{
 				gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
 			}
+			starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp)$edge.length
 			codon.data <- DNAbinToCodonNumeric(gene.tmp)
 			codon.data <- codon.data[phy$tip.label,]
 			nsites.vector = c(nsites.vector, dim(codon.data)[2] - 1)
@@ -1688,7 +1735,8 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 			aa.optim.list[[partition.index]] = codon.data$optimal.aa		
 		}
 	}
-	opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "1", "ftol_rel" = max.tol)
+	
+	opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "100000", "ftol_rel" = max.tol)
 	results.final <- c()
 	if(nuc.model == "JC"){
 		nuc.ip = NULL
@@ -1713,13 +1761,13 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		upper = rep(21, length(ip))
 		lower = rep(-21, length(ip))
 		if(edge.length == "optimize"){
-			index.matrix = matrix(0, n.partitions, length(ip)+length(phy$edge.length))
-			index.matrix[1,] = 1:ncol(index.matrix)
-			phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
-			ip.vector = c(ip, phy$edge.length)
-			upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
-			lower.vector = c(lower, rep(-21, length(phy$edge.length)))
 			if(edge.linked == TRUE){
+				phy$edge.length <- colMeans(starting.branch.lengths)
+				index.matrix = matrix(0, n.partitions, length(ip)+length(phy$edge.length))
+				index.matrix[1,] = 1:ncol(index.matrix)
+				ip.vector = c(ip, phy$edge.length)
+				upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
+				lower.vector = c(lower, rep(-21, length(phy$edge.length)))				
 				for(partition.index in 2:n.partitions){
 					ip.vector = c(ip.vector, ip)
 					upper.vector = c(upper.vector, upper)
@@ -1730,8 +1778,14 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 					index.matrix[partition.index,] <- index.matrix.tmp
 				}				
 			}else{
+				phy$edge.length <- starting.branch.lengths[1,]
+				index.matrix = matrix(0, n.partitions, length(ip)+length(phy$edge.length))
+				index.matrix[1,] = 1:ncol(index.matrix)
+				ip.vector = c(ip, phy$edge.length)
+				upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
+				lower.vector = c(lower, rep(-21, length(phy$edge.length)))				
 				for(partition.index in 2:n.partitions){
-					phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+					phy$edge.length <- starting.branch.lengths[partition.index,]
 					ip.vector = c(ip.vector, c(ip, phy$edge.length))
 					upper.vector = c(upper.vector, c(upper, rep(log(5), length(phy$edge.length))))
 					lower.vector = c(lower.vector, c(lower, rep(-21, length(phy$edge.length))))
@@ -1797,13 +1851,13 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 				}
 			}
 			if(edge.length == "optimize"){
-				index.matrix = matrix(0, n.partitions, max.par.model.count+length(phy$edge.length))
-				index.matrix[1,] = 1:ncol(index.matrix)
-				phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
-				ip.vector = c(ip, phy$edge.length)
-				upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
-				lower.vector = c(lower, rep(-21, length(phy$edge.length)))
 				if(edge.linked == TRUE){
+					phy$edge.length <- colMeans(starting.branch.lengths)
+					index.matrix = matrix(0, n.partitions, max.par.model.count+length(phy$edge.length))
+					index.matrix[1,] = 1:ncol(index.matrix)
+					ip.vector = c(ip, phy$edge.length)
+					upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
+					lower.vector = c(lower, rep(-21, length(phy$edge.length)))					
 					for(partition.index in 2:n.partitions){
 						if(nuc.model == "JC"){
 							ip.vector = c(ip.vector, ip[1], ip[5], ip[6], ip[7])
@@ -1826,8 +1880,14 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 						index.matrix[partition.index,] <- index.matrix.tmp							
 					}					
 				}else{
+					phy$edge.length <- starting.branch.lengths[1,]
+					index.matrix = matrix(0, n.partitions, max.par.model.count+length(phy$edge.length))
+					index.matrix[1,] = 1:ncol(index.matrix)
+					ip.vector = c(ip, phy$edge.length)
+					upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
+					lower.vector = c(lower, rep(-21, length(phy$edge.length)))					
 					for(partition.index in 2:n.partitions){
-						phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+						phy$edge.length <- starting.branch.lengths[partition.index,]
 						if(nuc.model == "JC"){
 							ip.vector = c(ip.vector, ip[1], ip[5], ip[6], ip[7])
 							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], rep(log(5), length(phy$edge.length))))
@@ -1929,13 +1989,13 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 				}
 			}
 			if(edge.length == "optimize"){
-				index.matrix = matrix(0, n.partitions, max.par.model.count+length(phy$edge.length))
-				index.matrix[1,] = 1:ncol(index.matrix)
-				phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
-				ip.vector = c(ip, phy$edge.length)
-				upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
-				lower.vector = c(lower, rep(-21, length(phy$edge.length)))
 				if(edge.linked == TRUE){
+					phy$edge.length <- colMeans(starting.branch.lengths)
+					index.matrix = matrix(0, n.partitions, max.par.model.count+length(phy$edge.length))
+					index.matrix[1,] = 1:ncol(index.matrix)
+					ip.vector = c(ip, phy$edge.length)
+					upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
+					lower.vector = c(lower, rep(-21, length(phy$edge.length)))					
 					for(partition.index in 2:n.partitions){
 						if(nuc.model == "JC"){
 							ip.vector = c(ip.vector, ip[1], ip[5], ip[6], ip[7])
@@ -1958,8 +2018,14 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 						index.matrix[partition.index,] <- index.matrix.tmp														
 					}					
 				}else{
+					phy$edge.length <- starting.branch.lengths[1,]
+					index.matrix = matrix(0, n.partitions, max.par.model.count+length(phy$edge.length))
+					index.matrix[1,] = 1:ncol(index.matrix)
+					ip.vector = c(ip, phy$edge.length)
+					upper.vector = c(upper, rep(log(5), length(phy$edge.length)))
+					lower.vector = c(lower, rep(-21, length(phy$edge.length)))										
 					for(partition.index in 2:n.partitions){
-						phy <- ComputeStartingBranchLengths(phy, chars=site.pattern.data.list[[partition.index]])
+						phy$edge.length <- starting.branch.lengths[partition.index,]
 						if(nuc.model == "JC"){
 							ip.vector = c(ip.vector, ip[1], ip[5], ip[6], ip[7], phy$edge.length)
 							upper.vector = c(upper.vector, c(upper[1], upper[5], upper[6], upper[7], rep(log(5), length(phy$edge.length))))
@@ -2040,7 +2106,6 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 ######################################################################################################################################
 ######################################################################################################################################
 
-####This needs serious work####
 print.selac <- function(x,...){
 	ntips=Ntip(x$phy)
 	output<-data.frame(x$loglik,x$AIC,ntips,sum(x$nsites), x$k.levels, row.names="")
@@ -2085,9 +2150,3 @@ print.selac <- function(x,...){
 	}
 }
 
-
-######################################################################################################################################
-######################################################################################################################################
-### Development NOTES -- JMB
-######################################################################################################################################
-######################################################################################################################################

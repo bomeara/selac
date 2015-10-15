@@ -1,30 +1,29 @@
 
-source("selacSimulation.R")
+source("selacSim.R")
 
-selacSimControl <- function(nreps=50, nuc.model, numcode=1, sensitivity=2, alpha=0.3876658, beta=0.08483003, Ne=5e6, gene.no=5, yeast.fit.output, aa.properties=NULL, n.cores){
-    phy = result$phy
+##
 
-    #Backtransform to Cphiqs#
-    C = 2
-    Phi <- 0.5
-    q <- 4e-7
-    C.Phi.q.s <- C * Phi * q * sensitivity
-    ##########################
-    
-    for(nrep.index in 1:nreps){
+selacSimControl <- function(start.rep=1, end.rep=100, nuc.model, numcode=1, alpha=0.4, beta=0.1, Ne=5e6, numgenes=5, yeast.fit.output, aa.properties=NULL){
+    phy = yeast.fit.output$phy
+	rows.to.sample = sample(1:106, numgenes)
+	write.table(rows.to.sample, file="GenesSampledForSim", quote=FALSE, sep="\t", row.names=FALSE)
+    for(nrep.index in start.rep:end.rep){
         system(paste("mkdir", paste("fastaSet",nrep.index, sep="_"), sep=" "))
-        rows.to.sample = sample(gene.no, 1:106)
-        for(gene.no.index in 1:gene.no){
-            empirical.codon.freqs = result$empirical.codon.freqs[[rows.to.sample[gene.no.index]]]
-            par.vec = c(C.Phi.q.s, alpha, beta, Ne, result$mle.pars[rows.to.sample[gene.no.index],5:12])
-            optimal.aa = result$aa.optimal[[rows.to.sample[gene.no.index]]]
-            tmp <- SelacSimulator(nsites=result$nsites[rows.to.sample[gene.no.index]], phy=phy, pars=par.vec, aa.optim_array=aa.optim, empirical.codon.freqs=empirical.codon.freqs, numcode=1, aa.properties=NULL, nuc.model=nuc.model)
+        for(gene.no.index in 1:numgenes){
+            empirical.codon.freqs = yeast.fit.output$empirical.codon.freqs[[rows.to.sample[gene.no.index]]]
+            par.vec = c(yeast.fit.output$mle.pars[rows.to.sample[gene.no.index],1], alpha, beta, Ne, yeast.fit.output$mle.pars[rows.to.sample[gene.no.index],5:12])
+            optimal.aa = yeast.fit.output$aa.optim[[rows.to.sample[gene.no.index]]]
+            tmp <- SelacSimulator(phy=phy, pars=par.vec, aa.optim_array=optimal.aa, root.codon.frequencies=empirical.codon.freqs, numcode=1, aa.properties=NULL, nuc.model=nuc.model, k.levels=0, diploid=FALSE)
+			write.dna(tmp, file=paste(paste("fastaSet",nrep.index, sep="_"), "/gene",  gene.no.index, ".fasta", sep=""), format="fasta", colw=1000000)
         }
-        selac.fit <- EstimateParametersCodonGlobal(paste(paste("fastaSet", nrep.index, sep="_"),"/",sep=""), n.partitions=gene.no, nuc.model=nuc.model, n.cores=n.cores)
-        save(selac.fit, file=paste("selac", nrep.index, sep="_"))
+#      selac.fit <- EstimateParametersCodonGlobal(paste(paste("fastaSet", nrep.index, sep="_"),"/",sep=""), n.partitions=numgenes, nuc.model=nuc.model, diploid=FALSE, n.cores=numgenes)
+#      save(selac.fit, file=paste("selac", nrep.index, sep="_"))
     }
 }
 
+load("yeast.finalSELAC106.Rdata")
+print(ls())
+selacSimControl(start.rep=1, end.rep=25, nuc.model="GTR", numgenes=5, yeast.fit.output=result)
 
 
 
