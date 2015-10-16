@@ -656,7 +656,8 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 	return(codon.fixation.probs)
 }
 
-##Work in progress##
+
+## Work in progress ##
 cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(NumericMatrix codon_sets, StringVector aa, NumericMatrix aa_distances, int nsites, double C, double Phi, double q, double Ne, bool include_stop_codon,  int numcode, bool diploid, Function GetProteinProteinDistance, Function GetPairwiseProteinFixationProbabilitySingleSite, int optimalaa_offset0index) {
 	NumericMatrix codon_fixation_probs_aa(codon_sets.nrow(), codon_sets.nrow());
 //	Rcpp::Rcout << "ok";
@@ -683,12 +684,9 @@ cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(Nu
 	} 
 	return(codon_fixation_probs_aa);
 }')
-
-
 #result <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1)
 
-
-
+## Work in progress ##
 CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
 	codon.sets <- CreateCodonSets()
 #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
