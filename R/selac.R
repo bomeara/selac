@@ -870,7 +870,6 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 	final.likelihood.vector <- rep(NA, nsites)
 	equilibrium.codon.freq <- root.p_array / sum(root.p_array)	
 	unique.aa <- GetMatrixAANames(numcode)
-	#print(Q_codon_array)
 	#Q_array codon mutation matrix multiplication here -- need to do this here because we need our scaling factor:
 	for(k in 1:21){ 
 		if(diploid == TRUE){
@@ -1312,7 +1311,6 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, n.p
 }
 
 
-
 ComputeStartingBranchLengths <- function(phy, data){
 	data.mat <- DNAbinToNucleotideCharacter(data)
 	new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON",edge.length=1,Nnode=1L)
@@ -1331,6 +1329,21 @@ ComputeStartingBranchLengths <- function(phy, data){
     return(mpr.tre.pruned)
 }
 
+
+GetCAI <- function(codon.data, aa.optim, numcode=1, w){
+    ref.codon.freqs <- CodonEquilibriumFrequencies(codon.data[1,-1], aa.optim, numcode=1)
+    w.array <- matrix(ref.codon.freqs, nrow=64, ncol=21)
+    w.array <- t(w.array)
+    w.array <- w.array / apply(w.array, 1, max)
+    w.array[17,] <- 0
+    unique.aa <- GetMatrixAANames(numcode=numcode)
+    rownames(w.array) <- unique.aa
+    wi <- apply(w.array, 2, max)
+    wi[wi < 1e-4] <- 0.01
+    wi = w
+    cai <- exp((1/(dim(codon.data)[2]-1)) * sum(log(wi[as.numeric(codon.data[1,])][-1])))
+    return(cai)
+}
 
 
 DiscreteGamma <- function (shape, ncats){
@@ -1615,9 +1628,9 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 		desRows <- which(phy$edge[,1]==focal)
 		desNodes <- phy$edge[desRows,2]
 		for (desIndex in sequence(length(desRows))){
-			expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
-			#tmp <- eigen(Q.scaled)
-			#expQt[[desNodes[desIndex]]] <- tmp$vectors %*% diag(exp(tmp$values * phy$edge.length[desRows[desIndex]])) %*% solve(tmp$vectors)
+			#expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+			tmp <- eigen(Q.scaled)
+			expQt[[desNodes[desIndex]]] <- tmp$vectors %*% diag(exp(tmp$values * phy$edge.length[desRows[desIndex]])) %*% solve(tmp$vectors)
 		}
 	}
 	return(expQt)
@@ -2051,7 +2064,6 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 				if(optimal.aa == "optimize"){
 					cat("Finished. Optimizing model parameters...", "\n")
 					results.final <- nloptr(x0=log(ip.vector), eval_f = OptimizeEdgeLengthsGlobal, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
-					print(results.final)
 					cat("Finished. Finding optimal aa...", "\n")
 					mle.pars.mat <- index.matrix
 					mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]

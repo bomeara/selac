@@ -7,7 +7,7 @@
 
 #written by Jeremy M. Beaulieu
 
-#source("selac.R")
+source("selac.R")
 
 SingleSiteUpPass <- function(phy, Q_codon, root.value){	
 	#Randomly choose starting state at root using the root.values as the probability:
@@ -44,7 +44,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
 	beta <- pars[3]
 	gamma <- GetAADistanceStartingParameters(aa.properties)[3]
 	Ne <- pars[4]
-
+	
 	if(k.levels > 0){
 		if(nuc.model == "JC") {
 			base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
@@ -98,11 +98,11 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
 		Q_codon = Q_codon_array[,,aa.optim_array[site]]
 		sim.codon.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
 	}
-	#Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
 	codon.names <- rownames(Q_codon_array[,,aa.optim_array[site]])
+	#Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
 	nucleotide.data <- c()
 	for(codon.sequence in seq(1, nsites, by=1)){
-		nucleotide.data <- cbind(nucleotide.data, matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), length(phy$tip.label),3))
+		nucleotide.data <- cbind(nucleotide.data, t(matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), 3,length(phy$tip.label))))
 	}
 	rownames(nucleotide.data) <- phy$tip.label
 	
