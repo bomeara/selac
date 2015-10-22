@@ -39,7 +39,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
 	C=4
 	q=4e-7
 	Phi.q <- C.q.phi / C
-	Phi <- Phi.q/q
+	Phi <- Phi.q / q
 	alpha <- pars[2]
 	beta <- pars[3]
 	gamma <- GetAADistanceStartingParameters(aa.properties)[3]
@@ -75,7 +75,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
 	codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
 	#Generate our fixation probability array:
 	unique.aa <- GetMatrixAANames(numcode)
-	aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=TRUE)
+	aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE)
 	Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
 	for(k in 1:21){ 
 		if(diploid == TRUE){
