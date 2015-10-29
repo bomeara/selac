@@ -11,7 +11,7 @@ source("selac.R")
 
 SingleSiteUpPass <- function(phy, Q_codon, root.value){	
 	#Randomly choose starting state at root using the root.values as the probability:
-	root.value = sample.int(64, 1, FALSE, prob=root.value)
+	root.value = sample.int(dim(Q_codon)[2], 1, FALSE, prob=root.value)
 	#Reorder the phy:
 	phy <- reorder(phy, "postorder")
     ntips <- length(phy$tip.label)
@@ -25,7 +25,7 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
     edge.length <- phy$edge.length
 	for (i in N:1) {
 		p <- expm(Q_codon * edge.length[i], method="Ward77")[sim.codon.data.site[anc[i]], ]
-		sim.codon.data.site[des[i]] <- sample.int(64, size = 1, FALSE, prob = p)
+		sim.codon.data.site[des[i]] <- sample.int(dim(Q_codon)[2], size = 1, FALSE, prob = p)
 	}
 	sim.codon.data.site <- sim.codon.data.site[1:ntips]
 	return(sim.codon.data.site)
@@ -111,6 +111,61 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
 }
 
 
+SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
+
+	nsites <- length(nuc.optim_array)
+	#Start organizing the user input parameters:
+	a0 <- pars[1]
+	a1 <- pars[2]
+	a2 <- pars[3]
+	Ne <- pars[4]
+	
+	site.mid.point <- ceiling(nsites/2)
+    site.index <- 1:nsites
+    site.index <- site.index - site.mid.point
+	position.multiplier.vector <- PositionSensitivityMultiplier(a0, a1-site.mid.point, a2, site.index)
+
+	if(nuc.model == "JC") {
+		base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+		nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+	}
+	if(nuc.model == "GTR") {
+		base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+		nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
+	}
+	if(nuc.model == "UNREST") {
+		nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model)
+	}		
+	if(is.null(root.p_array)) {
+		#Generate matrix of equal frequencies for each site:
+        root.p_array <- rep(0.25, 4)
+    }
+    if(diploid == TRUE){
+        ploidy = 2
+    }else{
+        ploidy = 1
+    }
+	#Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
+	sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
+	for(site in 1:nsites){
+		weight.matrix <- GetNucleotideFixationMatrix(1, position.multiplier=position.multiplier.vector[site], optimal.nucleotide=nuc.optim_array[site], Ne=Ne, diploid=diploid)
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
+		#Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
+        diag(Q_position) = 0
+        diag(Q_position) <- -rowSums(Q_position)		
+		sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=base.freqs)
+	}
+	nuc.names <- n2s(0:3)
+	#Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
+	nucleotide.data <- c()
+	for(nuc.sequence in seq(1, nsites, by=1)){
+		nucleotide.data <- cbind(nucleotide.data, t(matrix(nuc.names[sim.nu.data[,nuc.sequence]], split="")), 3,length(phy$tip.label))))
+	}
+	rownames(nucleotide.data) <- phy$tip.label
+	
+	#Done.
+	return(nucleotide.data)
+}
 
 ###TESTING CODE:
 #phy <- read.tree("../data/rokasYeast.tre")

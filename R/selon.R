@@ -105,8 +105,8 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
         ploidy = 1
     }
     for(site.index in sequence(nsites)) {
-        cost.matrix <- GetNucleotideFixationMatrix(1, position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
-        Q_position <- (ploidy * Ne) * nuc.mutation.rates * cost.matrix
+        weight.matrix <- GetNucleotideFixationMatrix(1, position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         diag(Q_position) = 0
         Q_position <- t(Q_position * root.p_array)
