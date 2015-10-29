@@ -1312,6 +1312,9 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, n.p
 
 
 ComputeStartingBranchLengths <- function(phy, data){
+	if(is.null(phy$edge.length)){
+		phy$edge.length = rep(1, length(phy$edge[,1]))
+	}
 	data.mat <- DNAbinToNucleotideCharacter(data)
 	new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON",edge.length=1,Nnode=1L)
 	class(new.tip) <- "phylo"
@@ -1702,7 +1705,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 	nsites.vector <- c()
 	if(optimal.aa == "none"){
 		empirical.base.freq.list <- as.list(numeric(n.partitions))
-		starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge.length))
+		starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge[,1]))
 		for (partition.index in sequence(n.partitions)) {
 			gene.tmp <- read.dna(partitions[partition.index], format='fasta')
 			if(!is.null(fasta.rows.to.keep)){
@@ -1723,7 +1726,7 @@ EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, ph
 		}
 	}else{
 		empirical.codon.freq.list <- as.list(numeric(n.partitions))
-		starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge.length))
+		starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge[,1]))
 		aa.optim.list <- as.list(numeric(n.partitions))
 		aa.optim.full.list <- as.list(numeric(n.partitions))
 		for (partition.index in sequence(n.partitions)) {
