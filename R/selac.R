@@ -1005,7 +1005,9 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 		}		
 	}
 	#codon_mutation_matrix = CreateCodonMutationMatrix(nuc.mutation.rates) #We now make an index matrix first then just place the nucleotide rates into it:
-	codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
+	#codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
+	codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
+	codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
 	nsites <- dim(codon.data$unique.site.patterns)[2]-1
 	
 	if(include.gamma==TRUE){
@@ -1178,7 +1180,9 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_
 		codon.data.list$site.pattern.counts <- rep(1, nsites)
 	}
 	
-	codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
+	#codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
+	codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
+	codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
 	optimal.vector.by.site <- rep(NA, nsites)
 	unique.aa <- GetMatrixAANames(numcode)	
 	optimal.aa.likelihood.mat <- matrix(0, nrow=length(unique.aa), ncol=nsites)
