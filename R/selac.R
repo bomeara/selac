@@ -9,13 +9,13 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-library(expm)
-library(nnet)
-library(nloptr)
-library(seqinr)
-library(phangorn)
-library(parallel)
-library(Rcpp)
+#library(expm)
+#library(nnet)
+#library(nloptr)
+#library(seqinr)
+#library(phangorn)
+#library(parallel)
+#library(Rcpp)
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -40,21 +40,10 @@ library(Rcpp)
 
 ######################################################################################################################################
 ######################################################################################################################################
-### Variation functions used by main function:
+### Various functions used by main function:
 ######################################################################################################################################
 ######################################################################################################################################
 
-# Create a distance of physiochemical distances between pairs of amino acids
-# 
-# This is based on the work of Grantham (1974), but allows user specification
-# of the weights
-#
-# @param alpha is the weight on composition (c), the atomic weight ratio of non carbon elements in end groups or rings to carbons in the side chain
-# @param beta is the weight on polarity (p)
-# @param gamma is the weight on molecular volume (v)
-# @param aa.properties is matrix of composition, polarity, and volume parameters for amino acids (three letter codes as rownames); Granthams is used if not user-supplied
-# @param normalize determines whether the distance matrix is normalized so that the mean distance is 1
-# @return aa.distances, the symmetric matrix of physiochemical distances between amino acids
 CreateAADistanceMatrixOriginal <- function(alpha=1.829272, beta=0.101799, gamma=0.0003990333, aa.properties=NULL, normalize=TRUE) {
 	if(is.null(aa.properties)) {
 		#     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0, 
@@ -221,11 +210,6 @@ CreatePolynomialMatrix <- function(alpha, phi, k){
 }
 
 
-#Create a nucleotide instantaneous mutation matrix, rows=from, cols=to, nuc order as in seqinr coding
-#
-# @param rates are the rates for the given model
-# @param model is the model. Choices are JC, HKY, and GTR
-# @return nuc.mutation.rates matrix of instantaneous mutation rates for nucleotides
 CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
 	if(model == "JC") {
 		nuc.mutation.rates <- matrix(data=rates[1], nrow=4, ncol=4)
@@ -278,12 +262,6 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
 }
 
 
-# Create a codon mutation model index, rows=from, cols=to, nuc order as in seqinr coding
-#
-# Note it does not assume a symmetric nucleotide matrix nor a symmetric codon mutation rate matrix
-# Stop codons are included
-# @param nuc.mutation.rates are the rates from (row) to (col) based on the nucleotide model
-# @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrixIndex <- function() {
 	nuc.rates.index = matrix(1:16, 4, 4)
 	codon.sets <- CreateCodonSets()
@@ -307,12 +285,6 @@ CreateCodonMutationMatrixIndex <- function() {
 }
 
 
-# Create a codon mutation model, rows=from, cols=to, nuc order as in seqinr coding
-#
-# Note it does not assume a symmetric nucleotide matrix nor a symmetric codon mutation rate matrix
-# Stop codons are included
-# @param nuc.mutation.rates are the rates from (row) to (col) based on the nucleotide model
-# @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 	codon.sets <- CreateCodonSets()
 	n.codons <- dim(codon.sets)[1]
@@ -337,12 +309,6 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 }
 
 
-# Create a codon mutation model based on Goldman and Yang model, rows=from, cols=to, nuc order as in seqinr coding
-#
-# Note it does not assume a symmetric nucleotide matrix nor a symmetric codon mutation rate matrix
-# Stop codons are included
-# @param nuc.mutation.rates are the rates from (row) to (col) based on the nucleotide model
-# @return codon.mutation.rates matrix of instantaneous mutation rates for codons
 CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs) {
 	kappa.par = x[1]
 	omega.par = x[2]
@@ -447,11 +413,6 @@ ConvertCodonNumericDataToAAData <- function(codon.data, numcode=1) {
 #  directly to the codon model
 #Create an amino acid mutation model, rows=from, cols=to
 #
-# Note it does not assume a symmetric nucleotide matrix nor a symmetric codon mutation rate matrix
-# @param codon.mutation.rates are the rates from (row) to (col) based on the nucleotide model
-# @param codon.freqs are the frequencies of each codon. By default, flat prior
-# @param numcode is the genetic code as in seqinr, set by default to standard
-# @return aa.mutation.rates matrix of instantaneous mutation rates for aa
 #CreateAAMutationMatrix <- function(codon.mutation.rates, codon.freqs = rep(1, 64), numcode=1, include.stop.codon=FALSE) {
 #	TranslateCodon <- function(codon, numcode=1) {
 #		return(translate(s2c(codon), numcode=numcode))
@@ -793,13 +754,7 @@ CreateCodonSets <- function() {
 	return(codon.sets)
 }
 
-# Get likelihood for a given AA site given tree and Q matrix, assuming the optimal AA is known
-# @param aa.data is data in corHMM format (one column species, one column state)
-# @param phy is a phylo object
-# @param Q_aa is the transition matrix Q for a given optimal aa at this site
-# @param charnum is which character to use in the aa.data matrix
-# @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
-# @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
+
 GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, charnum=1, root.p=NULL, return.all=FALSE) {
 	#	result <- rayDISC(phy=phy, data=aa.data, ntraits=1, charnum=charnum, p=Q_aa, root.p=root.p, node.states="marginal")
 	#Makes dev.rayDISC available:
@@ -828,13 +783,6 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 }
 
 
-# Get likelihood for a given codon site given tree and Q matrix, assuming the optimal AA is known
-# @param codon.data is data in corHMM format (one column species, one column state, states from CodonStringToNumeric)
-# @param phy is a phylo object
-# @param Q_codon is the transition matrix Q for a given optimal aa at this site
-# @param charnum is which character to use in the aa.data matrix
-# @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
-# @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, return.all=FALSE) {
 	nb.tip<-length(phy$tip.label)
 	nb.node <- phy$Nnode
@@ -1118,13 +1066,6 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
 }
 
 
-# Get likelihood for a given codon site given tree and Q matrix and determine the best likelihood across all possible amino acids
-# @param codon.data is data in corHMM format (one column species, one column state, states from CodonStringToNumeric)
-# @param phy is a phylo object
-# @param Q_codon is the transition matrix Q for a given optimal aa at this site
-# @param charnum is which character to use in the aa.data matrix
-# @param root.p is the root frequency: NULL if equilibrium, maddfitz, or a vector
-# @param return.all, if TRUE, allows return of everything from rayDISC rather than just the log likelihood
 GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
 	if(logspace) {
 		x = exp(x)
@@ -1693,7 +1634,32 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 ######################################################################################################################################
 ######################################################################################################################################
 
-EstimateParametersCodonGlobal <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", gold.yang=FALSE, include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
+#' @title Optimize parameters under the SELAC model
+#'
+#' @description 
+#' Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
+#'
+#' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data.
+#' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
+#' @param phy The phylogenetic tree to optimize the model parameters.
+#' @param edge.length A logical indicating whether or not edge lengths should be optimized.
+#' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
+#' @param optimal.aa Indicates what type of optimal.aa should be used. There are three options: "none", "majrule", or "optimize".
+#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
+#' @param ncats The number of discrete categories.
+#' @param numcode The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
+#' @param diploid A logical indicating whether or not the organism is diploid or not.
+#' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear). 
+#' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
+#' @param verbose Logical indicating whether each iteration be printed to the screen.
+#' @param n.cores The number of cores to run the analyses over.
+#' @param max.tol Supplies the relative optimization tolerance.
+#' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#'
+#' @details 
+#' SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produce bad behavior. Be sure that these are removed from the data prior to running the model.
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
 	
 	cat("Initializing data and model parameters...", "\n")
 	

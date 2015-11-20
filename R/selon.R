@@ -1,5 +1,4 @@
 
-
 ######################################################################################################################################
 ######################################################################################################################################
 ### Sella and Hirsh model for nucleotides
@@ -8,7 +7,7 @@
 
 #written by Jeremy M. Beaulieu
 
-source("selac.R")
+#source("selac.R")
 
 CreateNucleotideDistanceMatrix <- function(position.multiplier) {
     n.states <- 4
@@ -263,7 +262,28 @@ GetMaxNameUCE <- function(x) {
 ######################################################################################################################################
 ######################################################################################################################################
 
-EstimateParametersUCE <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
+#' @title Optimize parameters under the SELON model
+#'
+#' @description 
+#' Optimizes model parameters under the SELON model
+#'
+#' @param nuc.data.path Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.
+#' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
+#' @param phy The phylogenetic tree to optimize the model parameters.
+#' @param edge.length A logical indicating whether or not edge lengths should be optimized.
+#' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
+#' @param optimal.nuc Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".
+#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
+#' @param diploid A logical indicating whether or not the organism is diploid or not.
+#' @param verbose Logical indicating whether each iteration be printed to the screen.
+#' @param n.cores The number of cores to run the analyses over.
+#' @param max.tol Supplies the relative optimization tolerance.
+#' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#'
+#' @details 
+#' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. NOTE THIS IS NOT WORKING PROPERLY AT THIS TIME. SO PLEASE DO NOT USE YET.
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     

@@ -7,9 +7,8 @@
 
 #written by Jeremy M. Beaulieu
 
-source("selon.R")
-source("selac.R")
-
+#source("selon.R")
+#source("selac.R")
 
 SingleSiteUpPass <- function(phy, Q_codon, root.value){	
 	#Randomly choose starting state at root using the root.values as the probability:
@@ -91,9 +90,9 @@ BrownianEvolveParameters <- function(phy, start.value, rate){
     N <- dim(phy$edge)[1]
 	ROOT <- ntips + 1 #perhaps use an accessor to get the root node id
 	evolved.parameter <- integer(ntips + phy$Nnode)
-    evolved.parameter[ROOT] <- as.integer(start.value)
-    anc <- phy$edge[, 1]
-    des <- phy$edge[, 2]
+    evolved.parameter[ROOT] <- start.value
+    anc <- phy$edge[,1]
+    des <- phy$edge[,2]
     edge.length <- phy$edge.length
 	for(i in N:1) {
 		evolved.parameter[des[i]] <- rlnorm(1, mean=log(evolved.parameter[anc[i]]), sd=sqrt(edge.length[i])*rate)
@@ -102,6 +101,22 @@ BrownianEvolveParameters <- function(phy, start.value, rate){
 }
 
 
+#' @title Simulate DNA under the SELAC model
+#'
+#' @description 
+#' Simulates nucleotide data based on parameters under the SELAC model
+#'
+#' @param phy The phylogenetic tree with branch lengths.
+#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
+#' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
+#' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.
+#' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
+#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear). 
+#' @param diploid A logical indicating whether or not the organism is diploid or not.
+#'
+#' @details 
+#' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE){
 	nsites <- length(aa.optim_array)
 	#Start organizing the user input parameters:
@@ -182,8 +197,20 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
 }
 
 
+#' @title Simulate DNA under the SELON model
+#'
+#' @description 
+#' Simulates nucleotide data based on parameters under the SELAC model
+#'
+#' @param phy The phylogenetic tree with branch lengths.
+#' @param pars A vector of parameters used for the simulation. They are ordered as follows: a0, a1, a2, Ne, base.freqs for A C G, and the nucleotide rates.
+#' @param nuc.optim_array A vector of optimal nucleotide for each site to be simulated.
+#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param diploid A logical indicating whether or not the organism is diploid or not.
+#'
+#' @details 
+#' Simulates a nucleotide matrix using parameters under the SELON model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
-
 	nsites <- length(nuc.optim_array)
 	#Start organizing the user input parameters:
 	a0 <- pars[1]
@@ -235,6 +262,20 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
 }
 
 
+#' @title Simulate DNA under General-Time Reversible model
+#'
+#' @description 
+#' Simulates nucleotide data based on parameters under the GTR+G model
+#'
+#' @param phy The phylogenetic tree with branch lengths.
+#' @param pars A vector of parameters used for the simulation. They are ordered as follows: gamma shape and the rates for the nucleotide model.
+#' @param nsites The number of sites to simulate.
+#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param base.freqs The base frequencies for A C G T (in that order). 
+#' @param ncats The number of discrete gamma categories.
+#'
+#' @details 
+#' Simulates a nucleotide matrix using parameters under the GTR+G model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
     
     if(nuc.model == "JC") {
@@ -273,9 +314,27 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
 }
 
 
-SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE, pars.to.evolve="phi", rate=0.1){
+#' @title Simulate DNA under the SELAC model
+#'
+#' @description 
+#' Simulates nucleotide data based on parameters under the SELAC model but assumes either Phi or Ne evolves along the tree.
+#'
+#' @param phy The phylogenetic tree with branch lengths.
+#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, and Ne.
+#' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
+#' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.
+#' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
+#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear). 
+#' @param diploid A logical indicating whether or not the organism is diploid or not.
+#' @param pars.to.evolve Indicates which parameters to assume evolve along the tree. Only two options: "phi" or "Ne".
+#' @param rate The Brownian motion rate at which the parameter evolves.
+#'
+#' @details 
+#' Simulates a nucleotide matrix using parameters under the SELAC model, but allows either Phi or Ne to evolve along the tree. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
+SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE, pars.to.evolve="phi", rate=1){
 	nsites <- length(aa.optim_array)
-	#Start organizing the user input parameters:
+	# Start organizing the user input parameters:
 	C.q.phi <- pars[1]
 	C=4
 	q=4e-7
@@ -346,8 +405,7 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
 	return(nucleotide.data)
 }
 
-<<<<<<< HEAD
-=======
+
 #' Simulate using an individual based model
 #'
 #' @param phy A phylogram
@@ -373,20 +431,21 @@ FullWrightFisherSimulator <- function(phy, root.states=NULL, phi.mean, phi.sd=0,
 		
 	
 }
->>>>>>> 43b1c9d44e2c3d245972a2e9dbeb2d411ae57a1b
+
+
 
 ###TESTING CODE:
-phy <- read.tree("../data/rokasYeast.tre")
-phy <- drop.tip(phy, "Calb")
-gene.tmp <- read.dna("../data/gene1Yeast.fasta", format="fasta")
-gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[1:7,])
-codon.data <- DNAbinToCodonNumeric(gene.tmp)
-codon.data <- codon.data[phy$tip.label,]
-aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
-aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
-root.codon.freq <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=1)
+#phy <- read.tree("../data/rokasYeast.tre")
+#phy <- drop.tip(phy, "Calb")
+#gene.tmp <- read.dna("../data/gene1Yeast.fasta", format="fasta")
+#gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[1:7,])
+#codon.data <- DNAbinToCodonNumeric(gene.tmp)
+#codon.data <- codon.data[phy$tip.label,]
+#aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
+#aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+#root.codon.freq <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=1)
 
-tmp <- SelacSimulatorEvolvingRates(phy=phy, pars=c(1e-9,.4,.1,5e6,.25,.25,.25), aa.optim_array=aa.optim, root.codon.frequencies=root.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC")
+#tmp <- SelacSimulatorEvolvingRates(phy=phy, pars=c(1e-9,.4,.1,5e6,.25,.25,.25), aa.optim_array=aa.optim, root.codon.frequencies=root.codon.freq, numcode=1, aa.properties=NULL, nuc.model="JC")
 
 
 
