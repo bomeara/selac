@@ -1576,9 +1576,9 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 		desRows <- which(phy$edge[,1]==focal)
 		desNodes <- phy$edge[desRows,2]
 		for (desIndex in sequence(length(desRows))){
-			#expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
-			tmp <- eigen(Q.scaled)
-			expQt[[desNodes[desIndex]]] <- tmp$vectors %*% diag(exp(tmp$values * phy$edge.length[desRows[desIndex]])) %*% solve(tmp$vectors)
+			expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+            #tmp <- eigen(Q.scaled)
+            #expQt[[desNodes[desIndex]]] <- tmp$vectors %*% diag(exp(tmp$values * phy$edge.length[desRows[desIndex]])) %*% solve(tmp$vectors)
 		}
 	}
 	return(expQt)
