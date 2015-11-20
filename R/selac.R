@@ -309,7 +309,7 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 }
 
 
-CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs) {
+CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs, numcode) {
 	kappa.par = x[1]
 	omega.par = x[2]
 	codon.sets <- CreateCodonSets()
@@ -619,55 +619,55 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 
 
 ## Work in progress ##
-cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(NumericMatrix codon_sets, StringVector aa, NumericMatrix aa_distances, int nsites, double C, double Phi, double q, double Ne, bool include_stop_codon,  int numcode, bool diploid, Function GetProteinProteinDistance, Function GetPairwiseProteinFixationProbabilitySingleSite, int optimalaa_offset0index) {
-	NumericMatrix codon_fixation_probs_aa(codon_sets.nrow(), codon_sets.nrow());
-//	Rcpp::Rcout << "ok";
-//	Rcout << aa;
-	for (int i=0; i<codon_sets.nrow(); ++i) {
-		for(int j=0; j<codon_sets.nrow(); ++j) {
-			int mismatches=0;
-			for(int pos=0; pos<3; ++pos) {
-				if(codon_sets(i, pos)==codon_sets(j, pos)) {
-					mismatches++;	
-				}	
-			}
-			if(mismatches<2) {
-				StringVector proteinI(1);
-				StringVector proteinJ(1);
-				StringVector proteinOptimal(1);
-				proteinI(0) = aa(i);
-				proteinJ(0) = aa(j);
-				proteinOptimal(0) = aa(optimalaa_offset0index);
-				codon_fixation_probs_aa(i,j) = as<double>(GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(_["protein1"]=proteinI, _["protein2"]=proteinOptimal, _["aa.distances"]=aa_distances),  GetProteinProteinDistance(_["protein1"]=proteinJ, _["protein2"]=proteinOptimal, _["aa.distances"]=aa_distances), _["nsites"]=nsites, _["C"]=C, _["Phi"]=Phi, _["q"]=q, _["Ne"]=Ne, _["diploid"]=diploid));
-				//codon_fixation_probs_aa(i,j) = as<double>(GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(_["protein1"]=aa(i), _["protein2"]=aa(optimalaa_offset0index), _["aa.distances"]=aa_distances),  GetProteinProteinDistance(_["protein1"]=aa(j), _["protein2"]=aa(optimalaa_offset0index), _["aa.distances"]=aa_distances), _["nsites"]=nsites, _["C"]=C, _["Phi"]=Phi, _["q"]=q, _["Ne"]=Ne, _["diploid"]=diploid));
-			}
-		}
-	} 
-	return(codon_fixation_probs_aa);
-}')
+#cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(NumericMatrix codon_sets, StringVector aa, NumericMatrix aa_distances, int nsites, double C, double Phi, double q, double Ne, bool include_stop_codon,  int numcode, bool diploid, Function GetProteinProteinDistance, Function GetPairwiseProteinFixationProbabilitySingleSite, int optimalaa_offset0index) {
+#	NumericMatrix codon_fixation_probs_aa(codon_sets.nrow(), codon_sets.nrow());
+#//	Rcpp::Rcout << "ok";
+#//	Rcout << aa;
+#	for (int i=0; i<codon_sets.nrow(); ++i) {
+#		for(int j=0; j<codon_sets.nrow(); ++j) {
+#			int mismatches=0;
+#			for(int pos=0; pos<3; ++pos) {
+#				if(codon_sets(i, pos)==codon_sets(j, pos)) {
+#					mismatches++;	
+#				}	
+#			}
+#			if(mismatches<2) {
+#				StringVector proteinI(1);
+#				StringVector proteinJ(1);
+#				StringVector proteinOptimal(1);
+#				proteinI(0) = aa(i);
+#				proteinJ(0) = aa(j);
+#				proteinOptimal(0) = aa(optimalaa_offset0index);
+#				codon_fixation_probs_aa(i,j) = as<double>(GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(_["protein1"]=proteinI, _["protein2"]=proteinOptimal, _["aa.distances"]=aa_distances),GetProteinProteinDistance(_["protein1"]=proteinJ, _["protein2"]=proteinOptimal, _["aa.distances"]=aa_distances), _["nsites"]=nsites, _["C"]=C, _["Phi"]=Phi, _["q"]=q, _["Ne"]=Ne, _["diploid"]=diploid));
+#				//codon_fixation_probs_aa(i,j) = as<double>(GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(_["protein1"]=aa(i), _["protein2"]=aa(optimalaa_offset0index), _["aa.distances"]=aa_distances),  GetProteinProteinDistance(_["protein1"]=aa(j), _["protein2"]=aa(optimalaa_offset0index), _["aa.distances"]=aa_distances), _["nsites"]=nsites, _["C"]=C, _["Phi"]=Phi, _["q"]=q, _["Ne"]=Ne, _["diploid"]=diploid));
+#			}
+#		}
+#	} 
+#	return(codon_fixation_probs_aa);
+#}')
 #result <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1)
 
 ## Work in progress ##
-CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-	codon.sets <- CreateCodonSets()
+#CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+#	codon.sets <- CreateCodonSets()
 #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 #	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
-	colnames(codon.sets) <- c("first", "second", "third")
-	n.codons <- dim(codon.sets)[1]
-	codon.names <- rep("", n.codons)
-	aa.fixation.probs <- CreateAAFixationMatrixForEverything(aa.distances=aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid) 
-	for (i in sequence(n.codons)) {
-		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
-	}
-	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
-	unique.aa <- unique(codon.aa)
+#	colnames(codon.sets) <- c("first", "second", "third")
+#	n.codons <- dim(codon.sets)[1]
+#	codon.names <- rep("", n.codons)
+#	aa.fixation.probs <- CreateAAFixationMatrixForEverything(aa.distances=aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid) 
+#	for (i in sequence(n.codons)) {
+#		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+#	}
+#	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
+#	unique.aa <- unique(codon.aa)
 	
-	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
-	for (k in sequence(length(unique.aa))) {
-		codon.fixation.probs[,,k] <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1) #k-1 due to C++ counting from zero
-	}
-	return(codon.fixation.probs)
-}
+#	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+#	for (k in sequence(length(unique.aa))) {
+#		codon.fixation.probs[,,k] <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1) #k-1 due to C++ counting from zero
+#	}
+#	return(codon.fixation.probs)
+#}
 
 
 DiagArray <- function (dim){
@@ -778,7 +778,8 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 	diag(Q_codon) = 0
 	diag(Q_codon) = -rowSums(Q_codon)
 	#The result here is just the likelihood: 
-	result <- -dev.raydisc(p=NULL, phy=phy, liks=liks, Q=Q_aa, rate=NULL, root.p=root.p)
+#	result <- -dev.raydisc(p=NULL, phy=phy, liks=liks, Q=Q_aa, rate=NULL, root.p=root.p)
+	result <- -Inf
 	ifelse(return.all, stop("return all not currently implemented"), return(result))
 }
 
@@ -1008,8 +1009,8 @@ GetLikelihoodGoldYang_CodonForManyCharGivenAllParams <- function(x, codon.data, 
 		codon.freq <- as.matrix(codon.data[,-1])
 		codon.freq <- table(codon.freq)/sum(table(codon.freq))
 	}
-	codon_mutation_matrix = CreateCodonMutationMatrixGoldYang(x, base.freqs=empirical.base.freq)
-	likelihood <- GetLikelihoodGoldYang_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=empirical.base.freq, codon_mutation_matrix=codon_mutation_matrix)
+	codon_mutation_matrix = CreateCodonMutationMatrixGoldmanYang(x, base.freqs=codon.freq, numcode=numcode)
+	likelihood <- GetLikelihoodGoldYang_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, codon_mutation_matrix=codon_mutation_matrix)
 	if(neglnl) {
 		likelihood <- -1 * likelihood
 	}
@@ -1374,12 +1375,11 @@ PlotBubbleRatio <- function(x, main="", cex=1){
 
 
 PlotTransitionNetwork <- function(x, main="") {
-	require(igraph)
 	diag(x) <- 0
 	x<-x/max(x)
-	g <- graph.adjacency(x, weighted=TRUE, mode="directed")
-	g.layout <- layout.fruchterman.reingold(g)
-	plot(g, layout=g.layout, edge.width=10*get.edge.attribute(g, "weight"), edge.curved=TRUE)
+	g <- igraph::graph.adjacency(x, weighted=TRUE, mode="directed")
+	g.layout <- igraph::layout.fruchterman.reingold(g)
+	plot(g, layout=g.layout, edge.width=10*igraph::get.edge.attribute(g, "weight"), edge.curved=TRUE)
 }
 
 

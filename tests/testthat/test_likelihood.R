@@ -1,7 +1,7 @@
 test_that("GTR_likelihood", {
-	tree <- read.tree("../data/rokasYeast.tre")
+	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
-	yeast.gene <- read.dna("../data/gene1Yeast.fasta", format="fasta")
+	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
 	chars <- DNAbinToNucleotideNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
@@ -12,9 +12,9 @@ test_that("GTR_likelihood", {
 })
 
 test_that("GTR+GAMMA_likelihood", {
-	tree <- read.tree("../data/rokasYeast.tre")
+	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
-	yeast.gene <- read.dna("../data/gene1Yeast.fasta", format="fasta")
+	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
 	chars <- DNAbinToNucleotideNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
@@ -26,9 +26,9 @@ test_that("GTR+GAMMA_likelihood", {
 
 test_that("selac_likelihood", {
 	set.seed(4)
-	tree <- read.tree("../data/rokasYeast.tre")
+	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
-	yeast.gene <- read.dna("../data/gene1Yeast.fasta", format="fasta")
+	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
 	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
@@ -49,9 +49,9 @@ test_that("selac_likelihood", {
 
 test_that("selac+GAMMA_likelihood", {
 	set.seed(4)
-	tree <- read.tree("../data/rokasYeast.tre")
+	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
-	yeast.gene <- read.dna("../data/gene1Yeast.fasta", format="fasta")
+	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
 	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]

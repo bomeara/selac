@@ -1,7 +1,8 @@
-export(SelacOptimize, SelonOptimize, SelacSimulator, SelonSimulator, NucSimulator, SelacSimulatorEvolvingRates, 
+export(SelacOptimize, SelonOptimize, SelacSimulator, SelonSimulator, NucSimulator, SelacSimulatorEvolvingRates) 
 import(ape, seqinr, nloptr, nnet)
 importFrom(expm, expm)
 importFrom(phangorn, parsimony, phyDat, acctran)
 importFrom(parallel, mclapply)
 exportClasses('selac','selon')
 S3method(print, selac)
+

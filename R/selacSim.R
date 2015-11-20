@@ -95,7 +95,7 @@ BrownianEvolveParameters <- function(phy, start.value, rate){
     des <- phy$edge[,2]
     edge.length <- phy$edge.length
 	for(i in N:1) {
-		evolved.parameter[des[i]] <- rlnorm(1, mean=log(evolved.parameter[anc[i]]), sd=sqrt(edge.length[i])*rate)
+		evolved.parameter[des[i]] <- rlnorm(1, meanlog=log(evolved.parameter[anc[i]]), sdlog=sqrt(edge.length[i])*rate)
 	}
 	return(evolved.parameter)
 }
@@ -110,6 +110,7 @@ BrownianEvolveParameters <- function(phy, start.value, rate){
 #' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
 #' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.
+#' @param numcode The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear). 
@@ -323,6 +324,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
 #' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, and Ne.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
 #' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.
+#' @param numcode The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear). 
@@ -413,10 +415,10 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
 #' @param phi.mean The mean value of phi across sites
 #' @param phi.sd The standard deviation of phi across sites
 #' @param Ne Effective population size. Must be an integer.
-#' @param GTR rates in the usual order for selac
+#' @param GTR.rates rates in the usual order for selac
 #' @param recombination.rate The rate at which there is recombination
 #' @param optimal.aa.switch.rate The rate at which the optimal amino acid changes
-#' @param diplod If TRUE, simulate using a diploid population
+#' @param diploid If TRUE, simulate using a diploid population
 #' @param aa.properties The aa.properties
 #' @param population Rather than a single sequence to start the sim, allows use of a population
 #' @param brlen.conversion How many generations correspond to one unit of branch length on a tree
