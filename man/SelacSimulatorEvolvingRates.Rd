@@ -6,7 +6,8 @@
 \usage{
 SelacSimulatorEvolvingRates(phy, pars, aa.optim_array, root.codon.frequencies,
   numcode = 1, aa.properties = NULL, nuc.model, k.levels = 0,
-  diploid = TRUE, pars.to.evolve = "phi", rate = 1)
+  diploid = TRUE, pars.to.evolve = "phi", evolve.type="BM", evolve.pars=c(1,0), 
+  Ne.vals.evolved=NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -29,7 +30,11 @@ SelacSimulatorEvolvingRates(phy, pars, aa.optim_array, root.codon.frequencies,
 
 \item{pars.to.evolve}{Indicates which parameters to assume evolve along the tree. Only two options: "phi" or "Ne".}
 
-\item{rate}{The Brownian motion rate at which the parameter evolves.}
+\item{evolve.type}{The process by which the focal parameter evovles. There are two options: Brownian motion ("BM") or Ornstein-Uhlenbeck ("OU").}
+
+\item{evolve.pars}{The process parameters used to simulate focal parameter evolution. Under "BM", the order is root.state, rate; under "OU", the order is alpha, sigma.sq, and the mean.}
+
+\item{Ne.vals.evolved}{Under selac we assume a global Ne for all genes. Thus, when the focal parameter to evolve is "Ne", then a user specified vector of simulated Ne values are provided here.}
 }
 \description{
 Simulates nucleotide data based on parameters under the SELAC model but assumes either Phi or Ne evolves along the tree.

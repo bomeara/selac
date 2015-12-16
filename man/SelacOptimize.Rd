@@ -8,8 +8,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   edge.length = "optimize", edge.linked = TRUE, optimal.aa = "optimize",
   nuc.model = "GTR", include.gamma = FALSE, ncats = 4, numcode = 1,
   diploid = TRUE, k.levels = 0, aa.properties = NULL, verbose = FALSE,
-  n.cores = NULL, max.tol = .Machine$double.eps^0.25,
-  fasta.rows.to.keep = NULL)
+  parallel.type="by.gene", n.cores = NULL, 
+  max.tol = .Machine$double.eps^0.25, fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -40,6 +40,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{verbose}{Logical indicating whether each iteration be printed to the screen.}
 
+\item{parallel.type}{Designates whether a parallell run should occur by gene ("by.gene") or by site ("by.site").}
+
 \item{n.cores}{The number of cores to run the analyses over.}
 
 \item{max.tol}{Supplies the relative optimization tolerance.}
@@ -50,6 +52,6 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
 }
 \details{
-SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produce bad behavior. Be sure that these are removed from the data prior to running the model.
+SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
 }
 

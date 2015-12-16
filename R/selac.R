@@ -9,12 +9,12 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-#library(expm)
-#library(nnet)
-#library(nloptr)
-#library(seqinr)
-#library(phangorn)
-#library(parallel)
+library(expm)
+library(nnet)
+library(nloptr)
+library(seqinr)
+library(phangorn)
+library(parallel)
 #library(Rcpp)
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
@@ -1590,10 +1590,14 @@ CodonEquilibriumFrequencies <- function(codon.data, aa.opt.vector, numcode){
 
 
 GetMaxName <- function(x) {
-	x <- x[-which(x == "NA")]
-	return(names(table(x))[(which.is.max(table(x)))]) #note that this breaks ties at random
+    x.tmp <- x
+    x.tmp <- x[-which(x == "NA")]
+    if(length(x.tmp)==0){
+        return(names(table(x))[(which.is.max(table(x)))])
+    }else{
+        return(names(table(x.tmp))[(which.is.max(table(x.tmp)))])
+    }
 }
-
 
 
 ######################################################################################################################################
@@ -1841,7 +1845,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 		mle.pars.mat <- index.matrix
 		mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
 		phy$edge.length <- apply(mle.pars.mat[,7:ncol(mle.pars.mat)], 2, weighted.mean, w=nsites.vector)
-        colnames(mle.pars.mat) <- c(parameter.column.names, rep("edge.length", length((7:ncol(mle.pars.mat))))
+        colnames(mle.pars.mat) <- c(parameter.column.names, rep("edge.length", length((7:ncol(mle.pars.mat)))))
 		loglik <- -(results.final$objective) #to go from neglnl to lnl
 		np = max(index.matrix)
 		s <- 0
