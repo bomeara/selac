@@ -9,12 +9,12 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-library(expm)
-library(nnet)
-library(nloptr)
-library(seqinr)
-library(phangorn)
-library(parallel)
+#library(expm)
+#library(nnet)
+#library(nloptr)
+#library(seqinr)
+#library(phangorn)
+#library(parallel)
 #library(Rcpp)
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
