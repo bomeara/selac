@@ -315,7 +315,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
 }
 
 
-#' @title Simulate DNA under the SELAC model
+#' @title Simulate DNA under the SELAC model and evolving rates
 #'
 #' @description 
 #' Simulates nucleotide data based on parameters under the SELAC model but assumes either Phi or Ne evolves along the tree.
