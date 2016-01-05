@@ -8,7 +8,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   edge.length = "optimize", edge.linked = TRUE, optimal.aa = "optimize",
   nuc.model = "GTR", include.gamma = FALSE, ncats = 4, numcode = 1,
   diploid = TRUE, k.levels = 0, aa.properties = NULL, verbose = FALSE,
-  parallel.type="by.gene", n.cores = NULL, 
+  parallel.type = "by.gene", n.cores = NULL,
   max.tol = .Machine$double.eps^0.25, fasta.rows.to.keep = NULL)
 }
 \arguments{

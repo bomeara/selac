@@ -14,9 +14,9 @@ SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies, numcode = 1,
 
 \item{aa.optim_array}{A vector of optimal amino acids for each site to be simulated.}
 
-\item{numcode}{The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
-
 \item{root.codon.frequencies}{A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.}
+
+\item{numcode}{The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
 
 \item{aa.properties}{User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.}
 

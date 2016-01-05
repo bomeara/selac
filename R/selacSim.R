@@ -444,31 +444,29 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
 }
 
 
-#' Simulate using an individual based model
-#'
-#' @param phy A phylogram
-#' @param root.states The starting sequence
-#' @param phi.mean The mean value of phi across sites
-#' @param phi.sd The standard deviation of phi across sites
-#' @param Ne Effective population size. Must be an integer.
-#' @param GTR.rates rates in the usual order for selac
-#' @param recombination.rate The rate at which there is recombination
-#' @param optimal.aa.switch.rate The rate at which the optimal amino acid changes
-#' @param diploid If TRUE, simulate using a diploid population
-#' @param aa.properties The aa.properties
-#' @param population Rather than a single sequence to start the sim, allows use of a population
-#' @param brlen.conversion How many generations correspond to one unit of branch length on a tree
-#' @param burnin.generations How many generations to simulate on before actually starting the sim.
-FullWrightFisherSimulator <- function(phy, root.states=NULL, phi.mean, phi.sd=0, Ne=100, GTR.rates, recombination.rate, optimal.aa.switch.rate, diploid=TRUE, aa.properties=NULL, population=NULL, brlen.conversion=1e6, burnin.generations=1e3) {
-    if (is.null(root.states) & is.null(population)) {
-        stop("You must specify the root state or the root population")
-    }
-    if(is.null(population)) {
-        population <- replicate(n=Ne, root.states)
-    }
-    
-    
-}
+# Simulate using an individual based model
+#
+# @param phy A phylogram
+# @param root.states The starting sequence
+# @param phi.mean The mean value of phi across sites
+# @param phi.sd The standard deviation of phi across sites
+# @param Ne Effective population size. Must be an integer.
+# @param GTR.rates rates in the usual order for selac
+# @param recombination.rate The rate at which there is recombination
+# @param optimal.aa.switch.rate The rate at which the optimal amino acid changes
+# @param diploid If TRUE, simulate using a diploid population
+# @param aa.properties The aa.properties
+# @param population Rather than a single sequence to start the sim, allows use of a population
+# @param brlen.conversion How many generations correspond to one unit of branch length on a tree
+# @param burnin.generations How many generations to simulate on before actually starting the sim.
+#FullWrightFisherSimulator <- function(phy, root.states=NULL, phi.mean, phi.sd=0, Ne=100, GTR.rates, recombination.rate, optimal.aa.switch.rate, diploid=TRUE, aa.properties=NULL, population=NULL, brlen.conversion=1e6, burnin.generations=1e3) {
+#    if (is.null(root.states) & is.null(population)) {
+#        stop("You must specify the root state or the root population")
+#    }
+#    if(is.null(population)) {
+#        population <- replicate(n=Ne, root.states)
+#    }
+#}
 
 
 

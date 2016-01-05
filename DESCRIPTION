@@ -1,12 +1,22 @@
 Package: selac
 Type: Package
 Title: Selection Models for Amino Acid and/or Codon Evolution
-Version: 1.3
-Date: 2015-11-19
+Version: 1.4
+Date: 2016-1-5
 Author: Jeremy M. Beaulieu, JJ Chai, Brian O'Meara
 Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
 Description: Implements models for amino acid or codon evolution with selection.
-Suggests: testthat, igraph
-Depends: ape, seqinr, nloptr, nnet 
-Imports: expm, parallel, phangorn
+Suggests:
+    testthat,
+    igraph
+Depends:
+    ape,
+    seqinr,
+    nloptr,
+    nnet
+Imports:
+    expm,
+    parallel,
+    phangorn
 License: GPL
+RoxygenNote: 5.0.1

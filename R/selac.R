@@ -9,12 +9,12 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-#library(expm)
-#library(nnet)
-#library(nloptr)
-#library(seqinr)
-#library(phangorn)
-#library(parallel)
+library(expm)
+library(nnet)
+library(nloptr)
+library(seqinr)
+library(phangorn)
+library(parallel)
 #library(Rcpp)
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
@@ -693,7 +693,7 @@ FastCreateAllCodonFixationProbabilityMatricesSetToOne <- function(numcode=1) {
 }
 
 
-CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=4, Phi=0.5,q=4e-7,Ne=5e6, include.stop.codon=TRUE, numcode=1){
+CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1){
 	codon.sets <- CreateCodonSets()
 #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 #	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
@@ -734,7 +734,7 @@ CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites,
 }
 
 
-CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=4, Phi=0.5,q=4e-7,Ne=5e6){
+CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=4, Phi=0.5, q=4e-7, Ne=5e6){
 	m = 20
 	mat <- matrix(0,nrow=m,ncol=m)#set diagonal entries to be 0 at first
 	for(i in 1:(m-1)){
@@ -787,6 +787,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, return.all=FALSE) {
 	nb.tip<-length(phy$tip.label)
 	nb.node <- phy$Nnode
+    
 	nl <- nrow(Q_codon[[1]])
 	#Now we need to build the matrix of likelihoods to pass to dev.raydisc:
 	liks <- matrix(0, nb.tip + nb.node, nl)
@@ -1849,7 +1850,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 		loglik <- -(results.final$objective) #to go from neglnl to lnl
 		np = max(index.matrix)
 		s <- 0
-		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol) 
+		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol) 
 		class(obj) = "selac"				
 	}
 	if(optimal.aa=="majrule" | optimal.aa=="optimize") {
@@ -2161,7 +2162,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 		loglik <- -(results.final$objective) #to go from neglnl to lnl
 		#Counting parameters: Do we count the nsites too? Yup.
 		np = max(index.matrix) + sum(nsites.vector)
-		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol) 
+		obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol) 
 		class(obj) = "selac"		
 	}
 	return(obj)
