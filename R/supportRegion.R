@@ -33,7 +33,7 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
     for(i in 1:n.partitions){
         pars <- c(pars, pars.mat[i,which(pars.index[i,]>=pars.index[i,1])])
     }
-
+	
     site.pattern.data.list <- as.list(numeric(n.partitions))
     site.pattern.count.list <- as.list(numeric(n.partitions))
     nsites.vector <- c()
@@ -83,11 +83,11 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
         }
     }
     codon.index.matrix = CreateCodonMutationMatrixIndex()
-	lower <- rep(exp(-20), length(pars))
-	upper <- rep(exp(20), length(pars))
+	lower <- rep(exp(-21), length(pars))
+	upper <- rep(exp(21), length(pars))
     
     interval.results <- AdaptiveConfidenceIntervalSampling(x=pars, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=pars.index, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=selac.obj$numcode, diploid=selac.obj$diploid, aa.properties=selac.obj$aa.properties, volume.fixed.value=0.0003990333, nuc.model=selac.obj$nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=selac.obj$include.gamma, ncats=selac.obj$ncats, k.levels=selac.obj$k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE, lower=lower, upper=upper, desired.delta=desired.delta, n.points=n.points, scale.int=scale.int)
-
+	
     interval.results.in <- interval.results[which(interval.results[,1] - min(interval.results[,1])<=2),]
 	interval.results.out <- interval.results[which(interval.results[,1] - min(interval.results[,1])>2),]
 	
@@ -103,27 +103,25 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
 AdaptiveConfidenceIntervalSampling <- function(x, codon.site.data, codon.site.counts, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array, root.p_array, numcode, diploid, aa.properties, volume.fixed.value, nuc.model, codon.index.matrix, include.gamma, ncats, k.levels, logspace, verbose, parallel.type, n.cores, neglnl, lower, upper, desired.delta, n.points, scale.int) {
 	
 	phy$node.label <- NULL
-
-    #Now assess the likelihood at the MLE:
-	starting <- -OptimizeEdgeLengthsGlobal(x=log(x), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
+	
+#Now assess the likelihood at the MLE:
+	starting <- OptimizeEdgeLengthsGlobal(x=log(x), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
     
-	#Generate the multipliers for feeling the boundaries:
+#Generate the multipliers for feeling the boundaries:
 	min.multipliers <- rep(1, length(x))
 	max.multipliers <- rep(1, length(x))
-
+	
     results <- data.frame(data.frame(matrix(nrow=n.points+1, ncol=1+length(x))))
 	results[1,] <- unname(c(starting, x))
-    #write.table(results[1,], file="supportPointsSet", quote=FALSE, row.names=FALSE, sep="\t", col.names=FALSE)
 	
     for (i in sequence(n.points)) {
-		sim.points <- NA
-		while(is.na(sim.points[1])) {
-			sim.points <- GenerateValues(x, lower=lower, upper=upper, scale.int=scale.int, examined.max=max.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, max, na.rm=TRUE), examined.min=min.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, min, na.rm=TRUE))
-		}
-
-        second <- -OptimizeEdgeLengthsGlobal(x = log(sim.points), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
+        sum.vals <- NA
+		while(is.na(sum.vals)) {
+			sim.points <- GenerateValues(par=x, lower=lower, upper=upper, scale.int=scale.int, examined.max=max.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, max, na.rm=TRUE), examined.min=min.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, min, na.rm=TRUE))
+            sum.vals <- sum(sim.points)
+        }
+        second <- OptimizeEdgeLengthsGlobal(x = log(sim.points), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
         results[i+1,] <- c(second, sim.points)
-        #write.table(results[i+1,], file="supportPointsSet", quote=FALSE, row.names=FALSE, sep="\t", col.names=FALSE, append=TRUE)
 		
         if(i%%20==0) {
 			for (j in sequence(length(par))) {
@@ -158,7 +156,7 @@ GenerateValues <- function(par, lower, upper, scale.int, max.tries=100, expand.p
 		pass=TRUE
 		new.vals <- rep(NA, length(par))
 		for(i in sequence(length(par))) {
-			examined.max[i] <- max(0.001, examined.max[i])
+			examined.max[i] <- max(1e-10, examined.max[i])
 			new.vals[i] <- runif(1, max(lower[i], (1-scale.int)*examined.min[i]), min(upper[i], (1+scale.int)*examined.max[i]))
 			if(new.vals[i]<lower[i]) {
 				pass=FALSE
@@ -176,10 +174,10 @@ GenerateValues <- function(par, lower, upper, scale.int, max.tries=100, expand.p
 
 
 print.selac.support <- function(x,...){
-
+	
 	cat("\nSupport Region\n")
 	print(x$ci[,-1])
 	cat("\n")
 }
-	
+
 
