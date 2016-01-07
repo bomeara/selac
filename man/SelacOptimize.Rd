@@ -9,7 +9,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   nuc.model = "GTR", include.gamma = FALSE, ncats = 4, numcode = 1,
   diploid = TRUE, k.levels = 0, aa.properties = NULL, verbose = FALSE,
   parallel.type = "by.gene", n.cores = NULL,
-  max.tol = .Machine$double.eps^0.25, fasta.rows.to.keep = NULL)
+  max.tol = .Machine$double.eps^0.25, selac.starting.vals=c(8e-07, 
+  1.8292716544, 0.1017990371, 5e6), fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -45,6 +46,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{n.cores}{The number of cores to run the analyses over.}
 
 \item{max.tol}{Supplies the relative optimization tolerance.}
+
+\item{selac.starting.vals}{The initial parameter values used in the optimization process.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 }

@@ -1712,7 +1712,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 #'
 #' @details 
 #' SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, parallel.type="by.gene", n.cores=NULL, max.tol=.Machine$double.eps^0.25, fasta.rows.to.keep=NULL) {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, parallel.type="by.gene", n.cores=NULL, max.tol=.Machine$double.eps^0.25, selac.starting.vals=c(8e-07, 1.8292716544, 0.1017990371, 5e6), fasta.rows.to.keep=NULL) {
 	
 	cat("Initializing data and model parameters...", "\n")
 	
@@ -1859,13 +1859,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 		if(include.gamma == TRUE){
 			if(nuc.model == "JC"){
 				if(k.levels == 0){
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, 1)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "shape.gamma")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21)
 					lower = rep(-21, length(ip))
 					max.par.model.count = 7 + 0 + 1
 				}else{
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, 1, 1, 1)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, 1, 1, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21, 21)
 					lower = rep(-21, length(ip))
@@ -1874,13 +1874,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 			}
 			if(nuc.model == "GTR") {
 				if(k.levels == 0){
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, nuc.ip, 1)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
 					upper = c(rep(21, 4), 0, 0, 0, rep(21, length(nuc.ip)), 21)
 					lower = rep(-21, length(ip))
 					max.par.model.count = 7 + 5 + 1
 				}else{
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 21)
 					lower = rep(-21, length(ip))
@@ -1889,13 +1889,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 			}
 			if(nuc.model == "UNREST") {
 				if(k.levels == 0){
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, nuc.ip, 1)
+					ip = c(selac.starting.vals, 5e6, 0.25, 0.25, 0.25, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
 					upper = c(rep(21, 4), 0, 0, 0, rep(21, length(nuc.ip)), 21)
 					lower = rep(-21, length(ip))
 					max.par.model.count = 7 + 11 + 1
 				}else{
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
+					ip = c(selac.starting.vals, 5e6, 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 21)
 					lower = rep(-21, length(ip))
@@ -2007,13 +2007,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 		}else{
 			if(nuc.model == "JC"){
 				if(k.levels == 0){
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG")
 					upper = c(rep(21, 4), 0, 0, 0)
 					lower = rep(-21, length(ip))
 					max.par.model.count = 7 + 0 + 0
 				}else{
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, 1, 1)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, 1, 1)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "a0", "a1")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21)
 					lower = rep(-21, length(ip))
@@ -2022,13 +2022,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 			}
 			if(nuc.model == "GTR") {
 				if(k.levels == 0){
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, nuc.ip)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, nuc.ip)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
 					upper = c(rep(21, 4), 0, 0, 0, rep(21, length(nuc.ip)))
 					lower = rep(-21, length(ip))
 					max.par.model.count = 7 + 5 + 0
 				}else{
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 0.25, 0.25, 0.25, 1, 1, nuc.ip)
+					ip = c(selac.starting.vals, 0.25, 0.25, 0.25, 1, 1, nuc.ip)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21, rep(21, length(nuc.ip)))
 					lower = rep(-21, length(ip))
@@ -2037,13 +2037,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 			}
 			if(nuc.model == "UNREST") {
 				if(k.levels == 0){
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, nuc.ip)
+					ip = c(selac.starting.vals, nuc.ip)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
 					upper = c(rep(21, 4), 0, 0, 0, rep(21, length(nuc.ip)))
 					lower = rep(-21, length(ip))
 					max.par.model.count = 7 + 11 + 0
 				}else{
-					ip = c(4*4e-7*0.5, cpv.starting.parameters[1:2], 5e6, 1, 1, nuc.ip)
+					ip = c(selac.starting.vals, 1, 1, nuc.ip)
                     parameter.column.names <- c("C.q.phi", "alpha", "beta", "Ne", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
 					upper = c(rep(21, 4), 0, 0, 0, 21, 21, rep(21, length(nuc.ip)))
 					lower = rep(-21, length(ip))
