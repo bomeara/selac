@@ -5,12 +5,13 @@
 \title{Optimize parameters under the SELAC model}
 \usage{
 SelacOptimize(codon.data.path, n.partitions = NULL, phy,
-  edge.length = "optimize", edge.linked = TRUE, optimal.aa = "optimize",
-  nuc.model = "GTR", include.gamma = FALSE, ncats = 4, numcode = 1,
-  diploid = TRUE, k.levels = 0, aa.properties = NULL, verbose = FALSE,
-  parallel.type = "by.gene", n.cores = NULL,
-  max.tol = .Machine$double.eps^0.25, selac.starting.vals=c(8e-07, 
-  1.8292716544, 0.1017990371, 5e6), fasta.rows.to.keep = NULL)
+  data.type="codon", edge.length = "optimize", edge.linked = TRUE, 
+  optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE, 
+  ncats = 4, numcode = 1, diploid = TRUE, k.levels = 0, 
+  aa.properties = NULL, verbose = FALSE, parallel.type = "by.gene", 
+  n.cores = NULL, max.tol = .Machine$double.eps^0.25, 
+  selac.starting.vals=c(8e-07, 1.8292716544, 0.1017990371, 5e6), 
+  fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -18,6 +19,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{n.partitions}{The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.}
 
 \item{phy}{The phylogenetic tree to optimize the model parameters.}
+
+\item{data.type}{Indicates the data type. There are two options: "nucleotide" and "codon".}
 
 \item{edge.length}{A logical indicating whether or not edge lengths should be optimized.}
 
@@ -55,6 +58,6 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
 }
 \details{
-SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
+SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to either the traditional nucleotide based model (data.type="nucleotide") or the MutSel model of Yang and Nielsen (data.type="codon"). Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
 }
 
