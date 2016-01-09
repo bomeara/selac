@@ -309,9 +309,11 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 }
 
 
-CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs, numcode) {
-	kappa.par = x[1]
-	omega.par = x[2]
+CreateCodonMutationMatrixMutSel <- function(x, base.freqs, nuc.mutation.rates, numcode) {
+	omega.par = x[1]
+	#The first value is arbitrarily set to 0 per Yang and Nielsen (2008):
+	fitness.pars = c(0, x[-1])
+	print(fitness.pars)
 	codon.sets <- CreateCodonSets()
 	n.codons <- dim(codon.sets)[1]
 	codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
@@ -321,33 +323,41 @@ CreateCodonMutationMatrixGoldmanYang <- function(x, base.freqs, numcode) {
 	codon.name <- apply(codon.set.translate, 1, paste, collapse="")
 	aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
 	for (i in sequence(n.codons)) {
-		for (j in sequence(n.codons)) { #synonymous
-			if(aa.translation[i] == aa.translation[j]){
+		for (j in sequence(n.codons)) {
+			if(aa.translation[i] == aa.translation[j]){ #synonymous
 				if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
 					mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-					if(codon.sets[i,mismatch.position] == 0 & codon.sets[j,mismatch.position] == 2 | codon.sets[i,mismatch.position] == 2 & codon.sets[j,mismatch.position] == 0 | codon.sets[i,mismatch.position] == 1 & codon.sets[j,mismatch.position] == 3 | codon.sets[i,mismatch.position] == 3 & codon.sets[j,mismatch.position] == 1){#AtoGtransition or GtoAtransition or CtoTtransition or TtoCtransition
-						codon.mutation.rates[i,j] = base.freqs[j] * kappa.par
-					}else{ #transversion
-						codon.mutation.rates[i,j] = base.freqs[j]
+					matched.position <- which(codon.sets[i,] == codon.sets[j,])
+					base.freq.tmp <- 1/prod(base.freqs[matched.position])
+					if(fitness.pars[j]-fitness.pars[i] == 0){
+						codon.mutation.rates[i,j] = 0
+					}else{
+						codon.mutation.rates[i,j] <- nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * base.freq.tmp * ((fitness.pars[j] - fitness.pars[i])/(exp(fitness.pars[j]) - exp(fitness.pars[i]))) * (prod(base.freqs[codon.sets[j,]])*exp(fitness.pars[j]))
 					}
-				}				
+				}
 			}else{ #nonsynonymous
 				if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
 					mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-					if(codon.sets[i,mismatch.position] == 0 & codon.sets[j,mismatch.position] == 2 | codon.sets[i,mismatch.position] == 2 & codon.sets[j,mismatch.position] == 0 | codon.sets[i,mismatch.position] == 1 & codon.sets[j,mismatch.position] == 3 | codon.sets[i,mismatch.position] == 3 & codon.sets[j,mismatch.position] == 1){#AtoGtransition or GtoAtransition or CtoTtransition or TtoCtransition
-						codon.mutation.rates[i,j] = base.freqs[j] * kappa.par * omega.par
-					}else{ #transversion
-						codon.mutation.rates[i,j] = base.freqs[j] * omega.par
+					matched.position <- which(codon.sets[i,] == codon.sets[j,])
+					base.freq.tmp <- 1/prod(base.freqs[matched.position])
+					if(fitness.pars[j]-fitness.pars[i] == 0){
+						codon.mutation.rates[i,j] = 0
+					}else{
+						codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * base.freq.tmp * ((fitness.pars[j] - fitness.pars[i])/(exp(fitness.pars[j]) - exp(fitness.pars[i]))) * (prod(base.freqs[codon.sets[j,]])*exp(fitness.pars[j]))
 					}
 				}
 			}
 		}
 	}
+	#Remove stop codon rates:
+	codon.mutation.rates[which(aa.translation == "*"),] = codon.mutation.rates[,which(aa.translation == "*")] = 0
+	#Now let us finish up the matrix:
 	rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- codon.name
 	diag(codon.mutation.rates) <- 0
 	diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
 	return(codon.mutation.rates)
 }
+#ll<-CreateCodonMutationMatrixMutSel(x=c(.5, rep(.1,60)), base.freqs=rep(.25,4), nuc.mutation.rates=nuc.mutation.rates, numcode=1)
 
 
 CodonNumericToString <- function(x) { #remember that codon numbers start at 1
@@ -746,6 +756,7 @@ CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=4, Phi=0.5, q=4e-7, Ne
 	return(mat)
 }
 
+
 CreateCodonSets <- function() {
 	codon.sets <- expand.grid(0:3, 0:3, 0:3)
 	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
@@ -878,23 +889,25 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 }
 
 
-GetLikelihoodGoldYang_CodonForManyCharVaryingBySite <- function(codon.data, phy, root.p_array=NULL, codon_mutation_matrix, numcode) {
+GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, root.p_array=NULL, Q_codon, numcode, parallel.type="by.gene", n.cores) {
 	nsites <- dim(codon.data$unique.site.patterns)[2] - 1
 	final.likelihood.vector <- rep(NA, nsites)
-	if(is.null(root.p_array)) {
-		#Generate matrix of frequencies for each site -- NULL represents the empirical distribution at the tips:
-		root.p_array <- matrix(0, nrow=nsites, ncol=dim(codon_mutation_matrix)[2])
-		for(i in 1:nsites){
-			codon.freqs <- table(codon.data$unique.site.patterns[,i+1])
-			tmp.vector <- numeric(dim(codon_mutation_matrix)[2])
-			tmp.vector[as.numeric(names(codon.freqs))] = codon.freqs
-			root.p_array[i,] <- tmp.vector/sum(tmp.vector)
-		}
-	}
-	for (i in sequence(nsites)) {
-		final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy, Q_codon=codon_mutation_matrix, return.all=FALSE)
-	}
-	return(sum(final.likelihood.vector * codon.data$site.pattern.counts))
+
+	scale.factor <- -sum(diag(Q_codon) * root.p_array, na.rm=TRUE)
+
+    if(parallel.type == "by.gene"){
+        for (i in sequence(nsites)) {
+            final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy, Q_codon=Q_codon, root.p=root.p_array, scale.factor=scale.factor, return.all=FALSE)
+        }
+    }
+    if(parallel.type == "by.site"){
+        MultiCoreLikelihoodBySite <- function(nsites){
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsites, codon.data=codon.data$unique.site.patterns, phy=phy, Q_codon=Q_codon, root.p=root.p_array, scale.factor=scale.factor, return.all=FALSE)
+            return(tmp)
+        }
+        final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
+    }
+	return(final.likelihood.vector)
 }
 
 
@@ -1019,18 +1032,38 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
 }
 
 
-GetLikelihoodGoldYang_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode=1, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode=1, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
 	if(logspace) {
 		x = exp(x)
 	}
+	base.freqs <- c(x[1:3], 1-sum(x[1:3]))
+	if(nuc.model == "JC") {
+		base.freqs=c(x[1:3], 1-sum(x[1:3]))
+		nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=NULL)
+		x = x[-(1:3)]
+	}
+	if(nuc.model == "GTR") {
+		base.freqs=c(1:3], 1-sum(x[1:3]))
+		nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:8, model=nuc.model, base.freqs=NULL)
+		x = x[-(1:8)]
+	}
+	if(nuc.model == "UNREST") {
+		base.freqs=c(1:3], 1-sum(x[1:3]))
+		nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:14], model=nuc.model)
+		x = x[-(1:14)]
+	}		
+	
 	if(root.p_array==NULL){
 		codon.freq <- rep(1/64, 64)
 	}else{
 		codon.freq <- as.matrix(codon.data[,-1])
 		codon.freq <- table(codon.freq)/sum(table(codon.freq))
 	}
-	codon_mutation_matrix = CreateCodonMutationMatrixGoldmanYang(x, base.freqs=codon.freq, numcode=numcode)
-	likelihood <- GetLikelihoodGoldYang_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, codon_mutation_matrix=codon_mutation_matrix)
+
+	codon_mutation_matrix = CreateCodonMutationMatrixMutSel(x, base.freqs=base.freqs, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
+
+	likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, Q_codon, numcode, parallel.type, n.cores)
+	
 	if(neglnl) {
 		likelihood <- -1 * likelihood
 	}
@@ -1794,6 +1827,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, edge.length="
 		max.par.model.count = 11
         parameter.column.names <- c("C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
 	}
+
+	#Starting values for MutSel model -- com.pi is the frequency of codon i, I believe. rndu is a random number
+	#x[k++] = log((com.pi[i]+.001)/(com.pi[com.ncode-1]+.002*rndu()));
+	#
+	
 	if(optimal.aa=="none") {
 		codon.index.matrix = NA
 		if(include.gamma == TRUE){
