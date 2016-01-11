@@ -1037,7 +1037,8 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
 	if(logspace) {
 		x = exp(x)
 	}
-	if(nuc.model == "JC") {
+
+    if(nuc.model == "JC") {
         base.freqs <- c(x[1:3], 1-sum(x[1:3]))
 		nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=NULL)
 		x = x[-(1:3)]
@@ -1052,8 +1053,7 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
 		nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:14], model=nuc.model)
 		x = x[-(1:14)]
 	}
-    print("bases")
-    print(base.freqs)
+
     #Need to fix line 1056 -- at the moment, will never be NULL -- if I decide to include -F approximation might need to make sure this works.
 	if(is.null(root.p_array[1])){
         codon.freq <- root.p_array
@@ -1063,17 +1063,14 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
         codon.freq <- numeric(64)
         fitness.pars <- c(x[-1],0)
         fitness.pars <- c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
-        print(fitness.pars)
         for(i in 1:n.codons){
             codon.freq[i] <- base.freqs[unname(codon.sets[i,1])+1]*base.freqs[unname(codon.sets[i,2])+1]*base.freqs[unname(codon.sets[i,3])+1]*exp(fitness.pars[i])
         }
         codon.freq <- codon.freq/sum(codon.freq)
     }
-    print(codon.freq)
     codon_mutation_matrix = CreateCodonMutationMatrixMutSel(x, base.freqs=base.freqs, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
 
 	likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, Q_codon=codon_mutation_matrix, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
-    print(likelihood)
 	if(neglnl) {
 		likelihood <- -1 * likelihood
 	}
@@ -1239,6 +1236,7 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
 	}
 	par.mat <- index.matrix
 	par.mat[] <- c(x, 0)[index.matrix]
+    #    print(par.mat)
 	#Puts edge lengths on tree:
 	if(is.null(aa.optim_array)){
         if(data.type == "nucleotide"){
@@ -1390,6 +1388,7 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
             }
 		}
 	}
+    #    print(likelihood)
 	return(likelihood)
 }
 
@@ -1752,6 +1751,9 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
 	phy <- reorder(phy, "pruningwise")
+    if(any(root.p <0)){
+        return(10000000000)
+    }
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
 	for (i  in seq(from = 1, length.out = nb.node)) {
@@ -1994,11 +1996,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol) 
             class(obj) = "selac"
         }else{
+            max.par.model.count <- max.par.model.count + 3 + 1 + 60
             codon.index.matrix = NA
             fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.codon.freq.list[[1]])
-            ip = c(.25, .25, .25, nuc.ip, 0.5, fitness.pars)
+            ip = c(.25, .25, .25, nuc.ip, 0.01, fitness.pars)
             parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", 1:60, sep="_"))
-            upper = c(0, 0, 0, rep(21, length(ip)-3))
+            upper = c(0, 0, 0, rep(log(99), length(ip)-3))
             lower = rep(-21, length(ip))
             if(edge.length == "optimize"){
                 if(edge.linked == TRUE){
@@ -2042,6 +2045,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         }
                     }
                 }
+                print(index.matrix)
                 cat("Finished. Optimizing model parameters...", "\n")
                 results.final <- nloptr(x0=log(ip.vector), eval_f = OptimizeEdgeLengthsGlobal, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                 cat("Finished. Summarizing results...", "\n")
@@ -2057,7 +2061,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             loglik <- -(results.final$objective) #to go from neglnl to lnl
             np = max(index.matrix)
             s <- 0
-            obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol)
+            obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, data.type=data.type, nsites=nsites.vector, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, empirical.codon.freqs=empirical.codon.freq.list, max.tol=max.tol)
             class(obj) = "selac"
         }
 	}
@@ -2395,8 +2399,8 @@ print.selac <- function(x,...){
 	names(output)<-c("-lnL","AIC", "ntax", "nsites", "k.levels")
 	cat("\nFit\n")
 	print(output)
-	cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=x$aa.properties)	
-	if(x$aa.optim.type=="majrule" | x$aa.optim.type=="optimize"){
+	cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=x$aa.properties)
+    if(x$aa.optim.type=="majrule" | x$aa.optim.type=="optimize"){
 		if(x$nuc.model == "JC"){
 			cat("\n")
 			cat("\nSELAC Parameters\n")
@@ -2452,5 +2456,64 @@ print.selac <- function(x,...){
 		}
 		cat("\n")
 	}
+    else{
+        if(x$data.type == "codon"){
+            codon.sets <- CreateCodonSets()
+            n.codons <- dim(codon.sets)[1]
+            codon.set.translate <- apply(codon.sets, 2, n2s)
+            codon.name <- apply(codon.set.translate, 1, paste, collapse="")
+
+            cat("\nBase frequencies\n")
+            if(dim(x$mle.pars)[1] >1){
+                tmp <- cbind(x$mle.pars[,1:3], 1-colSums(t(x$mle.pars[,1:3])))
+                base.freqs <- data.frame(t(tmp), row.names=c("A","C","G","T"))
+            }else{
+                tmp <- c(x$mle.pars[,1:3], 1-sum(x$mle.pars[,1:3]))
+                base.freqs <- data.frame(t(t(tmp)), row.names=c("A","C","G","T"))
+                colnames(base.freqs) <- "X1"
+            }
+            print(base.freqs)
+            pars <- x$mle.pars
+            if(x$nuc.model == "JC") {
+                pars <- pars[-(1:3)]
+                cat("\nOmega\n")
+                omega <- pars[1]
+                pars <- pars[-(1)]
+                print(omega)
+                cat("\nScaled fitness parameters\n")
+                fitness.pars = c(pars[5:64],0)
+                fitness.pars = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
+                output<-data.frame(t(fitness.pars), row.names="")
+                colnames(output) <- codon.name
+                print(output)
+            }
+            if(x$nuc.model == "GTR") {
+                pars <- pars[-(1:8)]
+                cat("\nOmega\n")
+                omega <- pars[1]
+                pars <- pars[-(1)]
+                print(omega)
+                cat("\nScaled fitness parameters\n")
+                fitness.pars = c(pars[10:69],0)
+                fitness.pars = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
+                output<-data.frame(t(fitness.pars), row.names="")
+                colnames(output) <- codon.name
+                print(output)
+            }
+            if(x$nuc.model == "UNREST") {
+                pars <- pars[-(1:14)]
+                cat("\nOmega\n")
+                omega <- pars[1]
+                pars <- pars[-(1)]
+                print(omega)
+                cat("\nScaled fitness parameters\n")
+                fitness.pars = c(pars[16:75],0)
+                fitness.pars = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
+                output<-data.frame(t(fitness.pars), row.names="")
+                colnames(output) <- codon.name
+                print(output)
+            }
+        }
+    }
 }
 
