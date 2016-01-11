@@ -30,10 +30,44 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
     pars.mat <- selac.obj$mle.pars
     pars.index <- selac.obj$index.matrix
     pars <- c()
-    for(i in 1:n.partitions){
-        pars <- c(pars, pars.mat[i,which(pars.index[i,]>=pars.index[i,1])])
+    #Ok, this is all going to be rather clunky. So bear with me...
+    base.freqs.names <- c()
+    if(!selac.obj$nuc.model == "JC"){
+        rate.names <- c()
     }
-	
+
+    Ne.name <- "Ne"
+    alpha.name <- "alpha"
+    beta.name <- "beta"
+    edge.length.names <- rep("edge.length", length(phy$edge.length))
+    par.names <- c()
+    
+    for(partition.index in 1:n.partitions){
+        if(selac.obj$nuc.model == "JC"){
+            c.phi.q.name <- paste("C.phi.q", partition.index, sep="_")
+            base.freqs.names <- paste(c("freqA", "freqC", "freqG"), partition.index, sep="_")
+            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, Ne.name, base.freqs.names, edge.length.names)
+            par.names <- c(par.names, tmp.names[which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+            pars <- c(pars, pars.mat[partition.index,which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+        }
+        if(selac.obj$nuc.model == "GTR"){
+            c.phi.q.name <- paste("C.phi.q", partition.index, sep="_")
+            base.freqs.names <- paste(c("freqA", "freqC", "freqG"), partition.index, sep="_")
+            rate.names <- paste(c("C_A", "G_A", "T_A", "G_C", "T_C"), partition.index, sep="_")
+            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, Ne.name, base.freqs.names, rate.names, edge.length.names)
+            par.names <- c(par.names, tmp.names[which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+            pars <- c(pars, pars.mat[partition.index,which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+        }
+        if(selac.obj$nuc.model == "UNREST"){
+            c.phi.q.name <- paste("C.phi.q", partition.index, sep="_")
+            base.freqs.names <- paste(c("freqA", "freqC", "freqG"), partition.index, sep="_")
+            rate.names <- paste(c("C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T"), partition.index, sep="_")
+            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, Ne.name, base.freqs.names, rate.names, edge.length.names)
+            par.names <- c(par.names, tmp.names[which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+            pars <- c(pars, pars.mat[partition.index,which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+        }
+    }
+ 
     site.pattern.data.list <- as.list(numeric(n.partitions))
     site.pattern.count.list <- as.list(numeric(n.partitions))
     nsites.vector <- c()
@@ -88,11 +122,14 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
     
     interval.results <- AdaptiveConfidenceIntervalSampling(x=pars, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=pars.index, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=selac.obj$numcode, diploid=selac.obj$diploid, aa.properties=selac.obj$aa.properties, volume.fixed.value=0.0003990333, nuc.model=selac.obj$nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=selac.obj$include.gamma, ncats=selac.obj$ncats, k.levels=selac.obj$k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE, lower=lower, upper=upper, desired.delta=desired.delta, n.points=n.points, scale.int=scale.int)
 	
+    par.names <- c("lnLik", par.names)
     interval.results.in <- interval.results[which(interval.results[,1] - min(interval.results[,1])<=2),]
 	interval.results.out <- interval.results[which(interval.results[,1] - min(interval.results[,1])>2),]
 	
+    colnames(interval.results.in) <- colnames(interval.results) <- par.names
+    
 	obj = NULL	
-	obj$ci = apply(interval.results.in ,2, quantile)
+	obj$ci = apply(interval.results.in, 2, quantile)
 	obj$points.within.region = interval.results.in
 	obj$all.points = interval.results
 	class(obj) = "selac.support"	
@@ -104,10 +141,10 @@ AdaptiveConfidenceIntervalSampling <- function(x, codon.site.data, codon.site.co
 	
 	phy$node.label <- NULL
 	
-#Now assess the likelihood at the MLE:
+    #Now assess the likelihood at the MLE:
 	starting <- OptimizeEdgeLengthsGlobal(x=log(x), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
     
-#Generate the multipliers for feeling the boundaries:
+    #Generate the multipliers for feeling the boundaries:
 	min.multipliers <- rep(1, length(x))
 	max.multipliers <- rep(1, length(x))
 	
