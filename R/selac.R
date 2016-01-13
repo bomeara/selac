@@ -1171,7 +1171,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_
 			nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[8:length(x)], model=nuc.model)
 		}		
 	}
-	
+
 	if(!is.null(codon.data$unique.site.patterns)){
 		codon.data.list <- codon.data
 		nsites <- dim(codon.data$unique.site.patterns)[2]-1
@@ -1751,9 +1751,10 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
 	phy <- reorder(phy, "pruningwise")
-#    if(any(root.p <0)){
-#        return(10000000000)
-#    }
+	
+	if(any(root.p < 0) | any(is.na(root.p))){
+		return(10000000000)
+    }
 	
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
@@ -1911,7 +1912,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 		}
 	}
 
-    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "100000", "ftol_rel" = max.tol)
+    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "1", "ftol_rel" = max.tol)
 	results.final <- c()
 	if(nuc.model == "JC"){
 		nuc.ip = NULL
