@@ -1751,9 +1751,10 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 	TIPS <- 1:nb.tip
 	comp <- numeric(nb.tip + nb.node)
 	phy <- reorder(phy, "pruningwise")
-    if(any(root.p <0)){
-        return(10000000000)
-    }
+#    if(any(root.p <0)){
+#        return(10000000000)
+#    }
+	
 	#Obtain an object of all the unique ancestors
 	anc <- unique(phy$edge[,1])
 	for (i  in seq(from = 1, length.out = nb.node)) {
