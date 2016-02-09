@@ -200,7 +200,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
         diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
     }
     root.p_array <- NA
-    if(!is.null(root.codon.array)) {
+    if(is.null(root.codon.array)) {
 	    #Generate matrix of root frequencies for each optimal AA:
 	    root.p_array <- matrix(root.codon.frequencies, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
 	    root.p_array <- t(root.p_array)
