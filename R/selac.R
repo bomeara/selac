@@ -1236,6 +1236,7 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
 	}
 	par.mat <- index.matrix
 	par.mat[] <- c(x, 0)[index.matrix]
+    print(par.mat)
     #    print(par.mat)
 	#Puts edge lengths on tree:
 	if(is.null(aa.optim_array)){
@@ -1358,6 +1359,9 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
 				codon.data = NULL
 				codon.data$unique.site.patterns = codon.site.data[[partition.index]]
 				codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                print(partition.index)
+                print(codon.data$unique.site.patterns)
+                print(aa.optim_array[[partition.index]])
 				likelihood.vector = c(likelihood.vector, GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], root.p_array=root.p_array[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, parallel.type=parallel.type, n.cores=NULL))
 			}
 			likelihood = sum(likelihood.vector)
