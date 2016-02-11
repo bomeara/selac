@@ -1397,25 +1397,29 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
 }
 
 
-ComputeStartingBranchLengths <- function(phy, data){
-	if(is.null(phy$edge.length)){
-		phy$edge.length = rep(1, length(phy$edge[,1]))
+ComputeStartingBranchLengths <- function(phy, data, recalculate.starting.brlen){
+	if(recalculate.starting.brlen || is.null(phy$edge.length)) {
+		if(is.null(phy$edge.length)){
+			phy$edge.length = rep(1, length(phy$edge[,1]))
+		}
+		data.mat <- DNAbinToNucleotideCharacter(data)
+		new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON",edge.length=1,Nnode=1L)
+		class(new.tip) <- "phylo"
+		phy.with.outgroup <- bind.tree(phy, new.tip,where="root")
+		new.tip.data <- matrix(c("FAKEY_MCFAKERSON", rep("-", dim(data.mat)[2]-1)), dim(data.mat)[2], 1)
+		new.tip.df <- as.data.frame(t(new.tip.data))
+		rownames(new.tip.df) <- "FAKEY_MCFAKERSON"
+		colnames(new.tip.df) <- colnames(data.mat)
+		data.with.outgroup <- rbind(data.mat, new.tip.df)
+		dat <- as.matrix(data.with.outgroup[,-1])
+		dat <- phyDat(dat,type="DNA")
+		mpr.tre <- acctran(phy.with.outgroup, dat)
+		mpr.tre$edge.length <- mpr.tre$edge.length/dim(data.mat[,-1])[2]
+		mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
+		mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- exp(-20)
+	} else {
+		mpr.tree.pruned <- phy	
 	}
-	data.mat <- DNAbinToNucleotideCharacter(data)
-	new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON",edge.length=1,Nnode=1L)
-	class(new.tip) <- "phylo"
-	phy.with.outgroup <- bind.tree(phy, new.tip,where="root")
-	new.tip.data <- matrix(c("FAKEY_MCFAKERSON", rep("-", dim(data.mat)[2]-1)), dim(data.mat)[2], 1)
-	new.tip.df <- as.data.frame(t(new.tip.data))
-	rownames(new.tip.df) <- "FAKEY_MCFAKERSON"
-	colnames(new.tip.df) <- colnames(data.mat)
-	data.with.outgroup <- rbind(data.mat, new.tip.df)
-	dat <- as.matrix(data.with.outgroup[,-1])
-	dat <- phyDat(dat,type="DNA")
-	mpr.tre <- acctran(phy.with.outgroup, dat)
-	mpr.tre$edge.length <- mpr.tre$edge.length/dim(data.mat[,-1])[2]
-	mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
-	mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- exp(-20)
     return(mpr.tre.pruned)
 }
 
@@ -1825,10 +1829,11 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p){
 #' @param n.cores The number of cores to run the analyses over.
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
 #'
 #' @details 
 #' SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, parallel.type="by.gene", n.cores=NULL, max.tol=.Machine$double.eps^0.25, selac.starting.vals=c(8e-07, 1.8292716544, 0.1017990371, 5e6), fasta.rows.to.keep=NULL) {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, parallel.type="by.gene", n.cores=NULL, max.tol=.Machine$double.eps^0.25, selac.starting.vals=c(8e-07, 1.8292716544, 0.1017990371, 5e6), fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE) {
 	
 	cat("Initializing data and model parameters...", "\n")
 	
@@ -1853,7 +1858,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
                 }
-                starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp)$edge.length
+                starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, recalculate.starting.brlen)$edge.length
                 nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
                 nucleotide.data <- nucleotide.data[phy$tip.label,]
                 nsites.vector = c(nsites.vector, dim(nucleotide.data)[2] - 1)
@@ -1874,7 +1879,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
                 }
-                starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp)$edge.length
+                starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, recalculate.starting.brlen)$edge.length
                 codon.data <- DNAbinToCodonNumeric(gene.tmp)
                 codon.data <- codon.data[phy$tip.label,]
                 nsites.vector = c(nsites.vector, dim(codon.data)[2] - 1)
@@ -1898,7 +1903,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 			}else{
 				gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
 			}
-			starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp)$edge.length
+			starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, recalculate.starting.brlen)$edge.length
 			codon.data <- DNAbinToCodonNumeric(gene.tmp)
 			codon.data <- codon.data[phy$tip.label,]
 			nsites.vector = c(nsites.vector, dim(codon.data)[2] - 1)

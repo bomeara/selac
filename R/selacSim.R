@@ -134,8 +134,9 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param phy The phylogenetic tree with branch lengths.
 #' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
-#' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.
-#' @param numcode The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
+#' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x21.
+#' @param root.codon.array A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
+#' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
@@ -143,7 +144,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE){
+SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE){
     nsites <- length(aa.optim_array)
     #Start organizing the user input parameters:
     C.q.phi <- pars[1]
@@ -198,12 +199,18 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies, nu
         diag(Q_codon_array[,,unique.aa[k]]) = 0
         diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
     }
-    #Generate matrix of root frequencies for each optimal AA:
-    root.p_array <- matrix(root.codon.frequencies, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
-    root.p_array <- t(root.p_array)
-    root.p_array <- root.p_array / rowSums(root.p_array)
-    rownames(root.p_array) <- unique.aa
-    root.p_array[is.na(root.p_array)] = 0
+    root.p_array <- NA
+    if(is.null(root.codon.array)) {
+	    #Generate matrix of root frequencies for each optimal AA:
+	    root.p_array <- matrix(root.codon.frequencies, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
+	    root.p_array <- t(root.p_array)
+	    root.p_array <- root.p_array / rowSums(root.p_array)
+	    rownames(root.p_array) <- unique.aa
+    } else {
+    	root.p_array <- root.codon.array
+    }
+	root.p_array[is.na(root.p_array)] = 0
+
     #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
     sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
     for(site in 1:nsites){

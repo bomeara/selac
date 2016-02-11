@@ -4,8 +4,9 @@
 \alias{SelacSimulator}
 \title{Simulate DNA under the SELAC model}
 \usage{
-SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies, numcode = 1,
-  aa.properties = NULL, nuc.model, k.levels = 0, diploid = TRUE)
+SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
+  root.codon.array = NULL, numcode = 1, aa.properties = NULL, nuc.model,
+  k.levels = 0, diploid = TRUE)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -14,9 +15,11 @@ SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies, numcode = 1,
 
 \item{aa.optim_array}{A vector of optimal amino acids for each site to be simulated.}
 
-\item{root.codon.frequencies}{A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.}
+\item{root.codon.frequencies}{A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x21.}
 
-\item{numcode}{The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
+\item{root.codon.array}{A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.}
+
+\item{numcode}{The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
 
 \item{aa.properties}{User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.}
 
