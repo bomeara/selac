@@ -1921,7 +1921,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 		}
 	}
 
-    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "1", "ftol_rel" = max.tol)
+    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = "10000000", "ftol_rel" = max.tol)
 	results.final <- c()
 	if(nuc.model == "JC"){
 		nuc.ip = NULL
