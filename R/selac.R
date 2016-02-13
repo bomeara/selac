@@ -2262,7 +2262,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         }
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
 				}else{
@@ -2276,7 +2276,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         results.final <- nloptr(x0=results.final$solution, eval_f = OptimizeEdgeLengthsGlobal, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
                     cat("Finished. Summarizing results...", "\n")
@@ -2367,7 +2367,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         }
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
                 }else{
@@ -2381,7 +2381,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         results.final <- nloptr(x0=results.final$solution, eval_f = OptimizeEdgeLengthsGlobal, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
                     cat("Finished. Summarizing results...", "\n")
@@ -2566,7 +2566,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         }
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number+1
                     }
 				}else{
@@ -2580,7 +2580,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         results.final <- nloptr(x0=results.final$solution, eval_f = OptimizeEdgeLengthsGlobal, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
                     cat("Finished. Summarizing results...", "\n")
@@ -2671,7 +2671,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         }
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
                 }else{
@@ -2685,7 +2685,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                         results.final <- nloptr(x0=results.final$solution, eval_f = OptimizeEdgeLengthsGlobal, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                         lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                         current.likelihood <- results.final$objective
-                        print(current.likelihood)
+                        cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                         iteration.number <- iteration.number + 1
                     }
                     cat("Finished. Summarizing results...", "\n")
