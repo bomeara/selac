@@ -2389,7 +2389,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
-            if(edge.length == TRUE){
+            if(edge.length == "optimize"){
                 if(dim(index.matrix)[1]>1){
                     phy$edge.length <- apply(mle.pars.mat[,(max.par.model.count+1):ncol(mle.pars.mat)], 2, weighted.mean, w=nsites.vector)
                 }else{
@@ -2693,12 +2693,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
 			mle.pars.mat <- index.matrix
 			mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
-            if(edge.length == TRUE){
-            if(dim(index.matrix)[1]>1){
-                phy$edge.length <- apply(mle.pars.mat[,(max.par.model.count+1):ncol(mle.pars.mat)], 2, weighted.mean, w=nsites.vector)
-            }else{
-                phy$edge.length <- mle.pars.mat[,(max.par.model.count+1):ncol(mle.pars.mat)]
-            }
+            if(edge.length == "optimize"){
+                if(dim(index.matrix)[1]>1){
+                    phy$edge.length <- apply(mle.pars.mat[,(max.par.model.count+1):ncol(mle.pars.mat)], 2, weighted.mean, w=nsites.vector)
+                }else{
+                    phy$edge.length <- mle.pars.mat[,(max.par.model.count+1):ncol(mle.pars.mat)]
+                }
                 colnames(mle.pars.mat) <- c(parameter.column.names, rep("edge.length", length((max.par.model.count+1):ncol(mle.pars.mat))))
             }else{
                 colnames(mle.pars.mat) <- parameter.column.names
