@@ -1241,7 +1241,7 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
 	}
 	par.mat <- index.matrix
 	par.mat[] <- c(x, 0)[index.matrix]
-    #print(par.mat)
+    print(par.mat)
 	if(is.null(aa.optim_array)){
         if(data.type == "nucleotide"){
             if(nuc.model == "JC"){
@@ -1373,9 +1373,11 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
                 if(edge.length == "optimize"){
                     phy$edge.length = par.mat[partition.index,(max.par+1):ncol(par.mat)]
                 }
+                print(partition.index)
 				codon.data = NULL
 				codon.data$unique.site.patterns = codon.site.data[[partition.index]]
 				codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                print(codon.data$unique.site.patterns)
 				likelihood.vector = c(likelihood.vector, GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], root.p_array=root.p_array[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, parallel.type=parallel.type, n.cores=NULL))
 			}
 			likelihood = sum(likelihood.vector)
@@ -1385,9 +1387,11 @@ OptimizeEdgeLengthsGlobal <- function(x, codon.site.data, codon.site.counts, dat
                     if(edge.length == "optimize"){
                         phy$edge.length = par.mat[partition.index,(max.par+1):ncol(par.mat)]
                     }
+                    print(partition.index)
                     codon.data = NULL
                     codon.data$unique.site.patterns = codon.site.data[[partition.index]]
                     codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                    print(codon.data$unique.site.patterns)
                     likelihood.tmp = GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], root.p_array=root.p_array[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, parallel.type=parallel.type, n.cores=NULL)
                     return(likelihood.tmp)
                 }
@@ -1436,7 +1440,7 @@ ComputeStartingBranchLengths <- function(phy, data, recalculate.starting.brlen){
 		mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
 		mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- exp(-20)
 	} else {
-		mpr.tree.pruned <- phy	
+		mpr.tre.pruned <- phy	
 	}
     return(mpr.tre.pruned)
 }
