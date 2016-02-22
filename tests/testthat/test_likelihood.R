@@ -40,9 +40,9 @@ test_that("selac_likelihood", {
 	colnames(aa.optim.frame.to.add) <- colnames(codon.data)
 	codon.data <- rbind(codon.data, aa.optim.frame.to.add)
 	codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
-	aa.optim = codon.data$optimal.aa
+    aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
-	selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5, 1.829272, 0.101799, 5e6, .25, .25, .25, rep(1,5))), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="GTR", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    selac <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5, 1.829272, 0.101799, 5e6, .25, .25, .25, rep(1,5))), codon.data, phy, aa.optim_array=aa.optim, root.p_array=empirical.codon.freq, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="GTR", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
     comparison <- identical(round(selac, 3), -6202.519)
 	expect_true(comparison)
 })
