@@ -4,12 +4,12 @@
 \alias{SelacOptimize}
 \title{Optimize parameters under the SELAC model}
 \usage{
-SelacOptimize(codon.data.path, n.partitions = NULL, phy,
+SelacOptimize(codon.data.path, n.partitions = NULL, phy, data.type="codon",
   data.type = "codon", edge.length = "optimize", edge.linked = TRUE,
   optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE,
   ncats = 4, numcode = 1, diploid = TRUE, k.levels = 0,
   aa.properties = NULL, verbose = FALSE, parallel.type = "by.gene",
-  n.cores = NULL, max.tol = .Machine$double.eps^0.25,
+  n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals=1000000,
   selac.starting.vals = c(8e-07, 1.8292716544, 0.1017990371, 5e+06),
   fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE)
 }
@@ -19,6 +19,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{n.partitions}{The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.}
 
 \item{phy}{The phylogenetic tree to optimize the model parameters.}
+
+\item{data.type}{Sets the data type. Default is "codon", but "nucleotide" can also be specified.}
 
 \item{edge.length}{A logical indicating whether or not edge lengths should be optimized.}
 
@@ -47,6 +49,10 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{n.cores}{The number of cores to run the analyses over.}
 
 \item{max.tol}{Supplies the relative optimization tolerance.}
+
+\item{max.evals}{Supplies the max number of iterations tried during optimization.}
+
+\item{selac.starting.vals}{Supplies the starting values for the selac model.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 
