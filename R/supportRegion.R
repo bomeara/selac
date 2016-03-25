@@ -142,7 +142,7 @@ AdaptiveConfidenceIntervalSampling <- function(x, codon.site.data, codon.site.co
 	phy$node.label <- NULL
 	
     #Now assess the likelihood at the MLE:
-	starting <- OptimizeEdgeLengthsGlobal(x=log(x), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
+	starting <- OptimizeEdgeLengths(x=log(x), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
     
     #Generate the multipliers for feeling the boundaries:
 	min.multipliers <- rep(1, length(x))
@@ -157,7 +157,7 @@ AdaptiveConfidenceIntervalSampling <- function(x, codon.site.data, codon.site.co
 			sim.points <- GenerateValues(par=x, lower=lower, upper=upper, scale.int=scale.int, examined.max=max.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, max, na.rm=TRUE), examined.min=min.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, min, na.rm=TRUE))
             sum.vals <- sum(sim.points)
         }
-        second <- OptimizeEdgeLengthsGlobal(x = log(sim.points), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
+        second <- OptimizeEdgeLengths(x = log(sim.points), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
         results[i+1,] <- c(second, sim.points)
 		
         if(i%%20==0) {

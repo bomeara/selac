@@ -4,14 +4,14 @@
 \alias{SelacOptimize}
 \title{Optimize parameters under the SELAC model}
 \usage{
-SelacOptimize(codon.data.path, n.partitions = NULL, phy, data.type="codon",
+SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   data.type = "codon", edge.length = "optimize", edge.linked = TRUE,
   optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE,
   ncats = 4, numcode = 1, diploid = TRUE, k.levels = 0,
   aa.properties = NULL, verbose = FALSE, parallel.type = "by.gene",
   n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals=1000000,
-  selac.starting.vals = c(8e-07, 1.8292716544, 0.1017990371, 5e+06),
-  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE)
+  max.restarts=10, fasta.rows.to.keep = NULL, 
+  recalculate.starting.brlen = TRUE, output.by.restart=TRUE)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -52,11 +52,13 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy, data.type="codon",
 
 \item{max.evals}{Supplies the max number of iterations tried during optimization.}
 
-\item{selac.starting.vals}{Supplies the starting values for the selac model.}
+\item{max.restarts}{Supplies the number of random restarts.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 
 \item{recalculate.starting.brlen}{Whether to use given branch lengths in the starting tree or recalculate them.}
+
+\item{output.by.restart}{Logical indicating whether or not each restart is saved to a file. Default is TRUE.}
 }
 \description{
 Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
