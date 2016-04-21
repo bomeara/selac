@@ -245,27 +245,26 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
 #' Simulates a nucleotide matrix using parameters under the SELON model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
     nsites <- length(nuc.optim_array)
+    
     #Start organizing the user input parameters:
-    a0 <- pars[1]
-    a1 <- pars[2]
-    a2 <- pars[3]
-    Ne <- pars[4]
-    
-    site.mid.point <- ceiling(nsites/2)
+    scalor <- pars[1]
+    left.slope <- pars[2]
+    right.slope <- pars[3]
+    mid.point <- pars[4]
+    Ne = 5e6
     site.index <- 1:nsites
-    site.index <- site.index - site.mid.point
-    position.multiplier.vector <- PositionSensitivityMultiplier(a0, a1-site.mid.point, a2, site.index)
-    
+    position.multiplier.vector <- scalor * PositionSensitivityMultiplierSigmoid(left.slope, right.slope, mid.point, nsites)
+
     if(nuc.model == "JC") {
         base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "GTR") {
         base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model)
     }
     if(diploid == TRUE){
         ploidy = 2

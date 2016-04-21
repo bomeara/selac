@@ -2295,6 +2295,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             selac.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 1)
         }else{
             selac.starting.vals <- matrix(c(4, 1.8292716544, 0.1017990371),1,3)
+			selac.starting.vals <- rbind(selac.starting.vals, selac.starting.vals)
         }
         print(selac.starting.vals)
         if(include.gamma == TRUE){
@@ -2549,6 +2550,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         }else{
             number.of.current.restarts <- 1
             aa.optim.original <- aa.optim.list
+			best.lik <- 1000000
             while(number.of.current.restarts < (max.restarts+1)){
                 if(edge.length == "optimize"){
                     phy$edge.length <- colMeans(starting.branch.lengths)
