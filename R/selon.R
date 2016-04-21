@@ -329,12 +329,14 @@ GetMaxNameUCE <- function(x) {
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
 #' @param verbose Logical indicating whether each iteration be printed to the screen.
 #' @param n.cores The number of cores to run the analyses over.
-#' @param max.tol Supplies the relative optimization tolerance.
-#' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#' @max.tol Supplies the relative optimization tolerance.
+#' @max.evals Supplies the max number of iterations tried during optimization.
+#' @max.restarts Supplies the number of random restarts.
+#' @fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #'
 #' @details 
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. NOTE THIS IS NOT WORKING PROPERLY AT THIS TIME. SO PLEASE DO NOT USE YET.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -546,7 +548,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }
-			output.by.restart = TRUE
 			if(output.by.restart == TRUE){
 				obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
 				class(obj.tmp) = "selac"
