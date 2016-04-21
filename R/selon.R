@@ -215,7 +215,6 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
         partition.order <- 1:n.partitions
         likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
     }
-    print(c(likelihood, x))
     return(likelihood)
 }
 
@@ -549,7 +548,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             }
 			output.by.restart = TRUE
 			if(output.by.restart == TRUE){
-				obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
+				obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
 				class(obj.tmp) = "selac"
 				save(obj.tmp,file=paste(paste(nuc.data.path, "/restartResult", sep=""), number.of.current.restarts, "Rsave", sep="."))
 			}			
