@@ -422,7 +422,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7], rep(-21, length(nuc.ip))))
             }
             index.matrix.tmp = numeric(max.par.model.count)
-            index.matrix.tmp[(max.par.model.count+1):ncol(index.matrix)] = index.matrix[1,(max.par.model.count+1):ncol(index.matrix)]
             index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
             index.matrix[partition.index,] <- index.matrix.tmp
         }
