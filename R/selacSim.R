@@ -252,6 +252,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
     right.slope <- pars[3]
     mid.point <- pars[4]
     Ne = 5e6
+	scalor = scalor/Ne
     site.index <- 1:nsites
     position.multiplier.vector <- scalor * PositionSensitivityMultiplierSigmoid(left.slope, right.slope, mid.point, nsites)
 
