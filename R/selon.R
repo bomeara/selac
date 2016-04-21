@@ -548,6 +548,12 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }
+			output.by.restart = TRUE
+			if(output.by.restart == TRUE){
+				obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = loglik, AIC = -2*loglik+2*np, AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
+				class(obj.tmp) = "selac"
+				save(obj.tmp,file=paste(paste(nuc.data.path, "/restartResult", sep=""), number.of.current.restarts, "Rsave", sep="."))
+			}			
             if(results.final$objective < best.lik){
                 best.ip <- ip.vector
                 best.lik <- results.final$objective
