@@ -645,7 +645,7 @@ print.selon <- function(x,...){
 #system(paste("mkdir", paste("fastaSet",1, sep="_"), sep=" "))
 #write.dna(tmp, file=paste(paste("fastaSet",1, sep="_"), "/gene",  1, ".fasta", sep=""), format="fasta", colw=1000000)
 
-pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE)
+#pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE)
 
 
 
