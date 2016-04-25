@@ -410,14 +410,14 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     if(n.partitions > 1){
         for(partition.index in 2:n.partitions){
             if(nuc.model == "JC"){
-                ip[2] = ceiling(nsites.vector[partition.index]/2)
-                upper[2] = nsites.vector[partition.index]
+                ip[4] = ceiling(nsites.vector[partition.index]/2)
+                upper[4] = nsites.vector[partition.index]
                 ip.vector = c(ip.vector, ip[1:4], ip[5], ip[6], ip[7])
                 upper.vector = c(upper.vector, c(upper[1:4], upper[5], upper[6], upper[7]))
                 lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7]))
             }else{
-                ip[2] = ceiling(nsites.vector[partition.index]/2)
-                upper[2] = nsites.vector[partition.index]
+                ip[4] = ceiling(nsites.vector[partition.index]/2)
+                upper[4] = nsites.vector[partition.index]
                 ip.vector = c(ip.vector, ip[1:4], ip[5], ip[6], ip[7], nuc.ip)
                 upper.vector = c(upper.vector, c(upper[1:4], upper[5], upper[6], upper[7], rep(21, length(nuc.ip))))
                 lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7], rep(-21, length(nuc.ip))))
@@ -506,6 +506,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             phy$edge.length <- best.edge.lengths
         }
     }else{
+        print(lower.vector)
+        print(upper.vector)
+        print(ip.vector)
         number.of.current.restarts <- 1
         nuc.optim.original <- nuc.optim.list
 		best.lik <- 1000000
@@ -642,7 +645,7 @@ print.selon <- function(x,...){
 #system(paste("mkdir", paste("fastaSet",1, sep="_"), sep=" "))
 #write.dna(tmp, file=paste(paste("fastaSet",1, sep="_"), "/gene",  1, ".fasta", sep=""), format="fasta", colw=1000000)
 
-#pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE)
+pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE)
 
 
 
