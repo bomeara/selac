@@ -262,10 +262,10 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
     }
     if(nuc.model == "GTR") {
         base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model)
     }
     if(diploid == TRUE){
         ploidy = 2
