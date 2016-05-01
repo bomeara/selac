@@ -186,7 +186,6 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
     }
     par.mat <- index.matrix
     par.mat[] <- c(x, 0)[index.matrix]
-    print(par.mat)
     #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
     if(nuc.model == "JC"){
         max.par = 4 + 3 + 0
@@ -216,7 +215,6 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
         partition.order <- 1:n.partitions
         likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
     }
-    print(likelihood)
     return(likelihood)
 }
 
