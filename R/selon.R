@@ -186,6 +186,7 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
     }
     par.mat <- index.matrix
     par.mat[] <- c(x, 0)[index.matrix]
+    print(par.mat)
     #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
     if(nuc.model == "JC"){
         max.par = 4 + 3 + 0
@@ -215,6 +216,7 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
         partition.order <- 1:n.partitions
         likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
     }
+    print(likelihood)
     return(likelihood)
 }
 
@@ -411,13 +413,13 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         for(partition.index in 2:n.partitions){
             if(nuc.model == "JC"){
                 ip[4] = ceiling(nsites.vector[partition.index]/2)
-                upper[4] = nsites.vector[partition.index]
+                upper[4] = log(nsites.vector[partition.index])
                 ip.vector = c(ip.vector, ip[1:4], ip[5], ip[6], ip[7])
                 upper.vector = c(upper.vector, c(upper[1:4], upper[5], upper[6], upper[7]))
                 lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7]))
             }else{
                 ip[4] = ceiling(nsites.vector[partition.index]/2)
-                upper[4] = nsites.vector[partition.index]
+                upper[4] = log(nsites.vector[partition.index])
                 ip.vector = c(ip.vector, ip[1:4], ip[5], ip[6], ip[7], nuc.ip)
                 upper.vector = c(upper.vector, c(upper[1:4], upper[5], upper[6], upper[7], rep(21, length(nuc.ip))))
                 lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7], rep(-21, length(nuc.ip))))
@@ -427,6 +429,10 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             index.matrix[partition.index,] <- index.matrix.tmp
         }
     }
+    print(index.matrix)
+    print(lower.vector)
+    print(upper.vector)
+    print(ip.vector)
     if(optimal.nuc == "optimize"){
         number.of.current.restarts <- 1
         nuc.optim.original <- nuc.optim.list
@@ -506,9 +512,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             phy$edge.length <- best.edge.lengths
         }
     }else{
-        print(lower.vector)
-        print(upper.vector)
-        print(ip.vector)
         number.of.current.restarts <- 1
         nuc.optim.original <- nuc.optim.list
 		best.lik <- 1000000
@@ -531,6 +534,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
 			results.final <- nloptr(x0=log(ip.vector), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
+            print(mle.pars.mat)
             current.likelihood <- results.final$objective
             cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
             lik.diff <- 10
@@ -546,6 +550,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
 				results.final <- nloptr(x0=results.final$solution, eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
                 mle.pars.mat <- index.matrix
                 mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
+                print(mle.pars.mat)
                 lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                 current.likelihood <- results.final$objective
                 cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
@@ -645,7 +650,7 @@ print.selon <- function(x,...){
 #system(paste("mkdir", paste("fastaSet",1, sep="_"), sep=" "))
 #write.dna(tmp, file=paste(paste("fastaSet",1, sep="_"), "/gene",  1, ".fasta", sep=""), format="fasta", colw=1000000)
 
-#pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE)
+#pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE, n.cores=3)
 
 
 
