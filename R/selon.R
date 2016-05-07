@@ -64,7 +64,7 @@ GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optima
 }
 
 
-GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, scale.factor, sample.bias=TRUE, sample.bias.factor=0.01, return.all=FALSE) {
+GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, scale.factor, sample.bias=FALSE, sample.bias.factor=0.01, return.all=FALSE) {
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     nl <- nrow(Q_position)
