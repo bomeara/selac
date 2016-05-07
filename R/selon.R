@@ -385,7 +385,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
 		selon.starting.vals <- matrix(0, max.restarts+1, 2)
 		selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-20)*5e6, max = (10^-5)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
-		selon.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 500)
+		selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
 	}else{
 		selon.starting.vals <- matrix(c(1e-13*5e6, 100),1,2)
 		selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
