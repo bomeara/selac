@@ -246,26 +246,27 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
 SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
     nsites <- length(nuc.optim_array)
     
-    #Start organizing the user input parameters:
-    scalor <- pars[1]
-    left.slope <- pars[2]
-    right.slope <- pars[3]
-    mid.point <- pars[4]
+	#Start organizing the user input parameters:
+	#scalor <- pars[1]
+	#left.slope <- pars[2]
+	#right.slope <- pars[3]
+	#mid.point <- pars[4]
     Ne = 5e6
-	scalor = scalor/Ne
+	scalor = pars[1]/Ne
     site.index <- 1:nsites
-    position.multiplier.vector <- scalor * PositionSensitivityMultiplierSigmoid(left.slope, right.slope, mid.point, nsites)
-
-    if(nuc.model == "JC") {
-        base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+    #position.multiplier.vector <- scalor * PositionSensitivityMultiplierSigmoid(left.slope, right.slope, mid.point, nsites)
+	position.multiplier.vector <- PositionSensitivityMultiplierNormal(a0=scalor, a1=pars[2], a2=pars[3], site.index=1:nsites)
+	plot(position.multiplier.vector)
+	if(nuc.model == "JC") {
+        base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "GTR") {
-        base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
+        base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model)
     }
     if(diploid == TRUE){
         ploidy = 2

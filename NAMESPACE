@@ -5,4 +5,5 @@ importFrom(phangorn, parsimony, phyDat, acctran)
 importFrom(parallel, mclapply)
 exportClasses('selac','selon')
 S3method(print, selac)
+S3method(print, selon)
 

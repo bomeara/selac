@@ -5,9 +5,6 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
-#written by Jeremy M. Beaulieu
-
-#source("selac.R")
 
 CreateNucleotideDistanceMatrix <- function() {
     n.states <- 4
@@ -141,7 +138,13 @@ PositionSensitivityMultiplierSigmoid <- function(slope.left, slope.right, midpoi
     return(c(sensitivity.vector.left, sensitivity.vector.right))
 }
 
-pp<-PositionSensitivityMultiplierSigmoid(.9, .9, 100, 200)
+
+PositionSensitivityMultiplierQuadratic <- function(a0, a1, a2, site.index){
+    #At the moment assumes a standard normal distribution
+    #sensitivity.vector <- (1/(a2*sqrt(2*pi))) * exp(-((site.index - a1)^2)/ (2*(a2^2)))
+    sensitivity.vector <- a0 + a1*site.index + a2*(site.index^2)
+    return(sensitivity.vector)
+}
 
 
 GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.optim_array=NULL, nuc.model, diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
@@ -151,20 +154,21 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
 	Ne=5e6
 	x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
-        base.freqs=c(x[5:7], 1-sum(x[5:7]))
+        base.freqs=c(x[4:6], 1-sum(x[4:6]))
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "GTR") {
-        base.freqs=c(x[5:7], 1-sum(x[5:7]))
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[8:length(x)], model=nuc.model, base.freqs=base.freqs)
+        base.freqs=c(x[4:6], 1-sum(x[4:6]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[8:length(x)], model=nuc.model, base.freqs=base.freqs)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
     }
     nsites <- dim(nuc.data)[2]-1
     site.index <- 1:nsites
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
-    position.multiplier.vector <- x[1] * PositionSensitivityMultiplierSigmoid(x[2]+(-5), x[3]+(-5), x[4], nsites)
+    #position.multiplier.vector <- x[1] * PositionSensitivityMultiplierSigmoid(x[2]+(-5), x[3]+(-5), x[4], nsites)
+    position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
     final.likelihood = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
     likelihood <- sum(final.likelihood)
     
@@ -195,13 +199,13 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
     par.mat[] <- c(x, 0)[index.matrix]
     #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
     if(nuc.model == "JC"){
-        max.par = 4 + 3 + 0
+        max.par = 3 + 3 + 0
     }
     if(nuc.model == "GTR"){
-        max.par = 4 + 3 + 5
+        max.par = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
-        max.par = 4 + 3 + 11
+        max.par = 3 + 3 + 11
     }
     if(is.null(n.cores)){
         likelihood.vector <- c()
@@ -234,13 +238,13 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
 
 	#sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
     if(nuc.model == "JC"){
-        max.par = 4 + 3 + 0
+        max.par = 3 + 3 + 0
     }
     if(nuc.model == "GTR"){
-        max.par = 4 + 3 + 5
+        max.par = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
-        max.par = 4 + 3 + 11
+        max.par = 3 + 3 + 11
     }
     if(is.null(n.cores)){
         likelihood.vector <- c()
@@ -378,36 +382,36 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
 	if(max.restarts > 1){
-		selon.starting.vals <- matrix(0, max.restarts+1, 3)
-		selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
-		selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
-		selon.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 10)
+		selon.starting.vals <- matrix(0, max.restarts+1, 2)
+		selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-20)*5e6, max = (10^-5)*5e6)
+        #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
+		selon.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 500)
 	}else{
-		selon.starting.vals <- matrix(c(1e-7*5e6, 6, 6),1,3)
+		selon.starting.vals <- matrix(c(1e-13*5e6, 100),1,2)
 		selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
 	}			
     if(nuc.model == "JC"){
-        ip = c(selon.starting.vals[1,1:3], ceiling(nsites.vector[1]/2), 0.25, 0.25, 0.25)
-		parameter.column.names <- c("s.Ne", "left.slope", "right.slope", "inflect.point", "freqA", "freqC", "freqG")
-        upper = c(log(50), log(10), log(10), log(nsites.vector[1]), 0, 0, 0)
+        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25)
+		parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG")
+        upper = c(log(50), log(nsites.vector[1]), log(100), 0, 0, 0)
         lower = rep(-21, length(ip))
-        max.par.model.count = 4 + 3 + 0
+        max.par.model.count = 3 + 3 + 0
     }
     if(nuc.model == "GTR"){
         nuc.ip = rep(1, 5)
-        ip = c(selon.starting.vals[1,1:3], ceiling(nsites.vector[1]/2), 0.25, 0.25, 0.25, nuc.ip)
-		parameter.column.names <- c("s.Ne", "left.slope", "right.slope", "inflect.point", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
-        upper = c(log(50), log(10), log(10), log(nsites.vector[1]), 0, 0, 0, rep(21, length(nuc.ip)))
+        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
+		parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
+        upper = c(log(50), log(nsites.vector[1]), log(100), 0, 0, 0, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
-        max.par.model.count = 4 + 3 + 5
+        max.par.model.count = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
         nuc.ip = rep(1, 11)
-        ip = c(selon.starting.vals[1,1:3], ceiling(nsites.vector[1]/2), 0.25, 0.25, 0.25, nuc.ip)
-		parameter.column.names <- c("s.Ne", "left.slope", "right.slope", "inflect.point", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-        upper = c(log(50), log(10), log(10), log(nsites.vector[1]), 0, 0, 0, rep(21, length(nuc.ip)))
+        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
+		parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
+        upper = c(log(50), log(nsites.vector[1]), log(100), 0, 0, 0, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
-        max.par.model.count = 4 + 3 + 11
+        max.par.model.count = 3 + 3 + 11
     }
     index.matrix = matrix(0, n.partitions, max.par.model.count)
     index.matrix[1,] = 1:ncol(index.matrix)
@@ -417,17 +421,17 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     if(n.partitions > 1){
         for(partition.index in 2:n.partitions){
             if(nuc.model == "JC"){
-                ip[4] = ceiling(nsites.vector[partition.index]/2)
-                upper[4] = log(nsites.vector[partition.index])
-                ip.vector = c(ip.vector, ip[1:4], ip[5], ip[6], ip[7])
-                upper.vector = c(upper.vector, c(upper[1:4], upper[5], upper[6], upper[7]))
-                lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7]))
+                ip[2] = ceiling(nsites.vector[partition.index]/2)
+                upper[2] = log(nsites.vector[partition.index])
+                ip.vector = c(ip.vector, ip[1:3], ip[4], ip[5], ip[6])
+                upper.vector = c(upper.vector, c(upper[1:3], upper[4], upper[5], upper[6]))
+                lower.vector = c(lower.vector, c(lower[1:3], lower[4], lower[5], lower[6]))
             }else{
-                ip[4] = ceiling(nsites.vector[partition.index]/2)
-                upper[4] = log(nsites.vector[partition.index])
-                ip.vector = c(ip.vector, ip[1:4], ip[5], ip[6], ip[7], nuc.ip)
-                upper.vector = c(upper.vector, c(upper[1:4], upper[5], upper[6], upper[7], rep(21, length(nuc.ip))))
-                lower.vector = c(lower.vector, c(lower[1:4], lower[5], lower[6], lower[7], rep(-21, length(nuc.ip))))
+                ip[2] = ceiling(nsites.vector[partition.index]/2)
+                upper[2] = log(nsites.vector[partition.index])
+                ip.vector = c(ip.vector, ip[1:3], ip[4], ip[5], ip[6], nuc.ip)
+                upper.vector = c(upper.vector, c(upper[1:3], upper[4], upper[5], upper[6], rep(21, length(nuc.ip))))
+                lower.vector = c(lower.vector, c(lower[1:3], lower[4], lower[5], lower[6], rep(-21, length(nuc.ip))))
             }
             index.matrix.tmp = numeric(max.par.model.count)
             index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
@@ -502,7 +506,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             }
             number.of.current.restarts <- number.of.current.restarts + 1
             ip.vector[c(index.matrix[,1])] <- selon.starting.vals[number.of.current.restarts, 1]
-            ip.vector[2:3] <- c(selon.starting.vals[number.of.current.restarts, 2:3])
+            ip.vector[2] <- c(selon.starting.vals[number.of.current.restarts, 2])
             nuc.optim.list <- nuc.optim.original
         }
         selon.starting.vals <- best.ip
@@ -569,7 +573,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 best.edge.lengths <- phy$edge.length
             }
             number.of.current.restarts <- number.of.current.restarts + 1
-            ip.vector[1:3] <- c(selon.starting.vals[number.of.current.restarts, 1:3])
+            ip.vector[c(index.matrix[,1])] <- selon.starting.vals[number.of.current.restarts, 1]
+            ip.vector[2] <- c(selon.starting.vals[number.of.current.restarts, 2])
         }
         loglik <- -(best.lik) #to go from neglnl to lnl
         mle.pars.mat <- best.solution
@@ -628,7 +633,7 @@ print.selon <- function(x,...){
 #empirical.base.freq <- table(empirical.base.freq, deparse.level = 0) / sum(table(empirical.base.freq, deparse.level = 0))
 #nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, GetMaxNameUCE)) #starting values for all, final values for majrule
 #GetLikelihoodUCEForManyCharGivenAllParams(x=log(c(4.26e-6, ceiling(235/2), 10, .25, .25, .25)), nuc.data=nucleotide.data, phy=phy, nuc.optim_array=nuc.optim, nuc.model="JC", Ne=5e6, diploid=TRUE, logspace=TRUE)
-#kk <- PositionSensitivityMultiplier(4.26e-6, ceiling(235/2), 10, site.index<-seq(0, 235, by=1))
+#kk <- PositionSensitivityMultiplierNormal(4.26e-6, ceiling(235/2), 10, site.index<-seq(0, 235, by=1))
 #nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model="JC", base.freqs=rep(.25,4))
 #res <- c()
 #nucleotide.data.red <- nucleotide.data[,c(1:20)]
