@@ -2295,7 +2295,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             selac.starting.vals <- matrix(c(4, 1.8292716544, 0.1017990371),1,3)
 			selac.starting.vals <- rbind(selac.starting.vals, selac.starting.vals)
         }
-        print(selac.starting.vals)
         if(include.gamma == TRUE){
             #Gamma variation is turned ON:
             if(nuc.model == "JC"){
@@ -2369,7 +2368,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     index.matrix[partition.index,] <- index.matrix.tmp
                 }
             }
-            print(index.matrix)
         }else{
             # Gamma variation is turned OFF:
             if(nuc.model == "JC"){
