@@ -3,4 +3,4 @@
 selac
 =====
 
-Model by O'Meara, Chai, and Gilchrist for SELection on Amino acids and/or Codons
+Model by O'Meara, Beaulieu, Chai, and Gilchrist for SELection on Amino acids and/or Codons

@@ -465,24 +465,23 @@ CompareVectors <- function(cd1,cd2){
 }
 
 
-GetPairwiseProteinFixationProbabilityArbitraryLength <- function(protein1, protein2, protein_op, s, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6){
+GetPairwiseProteinFixationProbabilityArbitraryLength <- function(protein1, protein2, protein_op, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6){
     d1 <- GetProteinProteinDistance(protein1,protein_op,aa.distances)
     d2 <- GetProteinProteinDistance(protein2,protein_op,aa.distances)
     if(length(d1)!=length(d2)) #throw error if length of proteins are not the same
     stop("error: 2 proteins are of different lengths!")
     if(length(d1)==1){ #only one amino acid
-        return(GetPairwiseProteinFixationProbabilitySingleSite(d1, d2, s, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne))
+        return(GetPairwiseProteinFixationProbabilitySingleSite(d1, d2, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne))
     }
     else{
         if((length(s)==1)&&(length(d1)!=1)) #if s is given as a scalar, then treat it to be the same across all sites
-        s <- rep(s,length(d1))
         l = length(d1)
         cmp = CompareVectors(d1,d2)
         if(cmp$num > 1) return(0) #more than 1 position differ
         else if((cmp$num ==0)) return(1/(2*Ne)) #same fitness/functionality
         else{ #exactly 1 position differs
             pos = cmp$pos
-            return(GetPairwiseProteinFixationProbabilitySingleSite(d1[pos], d2[pos], s[pos], nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne))
+            return(GetPairwiseProteinFixationProbabilitySingleSite(d1[pos], d2[pos], nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne))
         }
     }
 }
@@ -807,9 +806,9 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 
 
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
-    nb.tip<-length(phy$tip.label)
+    nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
-    
+
     nl <- nrow(Q_codon[[1]])
     #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
     liks <- matrix(0, nb.tip + nb.node, nl)
@@ -886,15 +885,14 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     
     phy.sort <- reorder(phy, "pruningwise")
     anc.indices <- unique(phy.sort$edge[,1])
-    
     if(parallel.type == "by.gene"){
         for (i in sequence(nsites)) {
             final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[i]]], root.p=root.p_array[aa.optim_array[i],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
         }
     }
     if(parallel.type == "by.site"){
-        MultiCoreLikelihoodBySite <- function(nsites){
-            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsites, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[nsites]]], root.p=root.p_array[aa.optim_array[nsites],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+        MultiCoreLikelihoodBySite <- function(nsite.index){
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[nsites]]], root.p=root.p_array[aa.optim_array[nsites],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
             return(tmp)
         }
         final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
@@ -1011,7 +1009,6 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
     if(any(base.freqs < 0)){
         return(1000000)
     }
-    
     if(include.gamma==TRUE){
         rates.k <- DiscreteGamma(shape, ncats)
         final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
@@ -1916,6 +1913,7 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 
 #Step 2: Finish likelihood by taking our already exponentiated Q down the tree and simply re-traverse the tree and multiply by the observed likelihood.
 FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
+
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     TIPS <- 1:nb.tip
@@ -2317,7 +2315,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             if(nuc.model == "GTR") {
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, .22214)
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
                     upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 21)
                     lower = rep(-21, length(ip))
@@ -2347,7 +2345,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             index.matrix = matrix(0, n.partitions, max.par.model.count)
             index.matrix[1,] = 1:ncol(index.matrix)
-            ip.vector = c(ip, phy$edge.length)
+            ip.vector = ip
             upper.vector = upper
             lower.vector = lower
             if(n.partitions > 1){
@@ -2371,6 +2369,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     index.matrix[partition.index,] <- index.matrix.tmp
                 }
             }
+            print(index.matrix)
         }else{
             # Gamma variation is turned OFF:
             if(nuc.model == "JC"){
@@ -2445,7 +2444,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }
             }
         }
-        print(index.matrix)
         if(optimal.aa == "optimize"){
             number.of.current.restarts <- 1
             aa.optim.original <- aa.optim.list
