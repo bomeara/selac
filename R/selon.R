@@ -118,10 +118,11 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
 }
 
 
-PositionSensitivityMultiplierNormal <- function(a0, a1, a2, site.index){
+PositionSensitivityMultiplierNormal <- function(a0, a1, a2, midpoint, site.index){
     #At the moment assumes a standard normal distribution
 	#sensitivity.vector <- (1/(a2*sqrt(2*pi))) * exp(-((site.index - a1)^2)/ (2*(a2^2)))
-	sensitivity.vector <- a0 * exp(-((site.index - a1)^2)/ (2*(a2^2)))
+    #sensitivity.vector <- a0 * exp(-((site.index - a1)^2)/ (2*(a2^2)))
+    sensitivity.vector <- a0 + a1*(site.index) + a2*((site.index)^2)
     return(sensitivity.vector)
 }
 
@@ -340,10 +341,10 @@ GetMaxNameUCE <- function(x) {
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
 #' @param verbose Logical indicating whether each iteration be printed to the screen.
 #' @param n.cores The number of cores to run the analyses over.
-#' @max.tol Supplies the relative optimization tolerance.
-#' @max.evals Supplies the max number of iterations tried during optimization.
-#' @max.restarts Supplies the number of random restarts.
-#' @fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#' @param max.tol Supplies the relative optimization tolerance.
+#' @param max.evals Supplies the max number of iterations tried during optimization.
+#' @param max.restarts Supplies the number of random restarts.
+#' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #'
 #' @details 
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. NOTE THIS IS NOT WORKING PROPERLY AT THIS TIME. SO PLEASE DO NOT USE YET.

@@ -1,4 +1,4 @@
-export(SelacOptimize, SelonOptimize, SelacSimulator, SelonSimulator, NucSimulator, SelacSimulatorEvolvingRates) 
+export(SelacOptimize, SelacLargeOptimize, SelonOptimize, SelacSimulator, SelonSimulator, NucSimulator, SelacSimulatorEvolvingRates, GetSiteLikelihoods) 
 import(ape, seqinr, nloptr, nnet)
 importFrom(expm, expm)
 importFrom(phangorn, parsimony, phyDat, acctran)

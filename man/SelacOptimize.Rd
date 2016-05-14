@@ -9,9 +9,9 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE,
   ncats = 4, numcode = 1, diploid = TRUE, k.levels = 0,
   aa.properties = NULL, verbose = FALSE, parallel.type = "by.gene",
-  n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals=1000000,
-  max.restarts=10, fasta.rows.to.keep = NULL, 
-  recalculate.starting.brlen = TRUE, output.by.restart=TRUE)
+  n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals = 1e+06,
+  max.restarts = 3, fasta.rows.to.keep = NULL,
+  recalculate.starting.brlen = TRUE, output.by.restart = TRUE)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -20,7 +20,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{phy}{The phylogenetic tree to optimize the model parameters.}
 
-\item{data.type}{Sets the data type. Default is "codon", but "nucleotide" can also be specified.}
+\item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
 
 \item{edge.length}{A logical indicating whether or not edge lengths should be optimized.}
 
