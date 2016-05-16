@@ -374,7 +374,7 @@ GetMaxNameUCE <- function(x) {
 #' @param nuc.data.path Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
-#' @param edge.length A logical indicating whether or not edge lengths should be optimized.
+#' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.nuc Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
@@ -652,7 +652,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
 #' @param nuc.data.path Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
-#' @param edge.length A logical indicating whether or not edge lengths should be optimized.
+#' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.nuc Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".

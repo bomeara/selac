@@ -17,7 +17,7 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 
 \item{phy}{The phylogenetic tree to optimize the model parameters.}
 
-\item{edge.length}{A logical indicating whether or not edge lengths should be optimized.}
+\item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.}
 
 \item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 

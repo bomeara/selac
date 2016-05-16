@@ -11,7 +11,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   aa.properties = NULL, verbose = FALSE, parallel.type = "by.gene",
   n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals = 1e+06,
   max.restarts = 3, fasta.rows.to.keep = NULL,
-  recalculate.starting.brlen = TRUE, output.by.restart = TRUE)
+  recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
+  output.restart.filename = "restartResult")
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -22,7 +23,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
 
-\item{edge.length}{A logical indicating whether or not edge lengths should be optimized.}
+\item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.}
 
 \item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 
@@ -59,6 +60,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{recalculate.starting.brlen}{Whether to use given branch lengths in the starting tree or recalculate them.}
 
 \item{output.by.restart}{Logical indicating whether or not each restart is saved to a file. Default is TRUE.}
+
+\item{output.restart.filename}{Designates the file name for each random restart.}
 }
 \description{
 Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
