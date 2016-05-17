@@ -218,8 +218,6 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
         for(partition.index in sequence(n.partitions)){
             nuc.data = NULL
             nuc.data = site.pattern.data.list[[partition.index]]
-            print(nuc.data)
-            print(nuc.optim.list)
             likelihood.vector = c(likelihood.vector, GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl))
         }
         likelihood = sum(likelihood.vector)
