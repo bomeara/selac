@@ -3311,7 +3311,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
                 lik.diff <- 10
                 iteration.number <- 1
-                while(lik.diff != 0 & iteration.number<3){
+                while(lik.diff != 0 & iteration.number<7){
                     cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
                     cat("              Optimizing amino acids", "\n")
                     aa.optim.list <- as.list(numeric(n.partitions))
@@ -3483,7 +3483,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
                 lik.diff <- 10
                 iteration.number <- 1
-                while(lik.diff != 0 & iteration.number<3){
+                while(lik.diff != 0 & iteration.number<7){
                     cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
                     if(edge.length == "optimize"){
                         cat("              Optimizing edge lengths", "\n")
