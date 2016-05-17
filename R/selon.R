@@ -202,8 +202,6 @@ OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites
     }
     par.mat <- index.matrix
     par.mat[] <- c(x, 0)[index.matrix]
-    print(par.mat)
-    print(class(par.mat))
     
     #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
     if(nuc.model == "JC"){
