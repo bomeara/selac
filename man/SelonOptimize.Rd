@@ -8,7 +8,8 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
   edge.length = "optimize", edge.linked = TRUE, optimal.nuc = "majrule",
   nuc.model = "GTR", diploid = TRUE, verbose = FALSE, n.cores = NULL,
   max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 10,
-  output.by.restart = TRUE, fasta.rows.to.keep = NULL)
+  output.by.restart = TRUE, output.restart.filename = "restartResult",
+  fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}
@@ -39,12 +40,14 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 
 \item{output.by.restart}{Logical indicating whether or not each restart is saved to a file. Default is TRUE.}
 
+\item{output.restart.filename}{Designates the file name for each random restart.}
+
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 }
 \description{
 Optimizes model parameters under the SELON model
 }
 \details{
-SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. NOTE THIS IS NOT WORKING PROPERLY AT THIS TIME. SO PLEASE DO NOT USE YET.
+SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
 }
 

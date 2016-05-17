@@ -383,11 +383,12 @@ GetMaxNameUCE <- function(x) {
 #' @param max.evals Supplies the max number of iterations tried during optimization.
 #' @param max.restarts Supplies the number of random restarts.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
+#' @param output.restart.filename Designates the file name for each random restart.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #'
 #' @details 
-#' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. NOTE THIS IS NOT WORKING PROPERLY AT THIS TIME. SO PLEASE DO NOT USE YET.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, fasta.rows.to.keep=NULL) {
+#' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -540,7 +541,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             if(output.by.restart == TRUE){
                 obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
                 class(obj.tmp) = "selac"
-                save(obj.tmp,file=paste(paste(nuc.data.path, "restartResult", sep=""), number.of.current.restarts, "Rsave", sep="."))
+                save(obj.tmp,file=paste(paste(nuc.data.path, output.restart.filename, sep=""), number.of.current.restarts, "Rsave", sep="."))
             }
             if(results.final$objective < best.lik){
                 best.ip <- ip.vector
@@ -609,7 +610,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
 			if(output.by.restart == TRUE){
 				obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
 				class(obj.tmp) = "selac"
-				save(obj.tmp,file=paste(paste(nuc.data.path, "restartResult", sep=""), number.of.current.restarts, "Rsave", sep="."))
+				save(obj.tmp,file=paste(paste(nuc.data.path, output.restart.filename, sep=""), number.of.current.restarts, "Rsave", sep="."))
 			}			
             if(results.final$objective < best.lik){
                 best.ip <- ip.vector
@@ -661,11 +662,12 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
 #' @param max.evals Supplies the max number of iterations tried during optimization.
 #' @param max.restarts Supplies the number of random restarts.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
+#' @param output.restart.filename Designates the file name for each random restart.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #'
 #' @details
 #' This is the exact same implementation as in SelonOptimize(), except here we optimize parameters across each gene separately while keeping the shared parameters, the edge lengths, constant across genes. We then optimize edge lengths while keeping parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelonLargeOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, fasta.rows.to.keep=NULL) {
+SelonLargeOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", diploid=TRUE, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -848,7 +850,7 @@ SelonLargeOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.lengt
             if(output.by.restart == TRUE){
                 obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
                 class(obj.tmp) = "selac"
-                save(obj.tmp,file=paste(paste(nuc.data.path, "restartResult", sep=""), number.of.current.restarts, "Rsave", sep="."))
+                save(obj.tmp,file=paste(paste(nuc.data.path, output.restart.filename, sep=""), number.of.current.restarts, "Rsave", sep="."))
             }
             if(results.final$objective < best.lik){
                 best.ip <- ip.vector
@@ -946,7 +948,7 @@ SelonLargeOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.lengt
             if(output.by.restart == TRUE){
                 obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
                 class(obj.tmp) = "selac"
-                save(obj.tmp,file=paste(paste(nuc.data.path, "restartResult", sep=""), number.of.current.restarts, "Rsave", sep="."))
+                save(obj.tmp,file=paste(paste(nuc.data.path, output.restart.filename, sep=""), number.of.current.restarts, "Rsave", sep="."))
             }
             if(results.final$objective < best.lik){
                 best.ip <- ip.vector
