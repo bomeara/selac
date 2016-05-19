@@ -3912,7 +3912,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     phy <- selac.obj$phy
-    partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
+    partitions <- selac.obj$partitions
     include.gamma <- selac.obj$include.gamma
     aa.properties <- selac.obj$aa.properties
     diploid <- selac.obj$diploid
