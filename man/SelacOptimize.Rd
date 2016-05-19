@@ -67,6 +67,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
 }
 \details{
-SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model. Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
+SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model, if data.type="nucleotide", or the mutation-selection model of Yang and Nielsen (2008), if data.type="codon". In the latter case, we only allow the FMutSel0 implementation, which assumes 19 fitness parameters for 20-1 amino acids (the fitness parameter for Phenylalanine, or F, is set to zero).
+
+Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
 }
 
