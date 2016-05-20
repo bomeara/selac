@@ -1677,6 +1677,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
     if(logspace) {
         x <- exp(x)
     }
+    print(x)
     if(class(index.matrix)=="numeric"){
         index.matrix <- matrix(index.matrix, 1, length(index.matrix))
     }

@@ -147,39 +147,40 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE){
     nsites <- length(aa.optim_array)
     #Start organizing the user input parameters:
-    C.q.phi <- pars[1]
+    C.q.phi.ne <- pars[1]
     C=4
     q=4e-7
-    Phi.q <- C.q.phi / C
-    Phi <- Phi.q / q
+    Ne <- 5e6
+    Phi.q.ne <- C.q.phi.ne / C
+    Phi.ne <- Phi.q.ne / q
+    Phi <- Phi.ne/Ne
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
-    Ne <- pars[4]
     
     if(k.levels > 0){
         if(nuc.model == "JC") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[10:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[10:length(pars)], model=nuc.model)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model)
         }
     }else{
         if(nuc.model == "JC") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model)
         }
     }
     #Generate our codon matrix:
