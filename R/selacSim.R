@@ -139,12 +139,14 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
+#' @param ncats The number of discrete categories.
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE){
+SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE){
     nsites <- length(aa.optim_array)
     #Start organizing the user input parameters:
     C.q.phi.ne <- pars[1]
@@ -157,7 +159,11 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
-    
+
+    if(include.gamma == TRUE){
+        shape = pars[length(pars)]
+    }
+
     if(k.levels > 0){
         if(nuc.model == "JC") {
             base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
@@ -189,16 +195,44 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
     codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
     #Generate our fixation probability array:
     unique.aa <- GetMatrixAANames(numcode)
-    aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE)
-    Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-    for(k in 1:21){
-        if(diploid == TRUE){
-            Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
-        }else{
-            Q_codon_array[,,unique.aa[k]] = Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+    
+    if(include.gamma == TRUE){
+        rates.k <- DiscreteGamma(shape, ncats)
+        rate.Q_codon.list <- as.list(ncats)
+        for(cat.index in 1:ncats){
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, discrete.gamma.scalar=rates.k[cat.index], k=k.levels)
+            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
         }
-        diag(Q_codon_array[,,unique.aa[k]]) = 0
-        diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
+        for(cat.index in 1:ncats){
+            Q_codon_array <- rate.Q_codon.list[[cat.index]]
+            for(k in 1:21){
+                if(diploid == TRUE){
+                    Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+                }else{
+                    Q_codon_array[,,unique.aa[k]] = Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+                }
+                diag(Q_codon_array[,,unique.aa[k]]) = 0
+                diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
+            }
+            rate.Q_codon.list[[cat.index]] <- Q_codon_array
+        }
+    }else{
+        if(k.levels > 0){
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=x[7:8], discrete.gamma.scalar=rates.k[k], k=k.levels)
+        }else{
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, discrete.gamma.scalar=rates.k[k], k=k.levels)
+        }
+        aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE)
+        Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        for(k in 1:21){
+            if(diploid == TRUE){
+                Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+            }else{
+                Q_codon_array[,,unique.aa[k]] = Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+            }
+            diag(Q_codon_array[,,unique.aa[k]]) = 0
+            diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
+        }
     }
     root.p_array <- NA
     if(is.null(root.codon.array)) {
@@ -214,9 +248,19 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
 
     #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
     sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
-    for(site in 1:nsites){
-        Q_codon = Q_codon_array[,,aa.optim_array[site]]
-        sim.codon.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
+    
+    if(include.gamma == TRUE){
+        for(site in 1:nsites){
+            site.rate <- sample(1:4,1)
+            Q_codon_array <- rate.Q_codon.list[[site.rate]]
+            Q_codon = Q_codon_array[,,aa.optim_array[site]]
+            sim.codon.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
+        }
+    }else{
+        for(site in 1:nsites){
+            Q_codon = Q_codon_array[,,aa.optim_array[site]]
+            sim.codon.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
+        }
     }
     codon.names <- rownames(Q_codon_array[,,aa.optim_array[site]])
     #Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
