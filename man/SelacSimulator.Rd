@@ -6,7 +6,7 @@
 \usage{
 SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
   root.codon.array = NULL, numcode = 1, aa.properties = NULL, nuc.model,
-  k.levels = 0, diploid = TRUE)
+  include.gamma = FALSE, ncats = 4, k.levels = 0, diploid = TRUE)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -24,6 +24,10 @@ SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
 \item{aa.properties}{User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.}
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
+
+\item{include.gamma}{A logical indicating whether or not to include a discrete gamma model.}
+
+\item{ncats}{The number of discrete categories.}
 
 \item{k.levels}{Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).}
 
