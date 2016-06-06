@@ -10,7 +10,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   ncats = 4, numcode = 1, diploid = TRUE, k.levels = 0,
   aa.properties = NULL, verbose = FALSE, parallel.type = "by.gene",
   n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals = 1e+06,
-  max.restarts = 3, fasta.rows.to.keep = NULL,
+  max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult")
 }
@@ -27,7 +27,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 
-\item{optimal.aa}{Indicates what type of optimal.aa should be used. There are three options: "none", "majrule", or "optimize".}
+\item{optimal.aa}{Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".}
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
 
@@ -54,6 +54,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{max.evals}{Supplies the max number of iterations tried during optimization.}
 
 \item{max.restarts}{Supplies the number of random restarts.}
+
+\item{user.optimal.aa}{If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 
