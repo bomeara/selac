@@ -189,6 +189,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model)
         }
     }
+    
     #Generate our codon matrix:
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))

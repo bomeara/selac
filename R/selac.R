@@ -2233,7 +2233,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
-#' @param optimal.aa Indicates what type of optimal.aa should be used. There are three options: "none", "majrule", or "optimize".
+#' @param optimal.aa Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
 #' @param ncats The number of discrete categories.
@@ -2247,6 +2247,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param max.evals Supplies the max number of iterations tried during optimization.
 #' @param max.restarts Supplies the number of random restarts.
+#' @param user.optimal.aa If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
@@ -2256,7 +2257,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
 #' SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model, if data.type="nucleotide", or the mutation-selection model of Yang and Nielsen (2008), if data.type="codon". In the latter case, we only allow the FMutSel0 implementation, which assumes 19 fitness parameters for 20-1 amino acids (the fitness parameter for Phenylalanine, or F, is set to zero).
 #'
 #' Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, parallel.type="by.gene", n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult") {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, parallel.type="by.gene", n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult") {
     
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -2264,8 +2265,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     if(!edge.length == "optimize" & !edge.length == "fixed"){
         stop("Check that you have a supported edge length option. Options are optimize or fixed.", call.=FALSE)
     }
-    if(!optimal.aa == "optimize" & !optimal.aa == "majrule" & !optimal.aa == "none"){
-        stop("Check that you have a supported optimal amino acid option. Options are optimize, majrule, or none", call.=FALSE)
+    if(!optimal.aa == "optimize" & !optimal.aa == "majrule" & !optimal.aa == "none" & !optimal.aa == "user"){
+        stop("Check that you have a supported optimal amino acid option. Options are optimize, majrule, none, or user", call.=FALSE)
     }
     if(!nuc.model == "JC" & !nuc.model == "GTR" & !nuc.model == "UNREST"){
         stop("Check that you have a supported nucleotide substitution model. Options are JC, GTR, or UNREST.", call.=FALSE)
@@ -2273,8 +2274,10 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     if(!parallel.type == "by.gene" & !parallel.type == "by.site"){
         stop("Check that you have a supported parallel type. Options are by.gene or by.site.", call.=FALSE)
     }
-    if(is.null(n.cores)){
-        stop("This optimization routine requires multiple cores are specified.", call.=FALSE)
+    if(!is.null(user.optimal.aa)){
+        if(is.list(user.optimal.aa) == FALSE){
+            stop("User-supplied optimal amino acids must be input as a list.", call.=FALSE)
+        }
     }
 
     cat("Initializing data and model parameters...", "\n")
@@ -2350,8 +2353,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             codon.data <- codon.data[phy$tip.label,]
             nsites.vector = c(nsites.vector, dim(codon.data)[2] - 1)
             aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=numcode)
-            aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
-            aa.optim.full.list[[partition.index]] <- aa.optim
+            if(optimal.aa == "user"){
+                aa.optim <-  user.optimal.aa[[partition.index]]
+                aa.optim.full.list[[partition.index]] <- aa.optim
+            }else{
+                aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+                aa.optim.full.list[[partition.index]] <- aa.optim
+            }
             empirical.codon.freq.list[[partition.index]] <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=numcode)
             aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
             colnames(aa.optim.frame.to.add) <- colnames(codon.data)
@@ -2362,7 +2370,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             aa.optim.list[[partition.index]] = codon.data$optimal.aa
         }
     }
-    
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     results.final <- c()
     if(nuc.model == "JC"){
@@ -2609,7 +2616,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             class(obj) = "selac"
         }
     }
-    if(optimal.aa=="majrule" | optimal.aa=="optimize") {
+    if(optimal.aa=="majrule" | optimal.aa=="optimize" | optimal.aa=="user") {
         codon.index.matrix = CreateCodonMutationMatrixIndex()
         cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
         if(max.restarts > 1){
@@ -2787,7 +2794,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             while(number.of.current.restarts < (max.restarts+1)){
                 cat(paste("Finished. Performing random restart ", number.of.current.restarts,"...", sep=""), "\n")
                 aa.optim.list <- aa.optim.original
-                cat("       Doing first pass using majority rule optimal amino acid...", "\n")
+                cat("       Doing first pass using majority-rule optimal amino acids...", "\n")
                 if(edge.length == "optimize"){
                     cat("              Optimizing edge lengths", "\n")
                     phy$edge.length <- colMeans(starting.branch.lengths)
@@ -2889,7 +2896,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             aa.optim.original <- aa.optim.list
 			best.lik <- 1000000
             while(number.of.current.restarts < (max.restarts+1)){
-                cat("Finished. Doing first pass using majority rule optimal amino acid...", "\n")
+                if(optimal.aa == "user"){
+                    cat(paste("Finished. Performing random restart ", number.of.current.restarts," using user-supplied optimal amino acids...", sep=""), "\n")
+                }else{
+                    cat(paste("Finished. Performing random restart ", number.of.current.restarts," using majority-rule optimal amino acids...", sep=""), "\n")
+                }
                 if(edge.length == "optimize"){
                     cat("       Optimizing edge lengths", "\n")
                     phy$edge.length <- colMeans(starting.branch.lengths)
@@ -2979,13 +2990,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @description
 #' Efficient optimization of model parameters under the SELAC model
 #'
-#' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data.
+#' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
-#' @param optimal.aa Indicates what type of optimal.aa should be used. There are three options: "none", "majrule", or "optimize".
+#' @param optimal.aa Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
 #' @param ncats The number of discrete categories.
@@ -2998,6 +3009,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param max.evals Supplies the max number of iterations tried during optimization.
 #' @param max.restarts Supplies the number of random restarts.
+#' @param user.optimal.aa If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
@@ -3005,7 +3017,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #'
 #' @details
 #' This is the exact same implementation as in SelacOptimize(), except here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, constant across genes. We then optimize alpha, beta, and the edge lengths while keeping parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult") {
+SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult") {
     
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -3013,8 +3025,8 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
     if(!edge.length == "optimize" & !edge.length == "fixed"){
         stop("Check that you have a supported edge length option. Options are optimize or fixed.", call.=FALSE)
     }
-    if(!optimal.aa == "optimize" & !optimal.aa == "majrule" & !optimal.aa == "none"){
-        stop("Check that you have a supported optimal amino acid option. Options are optimize, majrule, or none", call.=FALSE)
+    if(!optimal.aa == "optimize" & !optimal.aa == "majrule" & !optimal.aa == "none" & !optimal.aa == "user"){
+        stop("Check that you have a supported optimal amino acid option. Options are optimize, majrule, none, or user", call.=FALSE)
     }
     if(!nuc.model == "JC" & !nuc.model == "GTR" & !nuc.model == "UNREST"){
         stop("Check that you have a supported nucleotide substitution model. Options are JC, GTR, or UNREST.", call.=FALSE)
@@ -3022,6 +3034,12 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
     if(is.null(n.cores)){
         stop("This optimization routine requires that multiple cores are specified.", call.=FALSE)
     }
+    if(!is.null(user.optimal.aa)){
+        if(is.list(user.optimal.aa) == FALSE){
+            stop("User-supplied optimal amino acids must be input as a list.", call.=FALSE)
+        }
+    }
+    
     parallel.type="by.gene"
     
     cat("Initializing data and model parameters...", "\n")
@@ -3097,8 +3115,13 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
             codon.data <- codon.data[phy$tip.label,]
             nsites.vector = c(nsites.vector, dim(codon.data)[2] - 1)
             aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=numcode)
-            aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
-            aa.optim.full.list[[partition.index]] <- aa.optim
+            if(optimal.aa == "user"){
+                aa.optim <- user.optimal.aa[[partition.index]]
+                aa.optim.full.list[[partition.index]] <- aa.optim
+            }else{
+                aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+                aa.optim.full.list[[partition.index]] <- aa.optim
+            }
             empirical.codon.freq.list[[partition.index]] <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=numcode)
             aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
             colnames(aa.optim.frame.to.add) <- colnames(codon.data)
@@ -3393,7 +3416,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
             class(obj) = "selac"
         }
     }
-    if(optimal.aa=="majrule" | optimal.aa=="optimize") {
+    if(optimal.aa=="majrule" | optimal.aa=="optimize" | optimal.aa=="user") {
         codon.index.matrix = CreateCodonMutationMatrixIndex()
         cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
         if(max.restarts > 1){
@@ -3585,7 +3608,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
             while(number.of.current.restarts < (max.restarts+1)){
                 cat(paste("Finished. Performing random restart ", number.of.current.restarts,"...", sep=""), "\n")
                 aa.optim.list <- aa.optim.original
-                cat("       Doing first pass using majority rule optimal amino acid...", "\n")
+                cat("       Doing first pass using majority-rule optimal amino acid...", "\n")
                 mle.pars.mat <- index.matrix
                 mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                 if(edge.length == "optimize"){
@@ -3743,7 +3766,11 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
             number.of.current.restarts <- 1
             best.lik <- 1000000
             while(number.of.current.restarts < (max.restarts+1)){
-                cat(paste("Finished. Performing random restart ", number.of.current.restarts," using majority rule as optimal amino acid...", sep=""), "\n")
+                if(optimal.aa == "user"){
+                    cat(paste("Finished. Performing random restart ", number.of.current.restarts," using user-supplied optimal amino acids...", sep=""), "\n")
+                }else{
+                    cat(paste("Finished. Performing random restart ", number.of.current.restarts," using majority-rule optimal amino acids...", sep=""), "\n")
+                }
                 mle.pars.mat <- index.matrix
                 mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                 cat("       Doing first pass...", "\n")
@@ -3895,6 +3922,21 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
 ### Utility function getting raw likelihoods not just across genes, but across sites. Also allows for different optimal AA to try
 ######################################################################################################################################
 ######################################################################################################################################
+
+#' @title Get data partiion order
+#'
+#' @description
+#'  Provides the order of the partitions after the data is read into SELAC.
+#'
+#' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.
+#'
+#' @details
+#' Provides the order of the partitions when the data is read into SELAC. This function is mainly useful for when users want to supply their own optimal amino acid list into SELAC.
+GetPartitionOrder <- function(codon.data.path){
+    partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
+    return(partitions)
+}
+
 
 #' @title Calculates site likelihoods under SELAC
 #'
