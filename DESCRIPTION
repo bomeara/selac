@@ -11,12 +11,12 @@ Suggests:
     igraph
 Depends:
     ape,
-    seqinr,
     nloptr,
     nnet
 Imports:
     expm,
     parallel,
-    phangorn
+    phangorn,
+    seqinr
 License: GPL
 RoxygenNote: 5.0.1
