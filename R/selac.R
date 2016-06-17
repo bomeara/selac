@@ -2424,7 +2424,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     mle.pars.mat <- index.matrix
                     mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -2544,7 +2544,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     mle.pars.mat <- index.matrix
                     mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -2800,7 +2800,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     mle.pars.mat <- index.matrix
                     mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -2906,7 +2906,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     mle.pars.mat <- index.matrix
                     mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -3187,7 +3187,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     cat("       Optimizing edge lengths", "\n")
                     phy$edge.length <- colMeans(starting.branch.lengths)
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -3326,7 +3326,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     cat("       Optimizing edge lengths", "\n")
                     phy$edge.length <- colMeans(starting.branch.lengths)
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -3614,7 +3614,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     cat("              Optimizing edge lengths", "\n")
                     phy$edge.length <- colMeans(starting.branch.lengths)
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -3788,7 +3788,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     cat("              Optimizing edge lengths", "\n")
                     phy$edge.length <- colMeans(starting.branch.lengths)
                     opts.edge <- opts
-                    upper.edge <- rep(log(5), length(phy$edge.length))
+                    upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
