@@ -903,7 +903,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     }
     if(parallel.type == "by.site"){
         MultiCoreLikelihoodBySite <- function(nsite.index){
-            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[nsites]]], root.p=root.p_array[aa.optim_array[nsites],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[nsite.index]]], root.p=root.p_array[aa.optim_array[nsite.index],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
             return(tmp)
         }
         final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
@@ -930,8 +930,8 @@ GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, r
         }
     }
     if(parallel.type == "by.site"){
-        MultiCoreLikelihoodBySite <- function(nsites){
-            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsites, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+        MultiCoreLikelihoodBySite <- function(nsite.index){
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
             return(tmp)
         }
         final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
@@ -963,8 +963,8 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
         }
     }
     if(parallel.type == "by.site"){
-        MultiCoreLikelihoodBySite <- function(nsites){
-            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsites, codon.data=nuc.data$unique.site.patterns, phy=phy, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+        MultiCoreLikelihoodBySite <- function(nsite.index){
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=nuc.data$unique.site.patterns, phy=phy, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
             return(tmp)
         }
         final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
