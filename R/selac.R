@@ -1677,7 +1677,6 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
     if(logspace) {
         x <- exp(x)
     }
-    print(x)
     if(class(index.matrix)=="numeric"){
         index.matrix <- matrix(index.matrix, 1, length(index.matrix))
     }
@@ -3668,7 +3667,19 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
                     cat("              Optimizing amino acids", "\n")
                     aa.optim.list <- as.list(numeric(n.partitions))
-                    aa.optim.full.list <- as.list(numeric(n.partitions))
+                    ParallelizedOptimizeAAByGene <- function(n.partition){
+                        gene.tmp <- read.dna(partitions[n.partition], format='fasta')
+                        if(!is.null(fasta.rows.to.keep)){
+                            gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
+                        }else{
+                            gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+                        }
+                        codon.data <- DNAbinToCodonNumeric(gene.tmp)
+                        codon.data <- codon.data[phy$tip.label,]
+                        tmp.aa.optim.full <- GetOptimalAAPerSite(x=log(mle.pars.mat[n.partition,]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim.list[[n.partition]], root.p_array=empirical.codon.freq.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, neglnl=TRUE)
+                        return(tmp.aa.optim.full)
+                    }
+                    aa.optim.full.list <- mclapply(1:n.partitions, ParallelizedOptimizeAAByGene, mc.cores=n.cores)
                     for(partition.index in sequence(n.partitions)) {
                         gene.tmp <- read.dna(partitions[partition.index], format='fasta')
                         if(!is.null(fasta.rows.to.keep)){
@@ -3678,7 +3689,6 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                         }
                         codon.data <- DNAbinToCodonNumeric(gene.tmp)
                         codon.data <- codon.data[phy$tip.label,]
-                        aa.optim.full.list[[partition.index]] = GetOptimalAAPerSite(x=log(mle.pars.mat[partition.index,]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim.list[[partition.index]], root.p_array=empirical.codon.freq.list[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, neglnl=TRUE)
                         empirical.codon.freq.list[[partition.index]] <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim.full.list[[partition.index]], numcode=numcode)
                         aa.optim.frame.to.add <- matrix(c("optimal", aa.optim.full.list[[partition.index]]), 1, dim(codon.data)[2])
                         colnames(aa.optim.frame.to.add) <- colnames(codon.data)
@@ -3717,7 +3727,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     
                     if(include.gamma == TRUE){
                         optim.alpha.beta.all.genes <- nloptr(x0=log(alpha.beta), eval_f = OptimizeAlphaBetaOnly, ub=c(21,21,21), lb=c(-21,-21,-21), opts=opts, par.mat=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
-                        current.likelihood <- optim.alpha.beta.all.genes$objective
+                        results.final$objective <- optim.alpha.beta.all.genes$objective
                         alpha.beta <- exp(optim.alpha.beta.all.genes$solution)
                         mle.pars.mat <- cbind(mle.pars.mat.red[,1], alpha.beta[1], alpha.beta[2], mle.pars.mat.red[,2:dim(mle.pars.mat.red)[2]], alpha.beta[3])
                         print(results.final$objective)
@@ -3859,7 +3869,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     
                     if(include.gamma == TRUE){
                         optim.alpha.beta.all.genes <- nloptr(x0=log(alpha.beta), eval_f = OptimizeAlphaBetaOnly, ub=c(21,21,21), lb=c(-21,-21,-21), opts=opts, par.mat=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
-                        current.likelihood <- optim.alpha.beta.all.genes$objective
+                        results.final$objective <- optim.alpha.beta.all.genes$objective
                         alpha.beta <- exp(optim.alpha.beta.all.genes$solution)
                         mle.pars.mat <- cbind(mle.pars.mat.red[,1], alpha.beta[1], alpha.beta[2], mle.pars.mat.red[,2:dim(mle.pars.mat.red)[2]], alpha.beta[3])
                         print(results.final$objective)
