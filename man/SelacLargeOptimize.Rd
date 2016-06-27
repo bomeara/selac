@@ -62,6 +62,8 @@ SelacLargeOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{output.by.restart}{Logical indicating whether or not each restart is saved to a file. Default is TRUE.}
 
 \item{output.restart.filename}{Designates the file name for each random restart.}
+
+\item{tol.step}{If > 1, makes for coarser tolerance at earlier iterations of the optimizer}
 }
 \description{
 Efficient optimization of model parameters under the SELAC model

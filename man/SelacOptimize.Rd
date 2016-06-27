@@ -12,7 +12,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   n.cores = NULL, max.tol = .Machine$double.eps^0.5, max.evals = 1e+06,
   max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
-  output.restart.filename = "restartResult")
+  output.restart.filename = "restartResult", tol.step = 1)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
@@ -64,6 +64,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{output.by.restart}{Logical indicating whether or not each restart is saved to a file. Default is TRUE.}
 
 \item{output.restart.filename}{Designates the file name for each random restart.}
+
+\item{tol.step}{If > 1, makes for coarser tolerance at earlier iterations of the optimizer}
 }
 \description{
 Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
