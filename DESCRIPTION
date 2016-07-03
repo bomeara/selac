@@ -1,8 +1,8 @@
 Package: selac
 Type: Package
 Title: Selection Models for Amino Acid and/or Codon Evolution
-Version: 1.5
-Date: 2016-6-17
+Version: 1.5.1
+Date: 2016-7-02
 Author: Jeremy M. Beaulieu, JJ Chai, Brian O'Meara
 Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
 Description: Implements models for amino acid or codon evolution with selection.
@@ -19,4 +19,5 @@ Imports:
     phangorn,
     seqinr
 License: GPL
+ByteCompile: TRUE
 RoxygenNote: 5.0.1
