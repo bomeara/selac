@@ -5,8 +5,9 @@
 \title{Adaptive sampling of support region}
 \usage{
 SupportRegion(selac.obj, n.points = 10000, scale.int = 0.1,
-  desired.delta = 2, parallel.type = "by.gene", n.cores = NULL,
-  verbose = TRUE, fasta.rows.to.keep = NULL)
+  desired.delta = 2, edge.length = "optimize", edge.linked = TRUE,
+  parallel.type = "by.gene", n.cores = NULL, verbose = TRUE,
+  fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{selac.obj}{An object of class "selac" that contains the MLE from a given model run.}
@@ -16,6 +17,10 @@ SupportRegion(selac.obj, n.points = 10000, scale.int = 0.1,
 \item{scale.int}{The scaling multiplier that defines the interval to randomly sample. By default it is set to 0.1, meaning that values are drawn at random along an interval that encompasses 10 percent above and below the MLE.}
 
 \item{desired.delta}{Defines the number of lnL units away from the MLE to include. By default the value is set to 2.}
+
+\item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.}
+
+\item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 
 \item{parallel.type}{Designates whether a parallel run should occur by gene ("by.gene") or by site ("by.site").}
 

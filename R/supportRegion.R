@@ -4,7 +4,6 @@
 ### Adaptive Bootstrap -- Simulating confidence intervals for parameters estimated in selac
 ######################################################################################################################################
 ######################################################################################################################################
-#source("selac.R")
 
 #' @title Adaptive sampling of support region
 #'
@@ -15,6 +14,8 @@
 #' @param n.points Indicates the number of points to sample.
 #' @param scale.int The scaling multiplier that defines the interval to randomly sample. By default it is set to 0.1, meaning that values are drawn at random along an interval that encompasses 10 percent above and below the MLE.
 #' @param desired.delta Defines the number of lnL units away from the MLE to include. By default the value is set to 2.
+#' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
+#' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param parallel.type Designates whether a parallel run should occur by gene ("by.gene") or by site ("by.site").
 #' @param n.cores The number of cores to run analyses over.
 #' @param verbose A logical indicating whether progress should be printed to the screen. The default is TRUE.
@@ -22,7 +23,7 @@
 #'
 #' @details
 #' This function provides a means for sampling the likelihood surface quickly to estimate confidence intervals that reflect the uncertainty in the MLE. The function starts with the MLE from the hisse run. It then uses a scaling multiplier to generate an interval by which to randomly alter each parameter. However, the algorithm was designed to \dQuote{feel} the boundaries of the random search. In other words, when the algorithm begins to sample the hinterlands of the surface, it will know to restrict the boundary to allow sampling of more reasonable values based on the currently sampled set. The goal of this sampling process is to find points within some desired distance from the MLE; by default we assume this distance is 2 lnLik. The confidence interval can be estimated directly from these points. The full set of points tried are also provided and can be used to generate contour plots (though, it is not entirely straightforward to do so -- but certainly doable).
-SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delta=2, parallel.type="by.gene", n.cores=NULL, verbose=TRUE, fasta.rows.to.keep=NULL) {
+SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delta=2, edge.length="optimize", edge.linked=TRUE, parallel.type="by.gene", n.cores=NULL, verbose=TRUE, fasta.rows.to.keep=NULL) {
 	
     phy <- selac.obj$phy
     partitions <- selac.obj$partitions
@@ -39,33 +40,49 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
     Ne.name <- "Ne"
     alpha.name <- "alpha"
     beta.name <- "beta"
-    edge.length.names <- rep("edge.length", length(phy$edge.length))
     par.names <- c()
     
     for(partition.index in 1:n.partitions){
         if(selac.obj$nuc.model == "JC"){
-            c.phi.q.name <- paste("C.phi.q", partition.index, sep="_")
+            c.phi.q.name <- paste("C.phi.q.Ne", partition.index, sep="_")
             base.freqs.names <- paste(c("freqA", "freqC", "freqG"), partition.index, sep="_")
-            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, Ne.name, base.freqs.names, edge.length.names)
-            par.names <- c(par.names, tmp.names[which(pars.index[partition.index,]>=pars.index[partition.index,1])])
+            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, base.freqs.names, edge.length.names)
+            if(selac.obj$include.gamma == TRUE){
+                tmp.names <- c(c.phi.q.ne.name, alpha.name, beta.name, base.freqs.names, rate.names, "shape.gamma")
+            }else{
+                tmp.names <- c(c.phi.q.ne.name, alpha.name, beta.name, base.freqs.names, rate.names)
+            }
             pars <- c(pars, pars.mat[partition.index,which(pars.index[partition.index,]>=pars.index[partition.index,1])])
         }
         if(selac.obj$nuc.model == "GTR"){
-            c.phi.q.name <- paste("C.phi.q", partition.index, sep="_")
+            c.phi.q.ne.name <- paste("C.phi.q.Ne", partition.index, sep="_")
             base.freqs.names <- paste(c("freqA", "freqC", "freqG"), partition.index, sep="_")
             rate.names <- paste(c("C_A", "G_A", "T_A", "G_C", "T_C"), partition.index, sep="_")
-            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, Ne.name, base.freqs.names, rate.names, edge.length.names)
+            if(selac.obj$include.gamma == TRUE){
+                tmp.names <- c(c.phi.q.ne.name, alpha.name, beta.name, base.freqs.names, rate.names, "shape.gamma")
+            }else{
+                tmp.names <- c(c.phi.q.ne.name, alpha.name, beta.name, base.freqs.names, rate.names)
+            }
             par.names <- c(par.names, tmp.names[which(pars.index[partition.index,]>=pars.index[partition.index,1])])
             pars <- c(pars, pars.mat[partition.index,which(pars.index[partition.index,]>=pars.index[partition.index,1])])
         }
         if(selac.obj$nuc.model == "UNREST"){
-            c.phi.q.name <- paste("C.phi.q", partition.index, sep="_")
+            c.phi.q.name <- paste("C.phi.q.Ne", partition.index, sep="_")
             base.freqs.names <- paste(c("freqA", "freqC", "freqG"), partition.index, sep="_")
             rate.names <- paste(c("C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T"), partition.index, sep="_")
-            tmp.names <- c(c.phi.q.name, alpha.name, beta.name, Ne.name, base.freqs.names, rate.names, edge.length.names)
+            if(selac.obj$include.gamma == TRUE){
+                tmp.names <- c(c.phi.q.ne.name, alpha.name, beta.name, base.freqs.names, rate.names, "shape.gamma")
+            }else{
+                tmp.names <- c(c.phi.q.ne.name, alpha.name, beta.name, base.freqs.names, rate.names)
+            }
             par.names <- c(par.names, tmp.names[which(pars.index[partition.index,]>=pars.index[partition.index,1])])
             pars <- c(pars, pars.mat[partition.index,which(pars.index[partition.index,]>=pars.index[partition.index,1])])
         }
+    }
+    
+    if(edge.length == "optimize"){
+        edge.length.names <- rep("edge.length", length(phy$edge.length))
+        par.names <- c(edge.length.names, par.names)
     }
  
     site.pattern.data.list <- as.list(numeric(n.partitions))
@@ -117,10 +134,10 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
         }
     }
     codon.index.matrix = CreateCodonMutationMatrixIndex()
-	lower <- rep(exp(-21), length(pars))
-	upper <- rep(exp(21), length(pars))
+	lower <- rep(exp(-22), length(pars))
+	upper <- rep(exp(22), length(pars))
     
-    interval.results <- AdaptiveConfidenceIntervalSampling(x=pars, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=pars.index, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=selac.obj$numcode, diploid=selac.obj$diploid, aa.properties=selac.obj$aa.properties, volume.fixed.value=0.0003990333, nuc.model=selac.obj$nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=selac.obj$include.gamma, ncats=selac.obj$ncats, k.levels=selac.obj$k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE, lower=lower, upper=upper, desired.delta=desired.delta, n.points=n.points, scale.int=scale.int)
+    interval.results <- AdaptiveConfidenceIntervalSampling(x=pars, edge.length=edge.length, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=pars.index, phy=phy, aa.optim_array=aa.optim.list, root.p_array=empirical.codon.freq.list, numcode=selac.obj$numcode, diploid=selac.obj$diploid, aa.properties=selac.obj$aa.properties, volume.fixed.value=0.0003990333, nuc.model=selac.obj$nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=selac.obj$include.gamma, ncats=selac.obj$ncats, k.levels=selac.obj$k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE, lower.pars=lower, upper.pars=upper, desired.delta=desired.delta, n.points=n.points, scale.int=scale.int)
 	
     par.names <- c("lnLik", par.names)
     interval.results.in <- interval.results[which(interval.results[,1] - min(interval.results[,1])<=2),]
@@ -137,29 +154,55 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
 }
 
 
-AdaptiveConfidenceIntervalSampling <- function(x, codon.site.data, codon.site.counts, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array, root.p_array, numcode, diploid, aa.properties, volume.fixed.value, nuc.model, codon.index.matrix, include.gamma, ncats, k.levels, logspace, verbose, parallel.type, n.cores, neglnl, lower, upper, desired.delta, n.points, scale.int) {
+AdaptiveConfidenceIntervalSampling <- function(x, edge.length, codon.site.data, codon.site.counts, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array, root.p_array, numcode, diploid, aa.properties, volume.fixed.value, nuc.model, codon.index.matrix, include.gamma, ncats, k.levels, logspace, verbose, parallel.type, n.cores, neglnl, lower.pars, upper.pars, desired.delta, n.points, scale.int) {
 	
 	phy$node.label <- NULL
 	
+    model.par.length <- length(x)
+    edge.length.length <- length(phy$edge.length)
+    mle.pars.mat <- index.matrix
+    mle.pars.mat[] <- c(x, 0)[index.matrix]
     #Now assess the likelihood at the MLE:
-	starting <- OptimizeEdgeLengths(x=log(x), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
-    
+	starting <- OptimizeEdgeLengths(x=log(phy$edge.length), par.mat=mle.pars.mat, codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
     #Generate the multipliers for feeling the boundaries:
-	min.multipliers <- rep(1, length(x))
-	max.multipliers <- rep(1, length(x))
-	
-    results <- data.frame(data.frame(matrix(nrow=n.points+1, ncol=1+length(x))))
-	results[1,] <- unname(c(starting, x))
-	
+    if(edge.length == "optimize"){
+        upper.edge <- rep(11, length(phy$edge.length))
+        lower.edge <- rep(1e-9, length(phy$edge.length))
+        upper <- c(upper.edge, upper.pars)
+        lower <- c(lower.edge, lower.pars)
+        pars.to.vary <- c(phy$edge.length, x)
+        min.multipliers <- rep(1, model.par.length + edge.length.length)
+        max.multipliers <- rep(1, model.par.length + edge.length.length)
+        results <- data.frame(data.frame(matrix(nrow=n.points+1, ncol=1+model.par.length + edge.length.length)))
+        results[1,] <- unname(c(starting, pars.to.vary))
+    }else{
+        upper <- upper.pars
+        lower <- lower.pars
+        pars.to.vary <- x
+        min.multipliers <- rep(1, model.par.length)
+        max.multipliers <- rep(1, model.par.length)
+        results <- data.frame(data.frame(matrix(nrow=n.points+1, ncol=1+length(model.par.length))))
+        results[1,] <- unname(c(starting, x))
+    }
     for (i in sequence(n.points)) {
         sum.vals <- NA
 		while(is.na(sum.vals)) {
-			sim.points <- GenerateValues(par=x, lower=lower, upper=upper, scale.int=scale.int, examined.max=max.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, max, na.rm=TRUE), examined.min=min.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, min, na.rm=TRUE))
+			sim.points <- GenerateValues(par=pars.to.vary, lower=lower, upper=upper, scale.int=scale.int, examined.max=max.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, max, na.rm=TRUE), examined.min=min.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, min, na.rm=TRUE))
             sum.vals <- sum(sim.points)
         }
-        second <- OptimizeEdgeLengths(x = log(sim.points), codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
+        pars.to.vary <- sim.points
+        if(edge.length == "optimize"){
+            phy$edge.length <- pars.to.vary[1:edge.length.length]
+            model.pars <- pars.to.vary[(edge.length.length+1):length(pars.to.vary)]
+            mle.pars.mat <- index.matrix
+            mle.pars.mat[] <- c(model.pars, 0)[index.matrix]
+        }else{
+            mle.pars.mat <- index.matrix
+            mle.pars.mat[] <- c(pars.to.vary, 0)[index.matrix]
+        }
+
+        second <- OptimizeEdgeLengths(x=log(phy$edge.length), par.mat=mle.pars.mat, codon.site.data=codon.site.data, codon.site.counts=codon.site.counts, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim_array, root.p_array=root.p_array, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=neglnl)
         results[i+1,] <- c(second, sim.points)
-		
         if(i%%20==0) {
 			for (j in sequence(length(par))) {
 				returned.range <- range(results[which((results[,1]-min(results[,1], na.rm=TRUE))<desired.delta), j+1], na.rm=TRUE)

@@ -6,7 +6,8 @@
 \usage{
 SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
   root.codon.array = NULL, numcode = 1, aa.properties = NULL, nuc.model,
-  include.gamma = FALSE, ncats = 4, k.levels = 0, diploid = TRUE)
+  include.gamma = FALSE, ncats = 4, k.levels = 0, diploid = TRUE,
+  site.cats.vector = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -32,6 +33,8 @@ SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
 \item{k.levels}{Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).}
 
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
+
+\item{site.cats.vector}{A vector designating the rate category for phi when include.gamma=TRUE.}
 }
 \description{
 Simulates nucleotide data based on parameters under the SELAC model

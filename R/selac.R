@@ -973,7 +973,7 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
 }
 
 
-GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, parallel.type="by.gene", n.cores=NULL, pp) {
+GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, parallel.type="by.gene", n.cores=NULL) {
     if(logspace) {
         x = exp(x)
     }
@@ -1109,13 +1109,16 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
             }
         }
         for(i in 1:n.codons){
-            codon.freq[i] <- base.freqs[unname(codon.sets[i,1])+1]* base.freqs[unname(codon.sets[i,2])+1] * base.freqs[unname(codon.sets[i,3])+1]*exp(fitness.pars.ordered[i])
+            #In the canonical model stop codons are ignored. We do the same here.
+            if(i == 49 | i == 51 | i == 57){
+                codon.freq[i] = 0
+            }else{
+                codon.freq[i] <- base.freqs[unname(codon.sets[i,1])+1]* base.freqs[unname(codon.sets[i,2])+1] * base.freqs[unname(codon.sets[i,3])+1]*exp(fitness.pars.ordered[i])
+            }
         }
         codon.freq <- codon.freq/sum(codon.freq)
     }
-    
     Q_codon = CreateCodonMutationMatrixMutSel(x, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
-    
     final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
     
@@ -1677,6 +1680,8 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
     if(logspace) {
         x <- exp(x)
     }
+    print(x)
+    save(x, phy, file="modelpars.Rsave")
     if(class(index.matrix)=="numeric"){
         index.matrix <- matrix(index.matrix, 1, length(index.matrix))
     }
@@ -3359,11 +3364,13 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                 mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                 if(edge.length == "optimize"){
                     cat("       Optimizing edge lengths", "\n")
-                    phy$edge.length <- colMeans(starting.branch.lengths)
+                    #phy$edge.length <- colMeans(starting.branch.lengths)
+                    phy$edge.length <- c(10.0000000, 10.0000000,  0.1573621,  0.1459208,  0.1236058,  0.1416955, 0.2301945,  0.3136916,  0.3296881,  0.3150126, 10.0000000, 10.0000000)
                     opts.edge <- opts
                     upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
-                    results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
+                    opts.poo <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = 1, "ftol_rel" = max.tol)
+                    results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.poo, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
                     print(exp(results.edge.final$solution))
                     phy$edge.length <- exp(results.edge.final$solution)
@@ -4003,10 +4010,11 @@ GetPartitionOrder <- function(codon.data.path){
 #' @param selac.obj An object of class SELAC.
 #' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data.
 #' @param aa.optim.input A list of optimal amino acids with each list element designating a character vector for each gene. The optimal amino acids be the MLE from a selac run (default) or a list of user defined optimal A.A.
+#' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #'
 #' @details
 #' The purpose of this function is to provide the site likelihoods across genes. It is also flexible in that it allows different hypotheses about optimal acids across genes and/or site. The output is a list object, with each list entry designating 1) the tot.likelihood for that gene, and 2) the site likelihoods for that gene.
-GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=NULL) {
+GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL) {
     
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     phy <- selac.obj$phy
@@ -4026,7 +4034,11 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     for(partition.index in 1:length(partitions)){
         x <- c(selac.obj$mle.pars[partition.index,])
         gene.tmp <- read.dna(partitions[partition.index], format='fasta')
-        gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+        if(!is.null(fasta.rows.to.keep)){
+            gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
+        }else{
+            gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+        }
         codon.data.tmp <- DNAbinToCodonNumeric(gene.tmp)
         codon.data.tmp <- codon.data.tmp[phy$tip.label,]
         codon.data = NULL
@@ -4115,6 +4127,124 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     return(obj.final)
 }
 
+
+#' @title Best phi rate category under SELAC+gamma
+#'
+#' @description
+#' Determines the best phi rate category across sites and across genes under SELAC+gamma
+#'
+#' @param selac.obj An object of class SELAC.
+#' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data.
+#' @param aa.optim.input A list of optimal amino acids with each list element designating a character vector for each gene. The optimal amino acids be the MLE from a selac run (default) or a list of user defined optimal A.A.
+#' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#'
+#' @details
+#' The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
+GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL) {
+    
+    codon.index.matrix = CreateCodonMutationMatrixIndex()
+    phy <- selac.obj$phy
+    partitions <- selac.obj$partitions
+    include.gamma <- selac.obj$include.gamma
+    aa.properties <- selac.obj$aa.properties
+    diploid <- selac.obj$diploid
+    ncats <- selac.obj$ncats
+    numcode <- selac.obj$numcode
+    gamma <- selac.obj$volume.fixed.value
+    nuc.model <- selac.obj$nuc.model
+    k.levels <- selac.obj$k.levels
+    parallel.type <- "by.gene"
+    n.cores <- NULL
+    obj.final <- as.list(1:length(partitions))
+    
+    for(partition.index in 1:length(partitions)){
+        x <- c(selac.obj$mle.pars[partition.index,])
+        gene.tmp <- read.dna(partitions[partition.index], format='fasta')
+        if(!is.null(fasta.rows.to.keep)){
+            gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
+        }else{
+            gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+        }
+        codon.data.tmp <- DNAbinToCodonNumeric(gene.tmp)
+        codon.data.tmp <- codon.data.tmp[phy$tip.label,]
+        codon.data = NULL
+        codon.data$unique.site.patterns = codon.data.tmp
+        nsites <- dim(codon.data$unique.site.patterns)[2]-1
+        codon.data$site.pattern.counts = rep(1, nsites)
+        
+        root.p_array <- selac.obj$empirical.codon.freqs[[partition.index]]
+        
+        if(is.null(aa.optim.input)){
+            aa.optim_array <- selac.obj$aa.optim[[partition.index]]
+        }
+        
+        if(include.gamma == TRUE){
+            shape = x[length(x)]
+            x = x[-length(x)]
+        }
+        
+        C.Phi.q.Ne <- x[1]
+        C <- 4
+        q <- 4e-7
+        Ne <- 5e6
+        Phi.q.Ne <- C.Phi.q.Ne / C
+        Phi.Ne <- Phi.q.Ne / q
+        Phi <- Phi.Ne / Ne
+        alpha <- x[2]
+        beta <- x[3]
+        
+        if(k.levels > 0){
+            if(nuc.model == "JC") {
+                base.freqs=c(x[4:6], 1-sum(x[4:6]))
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "GTR") {
+                base.freqs=c(x[4:6], 1-sum(x[4:6]))
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(x)], model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "UNREST") {
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(x)], model=nuc.model)
+            }
+        }else{
+            if(nuc.model == "JC") {
+                base.freqs=c(x[4:6], 1-sum(x[4:6]))
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "GTR") {
+                base.freqs=c(x[4:6], 1-sum(x[4:6]))
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "UNREST") {
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model)
+            }
+        }
+        
+        codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
+        codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
+        
+        rates.k <- DiscreteGamma(shape, ncats)
+        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+        for(k in sequence(ncats)){
+            if(k.levels > 0){
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=x[7:8], k=k.levels)
+            }else{
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+            }
+            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            final.likelihood.mat[k,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, root.p_array=root.p_array, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+        }
+        optimal.ratecat.by.site <- rep(NA, nsites)
+        print(final.likelihood.mat)
+        for(site.index in 1:nsites){
+            optimal.ratecat.by.site[site.index] <- which.is.max(final.likelihood.mat[,site.index])
+        }
+        print(optimal.ratecat.by.site)
+        obj.gene <- NULL
+        obj.gene$optimal.phi.cat <- optimal.ratecat.by.site
+        obj.final[[partition.index]] <- obj.gene
+    }
+    return(obj.final)
+}
 
 
 ######################################################################################################################################

@@ -143,10 +143,11 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param ncats The number of discrete categories.
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
+#' @param site.cats.vector A vector designating the rate category for phi when include.gamma=TRUE.
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE){
+SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
     nsites <- length(aa.optim_array)
     #Start organizing the user input parameters:
     C.q.phi.ne <- pars[1]
@@ -161,7 +162,8 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
 
     if(include.gamma == TRUE){
-        shape = pars[length(pars)]
+        shape <- pars[length(pars)]
+        pars <- pars[-length(pars)]
     }
 
     if(k.levels > 0){
@@ -227,7 +229,6 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
         }else{
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
         }
-        aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE)
         Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
         for(k in 1:21){
             if(diploid == TRUE){
@@ -256,10 +257,15 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
     
     if(include.gamma == TRUE){
         for(site in 1:nsites){
-            site.rate <- sample(1:4,1)
+            if(is.null(site.cats.vector)){
+                print("here")
+                site.rate <- sample(1:4,1)
+            }else{
+                site.rate <- site.cats.vector[site]
+            }
             Q_codon_array <- rate.Q_codon.list[[site.rate]]
-            Q_codon = Q_codon_array[,,aa.optim_array[site]]
-            sim.codon.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
+            Q_codon <- Q_codon_array[,,aa.optim_array[site]]
+            sim.codon.data[,site] <- SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
         }
     }else{
         for(site in 1:nsites){
