@@ -387,7 +387,7 @@ CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode)
     aa.distances <- rbind(aa.distances, "*"=0, deparse.level=2)
     aa.distances <- cbind(aa.distances, "*"=0, deparse.level=2)
     aa.translation <- sapply(codon.name, TranslateCodon, numcode=numcode)
-    
+    print(codon.freqs)
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
             if(aa.translation[i] == aa.translation[j]){ #synonymous -- set distance to zero.
@@ -395,9 +395,9 @@ CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode)
                     mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
                     matched.position <- which(codon.sets[i,] == codon.sets[j,])
                     if(codon.sets[i, mismatch.position] == 0 & codon.sets[j,mismatch.position] == 2 | codon.sets[i, mismatch.position] == 2 & codon.sets[j,mismatch.position] == 0 | codon.sets[i, mismatch.position] == 1 & codon.sets[j,mismatch.position] == 3 | codon.sets[i, mismatch.position] == 3 & codon.sets[j,mismatch.position] == 1){
-                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[aa.translation[j]] * exp(-0/v.par)
+                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * exp(-0/v.par)
                     }else{
-                        codon.mutation.rates[i,j] <- codon.freqs[aa.translation[j]] * exp(-0/v.par)
+                        codon.mutation.rates[i,j] <- codon.freqs[j] * exp(-0/v.par)
                     }
                 }
             }else{ #nonsynonymous -- so we need to know Grantham's distance.
@@ -405,9 +405,9 @@ CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode)
                     mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
                     matched.position <- which(codon.sets[i,] == codon.sets[j,])
                     if(codon.sets[i, mismatch.position] == 0 & codon.sets[j,mismatch.position] == 2 | codon.sets[i, mismatch.position] == 2 & codon.sets[j,mismatch.position] == 0 | codon.sets[i, mismatch.position] == 1 & codon.sets[j,mismatch.position] == 3 | codon.sets[i, mismatch.position] == 3 & codon.sets[j,mismatch.position] == 1){
-                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[aa.translation[j]] * exp(-aa.distances[aa.translation[i], aa.translation[j]]/v.par)
+                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * exp(-aa.distances[aa.translation[i], aa.translation[j]]/v.par)
                     }else{
-                        codon.mutation.rates[i,j] <- codon.freqs[aa.translation[j]] * exp(-aa.distances[aa.translation[i], aa.translation[j]]/v.par)
+                        codon.mutation.rates[i,j] <- codon.freqs[j]* exp(-aa.distances[aa.translation[i], aa.translation[j]]/v.par)
                     }
                 }
             }
@@ -1191,17 +1191,23 @@ GetLikelihoodGY94_CodonForManyCharGivenAllParams <- function(x, codon.data, phy,
     if(logspace) {
         x = exp(x)
     }
-    
+
     if(!is.null(root.p_array)){
         codon.freqs <- root.p_array
     }else{
-        codon.freqs.tabled <- table(codon.data)
-        codon.freqs <- codon.freqs.tabled/sum(codon.freqs.tabled)
+        codon.freqs.tabled <- table(as.matrix(codon.data$unique.site.patterns[,2:dim(codon.data$unique.site.patterns)[2]]))
+        codon.freqs <- numeric(64)
+        for(codon.index in 1:length(codon.freqs.tabled)){
+            codon.freqs[as.numeric(names(codon.freqs.tabled))[codon.index]] <- codon.freqs.tabled[codon.index]
+        }
+        codon.freqs <- codon.freqs/sum(codon.freqs)
     }
-    
+    print(codon.freqs)
+    print(sum(codon.freqs))
     aa.distances <- CreateAADistanceMatrix()
     Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
-    final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
+    print(Q_codon)
+    final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freqs, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
     
     if(neglnl) {

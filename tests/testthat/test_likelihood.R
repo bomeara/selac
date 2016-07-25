@@ -26,6 +26,20 @@ test_that("GTR+GAMMA_likelihood", {
 })
 
 
+test_that("GY94_likelihood", {
+    tree <- read.tree("rokasYeast.tre")
+    phy <- drop.tip(tree, "Calb")
+    yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
+    yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
+    chars <- DNAbinToCodonNumeric(yeast.gene)
+    codon.data <- chars[phy$tip.label,]
+    codon.data = SitePattern(codon.data)
+    fmutsel0 <- GetLikelihoodGY94_CodonForManyCharGivenAllParams(log(c(1,1)), codon.data, phy, numcode=1, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    comparison <- identical(round(fmutsel0,3), -8643.514)
+    expect_true(comparison)
+})
+
+
 test_that("FMutSel0_likelihood", {
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
