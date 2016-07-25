@@ -2405,7 +2405,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
-#' @param codon.model The type of codon model to use. There are three options: "GY94", "MutSel", "selac".
+#' @param codon.model The type of codon model to use. There are three options: "GY94", "FMutSel0", "selac".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".
@@ -2438,8 +2438,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
     }
-    if(!codon.model == "GY94" & !codon.model == "MutSel" & !codon.model == "selac"){
-        stop("Check that your codon model is correct. Options are GY94, MutSel, or selac", call.=FALSE)
+    if(!codon.model == "GY94" & !codon.model == "FMutSel0" & !codon.model == "selac"){
+        stop("Check that your codon model is correct. Options are GY94, FMutSel0, or selac", call.=FALSE)
     }
     if(!edge.length == "optimize" & !edge.length == "fixed"){
         stop("Check that you have a supported edge length option. Options are optimize or fixed.", call.=FALSE)
@@ -3227,7 +3227,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
-#' @param codon.model The type of codon model to use. There are three options: "GY94", "MutSel", "selac".
+#' @param codon.model The type of codon model to use. There are three options: "GY94", "FMutSel0", "selac".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".
@@ -3258,7 +3258,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
     }
     if(!codon.model == "GY94" & !codon.model == "MutSel" & !codon.model == "selac"){
-        stop("Check that your codon model is correct. Options are GY94, MutSel, or selac", call.=FALSE)
+        stop("Check that your codon model is correct. Options are GY94, FMutSel0, or selac", call.=FALSE)
     }
     if(!edge.length == "optimize" & !edge.length == "fixed"){
         stop("Check that you have a supported edge length option. Options are optimize or fixed.", call.=FALSE)
