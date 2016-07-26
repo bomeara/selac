@@ -34,8 +34,8 @@ test_that("GY94_likelihood", {
     chars <- DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
     codon.data = SitePattern(codon.data)
-    fmutsel0 <- GetLikelihoodGY94_CodonForManyCharGivenAllParams(log(c(1,1)), codon.data, phy, numcode=1, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
-    comparison <- identical(round(fmutsel0,3), -8643.514)
+    gy94 <- GetLikelihoodGY94_CodonForManyCharGivenAllParams(log(c(1,1)), codon.data, phy, numcode=1, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    comparison <- identical(round(gy94,3), -7826.123)
     expect_true(comparison)
 })
 
