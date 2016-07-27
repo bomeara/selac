@@ -5,10 +5,10 @@
 \title{Efficient optimization of the SELAC model}
 \usage{
 SelacLargeOptimize(codon.data.path, n.partitions = NULL, phy,
-  data.type = "codon", edge.length = "optimize", edge.linked = TRUE,
-  optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE,
-  ncats = 4, numcode = 1, diploid = TRUE, k.levels = 0,
-  aa.properties = NULL, verbose = FALSE, n.cores = NULL,
+  data.type = "codon", codon.model = "selac", edge.length = "optimize",
+  edge.linked = TRUE, optimal.aa = "optimize", nuc.model = "GTR",
+  include.gamma = FALSE, ncats = 4, numcode = 1, diploid = TRUE,
+  k.levels = 0, aa.properties = NULL, verbose = FALSE, n.cores = NULL,
   max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 3,
   user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
@@ -22,6 +22,8 @@ SelacLargeOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{phy}{The phylogenetic tree to optimize the model parameters.}
 
 \item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
+
+\item{codon.model}{The type of codon model to use. There are three options: "GY94", "FMutSel0", "selac".}
 
 \item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.}
 

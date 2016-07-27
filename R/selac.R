@@ -312,10 +312,7 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 }
 
 
-CreateCodonMutationMatrixMutSel <- function(x, nuc.mutation.rates, numcode) {
-    omega.par = x[1]
-    #The last value is arbitrarily set to 0 per Yang and Nielsen (2008):
-    fitness.pars = c(x[-1], 0)
+CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutation.rates, numcode) {
     codon.sets <- CreateCodonSets()
     n.codons <- dim(codon.sets)[1]
     codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
@@ -325,44 +322,32 @@ CreateCodonMutationMatrixMutSel <- function(x, nuc.mutation.rates, numcode) {
     codon.name <- apply(codon.set.translate, 1, paste, collapse="")
     aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
     
-    #Allows for either MutSel model to be used. For selac, however, we only care about the fitness pars for each unique AA.
-    if(length(fitness.pars)>21){
-        fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
-    }else{
-        fitness.pars.ordered <- numeric(dim(codon.mutation.rates)[2])
-        unique.aa <- unique(aa.translation)
-        unique.aa.nostop = unique.aa[-which(unique.aa=="*")]
-        for(par.index in 1:length(unique.aa.nostop)){
-            fitness.pars.ordered[which(aa.translation == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
-        }
-    }
-    
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
             if(aa.translation[i] == aa.translation[j]){ #synonymous
                 if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
                     mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
                     matched.position <- which(codon.sets[i,] == codon.sets[j,])
-                    if((fitness.pars.ordered[j]-fitness.pars.ordered[i]) == 0){
+                    if((fitness.pars[j]-fitness.pars[i]) == 0){
                         codon.mutation.rates[i,j] = 1
                     }else{
-                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * ((fitness.pars.ordered[j] - fitness.pars.ordered[i]) / (1 - exp(fitness.pars.ordered[i] - fitness.pars.ordered[j])))
+                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
                     }
                 }
             }else{ #nonsynonymous
                 if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
                     mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
                     matched.position <- which(codon.sets[i,] == codon.sets[j,])
-                    if((fitness.pars.ordered[j]-fitness.pars.ordered[i]) == 0){
+                    if((fitness.pars[j]-fitness.pars[i]) == 0){
                         codon.mutation.rates[i,j] = 1
                     }else{
-                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * ((fitness.pars.ordered[j] - fitness.pars.ordered[i]) / (1 - exp(fitness.pars.ordered[i] - fitness.pars.ordered[j])))
+                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
                     }
                 }
             }
         }
     }
-    #Remove stop codon rates:
+    #Remove stop codon rates -- they should be removed already, but just in case...
     codon.mutation.rates[which(aa.translation == "*"),] = codon.mutation.rates[,which(aa.translation == "*")] = 0
     #Now let us finish up the matrix:
     rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- codon.name
@@ -412,7 +397,7 @@ CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode)
             }
         }
     }
-    #Remove stop codon rates:
+    #Remove stop codon rates -- they should be removed already, but just in case...
     codon.mutation.rates[which(aa.translation == "*"),] = codon.mutation.rates[,which(aa.translation == "*")] = 0
     #Now let us finish up the matrix:
     rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- codon.name
@@ -1124,7 +1109,6 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     if(logspace) {
         x = exp(x)
     }
-    
     if(nuc.model == "JC") {
         base.freqs <- c(x[1:3], 1-sum(x[1:3]))
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -1140,39 +1124,43 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
         x = x[-(1:11)]
     }
     
+    #During the early stages of the optimization process it will try weird values for the base frequencies.
+    if(any(base.freqs < 0)){
+        return(1000000)
+    }
     if(!is.null(root.p_array[1])){
-        codon.freq <- root.p_array
+        codon.eq.freq <- root.p_array
     }else{
         codon.sets <- CreateCodonSets()
         n.codons <- dim(codon.sets)[1]
-        codon.freq <- numeric(n.codons)
+        codon.eq.freq <- numeric(n.codons)
         fitness.pars <- c(x[-1],0)
-        fitnes.pars.ordered <- numeric(n.codons)
+        fitness.pars.ordered <- numeric(n.codons)
         if(length(fitness.pars)>21){
             fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
         }else{
             fitness.pars.ordered <- numeric(n.codons)
             codon.set.translate <- apply(codon.sets, 2, n2s)
             codon.name <- apply(codon.set.translate, 1, paste, collapse="")
-            aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
+            aa.translation <- sapply(codon.name, TranslateCodon, numcode=numcode)
             unique.aa <- unique(aa.translation)
             unique.aa.nostop = unique.aa[-which(unique.aa=="*")]
             for(par.index in 1:length(unique.aa.nostop)){
                 fitness.pars.ordered[which(aa.translation == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
             }
         }
-        for(i in 1:n.codons){
+        for(codon.index in 1:n.codons){
             #In the canonical model stop codons are ignored. We do the same here.
-            if(i == 49 | i == 51 | i == 57){
-                codon.freq[i] = 0
+            if(codon.index == 49 | codon.index == 51 | codon.index == 57){
+                codon.eq.freq[codon.index] = 0
             }else{
-                codon.freq[i] <- base.freqs[unname(codon.sets[i,1])+1]* base.freqs[unname(codon.sets[i,2])+1] * base.freqs[unname(codon.sets[i,3])+1]*exp(fitness.pars.ordered[i])
+                codon.eq.freq[codon.index] <- base.freqs[unname(codon.sets[codon.index,1])+1] * base.freqs[unname(codon.sets[codon.index,2])+1] * base.freqs[unname(codon.sets[codon.index,3])+1] * exp(fitness.pars.ordered[codon.index])
             }
         }
-        codon.freq <- codon.freq/sum(codon.freq)
+        codon.eq.freq <- codon.eq.freq/sum(codon.eq.freq)
     }
-    Q_codon = CreateCodonMutationMatrixMutSel(x, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
-    final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freq, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
+    Q_codon = CreateCodonMutationMatrixMutSel(omega.par=x[1], fitness.pars=fitness.pars.ordered, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
+    final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.eq.freq, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
     
     if(neglnl) {
@@ -1950,6 +1938,7 @@ GetFitnessStartingValues <- function(codon.freqs, n.pars = 21){
     if(n.pars == 64){
         initial.vals = initial.vals[-c(49,51,57,64)]
     }
+    initial.vals[initial.vals < 0.0001] <- 0.001
     return(initial.vals)
 }
 
@@ -2717,16 +2706,16 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 aa.ordered <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "Y", "C", "W")
                 if(nuc.model == "UNREST"){
                     max.par.model.count <- max.par.model.count + 1 + 19
-                    ip = c(nuc.ip, 0.01, fitness.pars)
+                    ip = c(nuc.ip, 0.4, fitness.pars)
                     parameter.column.names <- c(parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
                     upper = c(rep(log(99), length(ip)-3))
-                    lower = rep(-21, length(ip))
+                    lower = rep(-10, length(ip))
                 }else{
                     max.par.model.count <- max.par.model.count + 3 + 1 + 19
-                    ip = c(.25, .25, .25, nuc.ip, 0.01, fitness.pars)
+                    ip = c(.25, .25, .25, nuc.ip, 0.4, fitness.pars)
                     parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
                     upper = c(0, 0, 0, rep(log(99), length(ip)-3))
-                    lower = rep(-21, length(ip))
+                    lower = rep(-10, length(ip))
                 }
                 
                 codon.index.matrix = NA
@@ -2739,9 +2728,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 if(n.partitions > 1){
                     for(partition.index in 2:n.partitions){
                         if(nuc.model == "UNREST"){
-                            ip = c(nuc.ip, 0.01, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+                            ip = c(nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
                         }else{
-                            ip = c(.25, .25, .25, nuc.ip, 0.01, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+                            ip = c(.25, .25, .25, nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
                         }
                         ip.vector = c(ip.vector, ip)
                         upper.vector = c(upper.vector, upper)
@@ -3260,7 +3249,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
     }
-    if(!codon.model == "GY94" & !codon.model == "MutSel" & !codon.model == "selac"){
+    if(!codon.model == "GY94" & !codon.model == "FMutSel0" & !codon.model == "selac"){
         stop("Check that your codon model is correct. Options are GY94, FMutSel0, or selac", call.=FALSE)
     }
     if(!edge.length == "optimize" & !edge.length == "fixed"){
@@ -3554,16 +3543,16 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                 aa.ordered <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "Y", "C", "W")
                 if(nuc.model == "UNREST"){
                     max.par.model.count <- max.par.model.count + 1 + 19
-                    ip = c(nuc.ip, 0.01, fitness.pars)
+                    ip = c(nuc.ip, 0.4, fitness.pars)
                     parameter.column.names <- c(parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
                     upper = c(rep(log(99), length(ip)-3))
-                    lower = rep(-21, length(ip))
+                    lower = rep(-10, length(ip))
                 }else{
                     max.par.model.count <- max.par.model.count + 3 + 1 + 19
-                    ip = c(.25, .25, .25, nuc.ip, 0.01, fitness.pars)
+                    ip = c(.25, .25, .25, nuc.ip, 0.4, fitness.pars)
                     parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
                     upper = c(0, 0, 0, rep(log(99), length(ip)-3))
-                    lower = rep(-21, length(ip))
+                    lower = rep(-10, length(ip))
                 }
                 
                 codon.index.matrix = NA
@@ -3576,9 +3565,9 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                 if(n.partitions > 1){
                     for(partition.index in 2:n.partitions){
                         if(nuc.model == "UNREST"){
-                            ip = c(nuc.ip, 0.01, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+                            ip = c(nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
                         }else{
-                            ip = c(.25, .25, .25, nuc.ip, 0.01, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+                            ip = c(.25, .25, .25, nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
                         }
                         ip.vector = c(ip.vector, ip)
                         upper.vector = c(upper.vector, upper)

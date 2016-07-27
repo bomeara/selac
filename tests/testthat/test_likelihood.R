@@ -45,11 +45,11 @@ test_that("FMutSel0_likelihood", {
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
     yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-    chars <- DNAbinToCodonNumeric(yeast.gene)
+    chars <- selac:::DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
-    codon.data = SitePattern(codon.data)
-    fmutsel0 <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(log(c(.25,.25,.25, rep(1,5), 1, rep(1,19))), codon.data, phy, numcode=1,  nuc.model="GTR", logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
-    comparison <- identical(round(fmutsel0,3), -8643.514)
+    codon.data = selac:::SitePattern(codon.data)
+    fmutsel0 <- selac:::GetLikelihoodMutSel_CodonForManyCharGivenAllParams(log(c(.25,.25,.25, rep(1,5), .4, rep(1,19))), codon.data, phy, numcode=1,  nuc.model="GTR", logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    comparison <- identical(round(fmutsel0,3), -8641.113)
     expect_true(comparison)
 })
 
