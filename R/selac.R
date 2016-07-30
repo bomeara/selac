@@ -868,6 +868,8 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.dat
         }else{
             #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
             liks[i,] <- 1
+            #This is to deal with stop codons, which are effectively removed from the model at this point. Someday they might be allowed back in. If so, the following line needs to be dealt with.
+            liks[i,c(49, 51, 57)] <- 0
         }
     }
     #The result here is just the likelihood:
@@ -1065,6 +1067,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
     if(any(base.freqs < 0)){
         return(1000000)
     }
+    
     if(include.gamma==TRUE){
         rates.k <- DiscreteGamma(shape, ncats)
         final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
@@ -1830,7 +1833,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
         x <- exp(x)
     }
     #print(x)
-    #save(x, phy, file="modelpars.Rsave")
+    save(x, phy, file="modelpars.Rsave")
     if(class(index.matrix)=="numeric"){
         index.matrix <- matrix(index.matrix, 1, length(index.matrix))
     }
@@ -3603,6 +3606,7 @@ SelacLargeOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.typ
                     return(tmp.pars)
                 }
                 results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores)
+                #results.set <- lapply(1:n.partitions, ParallelizedOptimizedByGene)
                 parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
                 results.final <- NULL
                 results.final$objective <- sum(parallelized.parameters[,1])
