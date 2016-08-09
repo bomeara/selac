@@ -202,24 +202,26 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
     if(include.gamma == TRUE){
         rates.k <- DiscreteGamma(shape, ncats)
         rate.Q_codon.list <- as.list(ncats)
-        for(cat.index in 1:ncats){
+        #for(cat.index in 1:ncats){
             if(k.levels > 0){
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=pars[7:8], k=k.levels)
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
-            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-        }
+            #rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        #}
         for(cat.index in 1:ncats){
-            Q_codon_array <- rate.Q_codon.list[[cat.index]]
-            for(k in 1:21){
+            #Q_codon_array <- rate.Q_codon.list[[cat.index]]
+            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            for(aa.index in 1:21){
                 if(diploid == TRUE){
-                    Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+                    Q_codon_array[,,unique.aa[aa.index]] <- 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[aa.index]])
                 }else{
-                    Q_codon_array[,,unique.aa[k]] = Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
+                    Q_codon_array[,,unique.aa[aa.index]] <- Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[aa.index]])
                 }
-                diag(Q_codon_array[,,unique.aa[k]]) = 0
-                diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
+                diag(Q_codon_array[,,unique.aa[aa.index]]) <- 0
+                diag(Q_codon_array[,,unique.aa[aa.index]]) <- -rowSums(Q_codon_array[,,unique.aa[aa.index]])
+                Q_codon_array[,,unique.aa[aa.index]] <- Q_codon_array[,,unique.aa[aa.index]] * rates.k[cat.index]
             }
             rate.Q_codon.list[[cat.index]] <- Q_codon_array
         }
@@ -258,7 +260,6 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
     if(include.gamma == TRUE){
         for(site in 1:nsites){
             if(is.null(site.cats.vector)){
-                print("here")
                 site.rate <- sample(1:4,1)
             }else{
                 site.rate <- site.cats.vector[site]
