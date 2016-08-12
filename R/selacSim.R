@@ -147,18 +147,18 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NULL, root.codon.array=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
+SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
     nsites <- length(aa.optim_array)
+
     #Start organizing the user input parameters:
-    C.q.phi.ne <- pars[1]
+    C.q.phi <- pars[1]
     C=4
     q=4e-7
-    Ne <- 5e6
-    Phi.q.ne <- C.q.phi.ne / C
-    Phi.ne <- Phi.q.ne / q
-    Phi <- Phi.ne/Ne
-    alpha <- pars[2]
-    beta <- pars[3]
+    Ne <- pars[2]
+    Phi.q <- C.q.phi / C
+    Phi <- Phi.q / q
+    alpha <- pars[3]
+    beta <- pars[4]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
 
     if(include.gamma == TRUE){
@@ -168,34 +168,37 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
 
     if(k.levels > 0){
         if(nuc.model == "JC") {
-            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[8:9]
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[10:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[8:9]
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=NULL)
+            poly.params <- pars[5:6]
         }
     }else{
         if(nuc.model == "JC") {
-            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[5:length(pars)], model=nuc.model, base.freqs=NULL)
         }
     }
-    
+
     #Generate our codon matrix:
-    codon.index.matrix = CreateCodonMutationMatrixIndex()
+    codon.index.matrix <- CreateCodonMutationMatrixIndex()
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
-    codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
+    codon_mutation_matrix[is.na(codon_mutation_matrix)] <- 0
     #Generate our fixation probability array:
     unique.aa <- GetMatrixAANames(numcode)
     
@@ -204,7 +207,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
         rate.Q_codon.list <- as.list(ncats)
         #for(cat.index in 1:ncats){
             if(k.levels > 0){
-                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=pars[7:8], k=k.levels)
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
@@ -227,7 +230,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
         }
     }else{
         if(k.levels > 0){
-            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=pars[7:8], k=k.levels)
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
         }else{
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
         }
@@ -243,18 +246,19 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
         }
     }
     root.p_array <- NA
-    if(is.null(root.codon.array)) {
-	    #Generate matrix of root frequencies for each optimal AA:
-	    root.p_array <- matrix(root.codon.frequencies, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
-	    root.p_array <- t(root.p_array)
-	    root.p_array <- root.p_array / rowSums(root.p_array)
-	    rownames(root.p_array) <- unique.aa
-    } else {
-    	root.p_array <- root.codon.array
-    }
-	root.p_array[is.na(root.p_array)] = 0
 
-    #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
+    if(is.null(codon.freq.by.aa)) {
+        codon.freq.by.aa <- rep(1/1344, by=64*21)
+    }
+    
+    #Generate matrix of root frequencies for each optimal AA:
+    root.p_array <- matrix(codon.freq.by.aa, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
+    root.p_array <- t(root.p_array)
+    root.p_array <- root.p_array / rowSums(root.p_array)
+    rownames(root.p_array) <- unique.aa
+	root.p_array[is.na(root.p_array)] <- 0
+
+    #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user-input vector of optimal AA:
     sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
     
     if(include.gamma == TRUE){
@@ -270,8 +274,8 @@ SelacSimulator <- function(phy, pars, aa.optim_array, root.codon.frequencies=NUL
         }
     }else{
         for(site in 1:nsites){
-            Q_codon = Q_codon_array[,,aa.optim_array[site]]
-            sim.codon.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
+            Q_codon <- Q_codon_array[,,aa.optim_array[site]]
+            sim.codon.data[,site] <- SingleSiteUpPass(phy, Q_codon=Q_codon, root.value=root.p_array[aa.optim_array[site],])
         }
     }
     codon.names <- rownames(Q_codon_array[,,aa.optim_array[site]])
