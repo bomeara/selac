@@ -4,10 +4,9 @@
 \alias{SelacSimulator}
 \title{Simulate DNA under the SELAC model}
 \usage{
-SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
-  root.codon.array = NULL, numcode = 1, aa.properties = NULL, nuc.model,
-  include.gamma = FALSE, ncats = 4, k.levels = 0, diploid = TRUE,
-  site.cats.vector = NULL)
+SelacSimulator(phy, pars, aa.optim_array, codon.freq.by.aa = NULL,
+  numcode = 1, aa.properties = NULL, nuc.model, include.gamma = FALSE,
+  ncats = 4, k.levels = 0, diploid = TRUE, site.cats.vector = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -15,10 +14,6 @@ SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
 \item{pars}{A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.}
 
 \item{aa.optim_array}{A vector of optimal amino acids for each site to be simulated.}
-
-\item{root.codon.frequencies}{A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x21.}
-
-\item{root.codon.array}{A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.}
 
 \item{numcode}{The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
 
@@ -35,6 +30,10 @@ SelacSimulator(phy, pars, aa.optim_array, root.codon.frequencies = NULL,
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
 
 \item{site.cats.vector}{A vector designating the rate category for phi when include.gamma=TRUE.}
+
+\item{root.codon.frequencies}{A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x21.}
+
+\item{root.codon.array}{A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.}
 }
 \description{
 Simulates nucleotide data based on parameters under the SELAC model

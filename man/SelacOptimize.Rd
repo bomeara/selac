@@ -2,21 +2,20 @@
 % Please edit documentation in R/selac.R
 \name{SelacOptimize}
 \alias{SelacOptimize}
-\title{Optimize parameters under the SELAC model}
+\title{Efficient optimization of the SELAC model}
 \usage{
 SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   data.type = "codon", codon.model = "selac", edge.length = "optimize",
   edge.linked = TRUE, optimal.aa = "optimize", nuc.model = "GTR",
   include.gamma = FALSE, ncats = 4, numcode = 1, diploid = TRUE,
-  k.levels = 0, aa.properties = NULL, verbose = FALSE,
-  parallel.type = "by.gene", n.cores = NULL,
+  k.levels = 0, aa.properties = NULL, verbose = FALSE, n.cores = NULL,
   max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 3,
   user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult", tol.step = 1)
 }
 \arguments{
-\item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data.}
+\item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
 
 \item{n.partitions}{The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.}
 
@@ -24,7 +23,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
 
-\item{codon.model}{The type of codon model to use. There are three options: "GY94", "FMutSel0", "selac".}
+\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".}
 
 \item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.}
 
@@ -48,8 +47,6 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{verbose}{Logical indicating whether each iteration be printed to the screen.}
 
-\item{parallel.type}{Designates whether a parallell run should occur by gene ("by.gene") or by site ("by.site").}
-
 \item{n.cores}{The number of cores to run the analyses over.}
 
 \item{max.tol}{Supplies the relative optimization tolerance.}
@@ -71,11 +68,9 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{tol.step}{If > 1, makes for coarser tolerance at earlier iterations of the optimizer}
 }
 \description{
-Optimizes model parameters under the SELAC model, or the more traditional nucleotide based models
+Efficient optimization of model parameters under the SELAC model
 }
 \details{
-SELAC stands for SELection on Amino acids and/or Codons. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELAC model. Selection is based on selection towards an optimal amino acid at each site. The optimal amino acid at a side could be assumed to be based on a majority rule (\code{optimal.aa="majrule"}), or actually optimized as part of the optimization routine (\code{optimal.aa="optimize"}. Note that by setting \code{optimal.aa="none"} reverts to the traditional nucleotide based model, if data.type="nucleotide", or the mutation-selection model of Yang and Nielsen (2008), if data.type="codon". In the latter case, we only allow the FMutSel0 implementation, which assumes 19 fitness parameters for 20-1 amino acids (the fitness parameter for Phenylalanine, or F, is set to zero).
-
-Also of note, is that the presence of stop codons produces bad behavior. Be sure that these are removed from the data prior to running the model.
+Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
 }
 
