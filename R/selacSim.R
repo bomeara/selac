@@ -151,14 +151,15 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
     nsites <- length(aa.optim_array)
 
     #Start organizing the user input parameters:
-    C.q.phi <- pars[1]
+    C.q.phi.Ne <- pars[1]
     C=4
     q=4e-7
-    Ne <- pars[2]
-    Phi.q <- C.q.phi / C
-    Phi <- Phi.q / q
-    alpha <- pars[3]
-    beta <- pars[4]
+    Ne <- 5e6
+    Phi.q.Ne <- C.q.phi.Ne / C
+    Phi.Ne <- Phi.q.Ne / q
+    Phi <- Phi.Ne / Ne
+    alpha <- pars[2]
+    beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
 
     if(include.gamma == TRUE){
@@ -168,30 +169,30 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
 
     if(k.levels > 0){
         if(nuc.model == "JC") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
-            poly.params <- pars[8:9]
+            poly.params <- pars[7:8]
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[10:length(pars)], model=nuc.model, base.freqs=base.freqs)
-            poly.params <- pars[8:9]
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[7:8]
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=NULL)
-            poly.params <- pars[5:6]
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[6:length(pars)], model=nuc.model, base.freqs=NULL)
+            poly.params <- pars[4:5]
         }
     }else{
         if(nuc.model == "JC") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(pars[5:7], 1-sum(pars[5:7]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[8:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[5:length(pars)], model=nuc.model, base.freqs=NULL)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[4:length(pars)], model=nuc.model, base.freqs=NULL)
         }
     }
 
@@ -205,16 +206,16 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
     if(include.gamma == TRUE){
         rates.k <- DiscreteGamma(shape, ncats)
         rate.Q_codon.list <- as.list(ncats)
-        #for(cat.index in 1:ncats){
+        for(cat.index in 1:ncats){
             if(k.levels > 0){
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
-            #rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-        #}
+            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        }
         for(cat.index in 1:ncats){
-            #Q_codon_array <- rate.Q_codon.list[[cat.index]]
+            Q_codon_array <- rate.Q_codon.list[[cat.index]]
             Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
             for(aa.index in 1:21){
                 if(diploid == TRUE){
@@ -224,7 +225,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
                 }
                 diag(Q_codon_array[,,unique.aa[aa.index]]) <- 0
                 diag(Q_codon_array[,,unique.aa[aa.index]]) <- -rowSums(Q_codon_array[,,unique.aa[aa.index]])
-                Q_codon_array[,,unique.aa[aa.index]] <- Q_codon_array[,,unique.aa[aa.index]] * rates.k[cat.index]
+                #Q_codon_array[,,unique.aa[aa.index]] <- Q_codon_array[,,unique.aa[aa.index]]
             }
             rate.Q_codon.list[[cat.index]] <- Q_codon_array
         }
