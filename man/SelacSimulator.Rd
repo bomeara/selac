@@ -15,6 +15,8 @@ SelacSimulator(phy, pars, aa.optim_array, codon.freq.by.aa = NULL,
 
 \item{aa.optim_array}{A vector of optimal amino acids for each site to be simulated.}
 
+\item{codon.freq.by.aa}{A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.}
+
 \item{numcode}{The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
 
 \item{aa.properties}{User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.}
@@ -30,10 +32,6 @@ SelacSimulator(phy, pars, aa.optim_array, codon.freq.by.aa = NULL,
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
 
 \item{site.cats.vector}{A vector designating the rate category for phi when include.gamma=TRUE.}
-
-\item{root.codon.frequencies}{A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x21.}
-
-\item{root.codon.array}{A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.}
 }
 \description{
 Simulates nucleotide data based on parameters under the SELAC model

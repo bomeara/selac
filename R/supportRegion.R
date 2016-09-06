@@ -123,7 +123,7 @@ SupportRegion <- function(selac.obj, n.points=10000, scale.int=0.1, desired.delt
             nsites.vector = c(nsites.vector, dim(codon.data)[2] - 1)
             aa.optim <- selac.obj$aa.optim[[partition.index]]
             aa.optim.full.list[[partition.index]] <- aa.optim
-            empirical.codon.freq.list[[partition.index]] <- CodonEquilibriumFrequencies(codon.data[,-1], aa.optim, numcode=selac.obj$numcode)
+            empirical.codon.freq.list[[partition.index]] <- GetCodonFreqsByAA(codon.data[,-1], aa.optim, numcode=selac.obj$numcode)
             aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
             colnames(aa.optim.frame.to.add) <- colnames(codon.data)
             codon.data <- rbind(codon.data, aa.optim.frame.to.add)

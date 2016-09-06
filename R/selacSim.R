@@ -134,8 +134,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param phy The phylogenetic tree with branch lengths.
 #' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
-#' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x21.
-#' @param root.codon.array A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
+#' @param codon.freq.by.aa A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
 #' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
