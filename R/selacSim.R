@@ -215,7 +215,6 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
         }
         for(cat.index in 1:ncats){
             Q_codon_array <- rate.Q_codon.list[[cat.index]]
-            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
             for(aa.index in 1:21){
                 if(diploid == TRUE){
                     Q_codon_array[,,unique.aa[aa.index]] <- 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[aa.index]])
@@ -224,7 +223,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
                 }
                 diag(Q_codon_array[,,unique.aa[aa.index]]) <- 0
                 diag(Q_codon_array[,,unique.aa[aa.index]]) <- -rowSums(Q_codon_array[,,unique.aa[aa.index]])
-                #Q_codon_array[,,unique.aa[aa.index]] <- Q_codon_array[,,unique.aa[aa.index]]
+                Q_codon_array[,,unique.aa[aa.index]] <- Q_codon_array[,,unique.aa[aa.index]]
             }
             rate.Q_codon.list[[cat.index]] <- Q_codon_array
         }

@@ -2568,11 +2568,12 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
 #' @param output.restart.filename Designates the file name for each random restart.
+#' @param user.supplied.starting.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param tol.step If > 1, makes for coarser tolerance at earlier iterations of the optimizer
 #'
 #' @details
 #' Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", tol.step=1) {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores=NULL, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.vals=NULL, tol.step=1) {
     
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -3024,8 +3025,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             selac.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 3)
             selac.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 1)
         }else{
-            selac.starting.vals <- matrix(c(2, 1.8292716544, 0.1017990371), 1, 3)
-            selac.starting.vals <- rbind(selac.starting.vals, c(2, 1.8292716544, 0.1017990371))
+            if(is.null(user.supplied.starting.vals)){
+                selac.starting.vals <- matrix(c(2, 1.8292716544, 0.1017990371), 1, 3)
+                selac.starting.vals <- rbind(selac.starting.vals, c(2, 1.8292716544, 0.1017990371))
+            }else{
+                selac.starting.vals <- matrix(c(user.supplied.starting.vals[1], user.supplied.starting.vals[2], user.supplied.starting.vals[3]), 1, 3)
+                selac.starting.vals <- rbind(selac.starting.vals, c(user.supplied.starting.vals[1], user.supplied.starting.vals[2], user.supplied.starting.vals[3]))
+            }
         }
         if(include.gamma == TRUE){
             #Gamma variation is turned ON:
