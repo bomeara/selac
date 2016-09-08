@@ -9,14 +9,14 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-library(ape)
-library(expm)
-library(nnet)
-library(nloptr)
-library(seqinr)
-library(phangorn)
-library(MASS)
-library(parallel)
+#library(ape)
+#library(expm)
+#library(nnet)
+#library(nloptr)
+#library(seqinr)
+#library(phangorn)
+#library(MASS)
+#library(parallel)
 #library(Rcpp)
 #library(RcppArmadillo)
 #library(inline)
