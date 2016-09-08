@@ -9,14 +9,14 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-#library(ape)
-#library(expm)
-#library(nnet)
-#library(nloptr)
-#library(seqinr)
-#library(phangorn)
-#library(MASS)
-#library(parallel)
+library(ape)
+library(expm)
+library(nnet)
+library(nloptr)
+library(seqinr)
+library(phangorn)
+library(MASS)
+library(parallel)
 #library(Rcpp)
 #library(RcppArmadillo)
 #library(inline)
@@ -265,9 +265,10 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
         base.freqs <- Null(nuc.mutation.rates)
         #Rescale base.freqs so that they sum to 1:
         base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        base.freqs.scaled.matrix <- rbind(base.freqs.scaled, base.freqs.scaled, base.freqs.scaled, base.freqs.scaled)
         diag(nuc.mutation.rates) <- 0
         #Rescale Q to account for base.freqs:
-        nuc.mutation.rates <- t(nuc.mutation.rates * base.freqs.scaled)
+        nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         return(nuc.mutation.rates)
     }
