@@ -2355,10 +2355,10 @@ GetCodonFreqsByAA <- function(codon.data, aa.opt.vector, numcode){
 GetCodonFreqsByGene <- function(codon.data){
     codon.freqs.tabled <- table(as.matrix(codon.data[,2:dim(codon.data)[2]]))
     codon.freqs <- numeric(64)
-    for(codon.index in 1:length(codon.freqs.tabled)){
+    for(codon.index in 1:length(codon.freqs)){
         codon.freqs[as.numeric(names(codon.freqs.tabled))[codon.index]] <- codon.freqs.tabled[codon.index]
     }
-    codon.freqs <- codon.freqs/sum(codon.freqs)
+    codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
     return(codon.freqs)
 }
 

@@ -135,6 +135,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
 #' @param codon.freq.by.aa A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
+#' @param codon.freq.by.gene A matrix of codon frequencies for each gene.
 #' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
@@ -146,7 +147,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
+SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
     nsites <- length(aa.optim_array)
 
     #Start organizing the user input parameters:
@@ -202,6 +203,12 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, num
     #Generate our fixation probability array:
     unique.aa <- GetMatrixAANames(numcode)
     
+    #We rescale the codon matrix only -- this is the issue!
+    diag(codon_mutation_matrix) = 0
+    diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
+    scale.factor <- -sum(diag(codon_mutation_matrix) * codon.freq.by.gene, na.rm=TRUE)
+    codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
+
     if(include.gamma == TRUE){
         rates.k <- DiscreteGamma(shape, ncats)
         rate.Q_codon.list <- as.list(ncats)
