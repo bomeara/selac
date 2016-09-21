@@ -83,15 +83,15 @@ test_that("selac_likelihood", {
     set.seed(4)
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
-    yeast.gene <- read.dna("/Users/jeremy/Desktop/WORK_IN_PROGRESS/SELAC_FINAL_DATASETS/yeast/rokas/gene69.pruned.fasta", format="fasta")
+    yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
     yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-    chars <- selac:::DNAbinToCodonNumeric(yeast.gene)
+    chars <- DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
-    aa.data <- selac:::ConvertCodonNumericDataToAAData(codon.data, numcode=1)
-    aa.optim <- apply(aa.data[, -1], 2, selac:::GetMaxName) #starting values for all, final values for majrule
+    aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
+    aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
     aa.optim.full.list <- aa.optim
-    codon.freq.by.aa <- selac:::GetCodonFreqsByAA(codon.data[,-1], aa.optim, numcode=1)
-    codon.freq.by.gene <- selac:::GetCodonFreqsByGene(codon.data[,-1])
+    codon.freq.by.aa <- GetCodonFreqsByAA(codon.data[,-1], aa.optim, numcode=1)
+    codon.freq.by.gene <- GetCodonFreqsByGene(codon.data[,-1])
     aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
     colnames(aa.optim.frame.to.add) <- colnames(codon.data)
     codon.data <- rbind(codon.data, aa.optim.frame.to.add)
