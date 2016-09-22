@@ -2,7 +2,7 @@
 % Please edit documentation in R/selac.R
 \name{GetSelacSiteLikelihoods}
 \alias{GetSelacSiteLikelihoods}
-\title{Calculates site likelihoods under SELAC}
+\title{Calculate site likelihoods under SelAC}
 \usage{
 GetSelacSiteLikelihoods(selac.obj, codon.data.path, aa.optim.input = NULL,
   fasta.rows.to.keep = NULL)

@@ -3647,7 +3647,51 @@ GetPartitionOrder <- function(codon.data.path){
 }
 
 
-#' @title Calculates site likelihoods under SELAC
+#' @title Calculate functionality
+#'
+#' @description
+#' Calculates the functionality of a single gene
+#'
+#' @param gene.length Indicates the length of the gene used to calculate functionality.
+#' @param aa.data A matrix of amino acids
+#' @param optimal.aa A vector of inferred optimal amino acids.
+#' @param alpha The inferred Grantham composition paramter
+#' @param beta The inferred Grantham polarity parameter
+#' @param gamma the inferred Grantham molecular volume parameter
+#' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
+#'
+#' @details
+#' The purpose of this function is to provide the functionality of a gene based on the inferred parameters from SelAC. The functionality is often used to scale phi.
+GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamma, aa.properties=NULL){
+    if(is.null(aa.properties)) {
+        #     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
+        # 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
+        # 12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5,
+        # 9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119,
+        # 111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L,
+        # 3L), .Dimnames = list(c("Ala", "Cys", "Asp", "Glu", "Phe", "Gly",
+        # "His", "Ile", "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg",
+        # "Ser", "Thr", "Val", "Trp", "Tyr"), c("c", "p", "v"))) #properties from Grantham paper
+        aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
+        1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
+        12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5,
+        9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119,
+        111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L,
+        3L), .Dimnames = list(c("A", "C", "D", "E", "F", "G",
+        "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+        "S", "T", "V", "W", "Y"), c("c", "p", "v"))) #properties from Grantham paper
+    }
+    aa.distances <- c()
+    #Note using only the second row, because we are comparing empirical S. cervisae rates:
+    for(site.index in 1:gene.length){
+        aa.distances <- c(aa.distances, (1+((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
+    }
+    functionality = 1/((1/gene.length) * sum(aa.distances))
+    return(functionality)
+}
+
+
+#' @title Calculate site likelihoods under SelAC
 #'
 #' @description
 #' Calculates the likelihoods across sites and across genes under SELAC
