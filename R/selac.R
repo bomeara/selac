@@ -3767,7 +3767,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
                 nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(x)], model=nuc.model, base.freqs=base.freqs)
             }
             if(nuc.model == "UNREST") {
-                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(x)], model=nuc.model)
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[6:length(x)], model=nuc.model)
             }
         }else{
             if(nuc.model == "JC") {
@@ -3779,7 +3779,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
                 nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
             }
             if(nuc.model == "UNREST") {
-                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model)
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model)
             }
         }
         
