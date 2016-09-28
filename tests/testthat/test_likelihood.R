@@ -20,7 +20,7 @@ test_that("GTR+GAMMA_likelihood", {
 	chars <- DNAbinToNucleotideNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	nuc.sites = SitePattern(codon.data)
-	gtr_gamma <- GetLikelihoodNucleotideForManyCharGivenAllParams(log(c(.5,1,1,1,1,1)), nuc.sites, phy, nuc.model="GTR", include.gamma=TRUE, logspace=TRUE, ncats=4, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+	gtr_gamma <- GetLikelihoodNucleotideForManyCharGivenAllParams(log(c(.5,1,1,1,1,1)), nuc.sites, phy, nuc.model="GTR", include.gamma=TRUE, gamma.type="median", logspace=TRUE, ncats=4, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
 	comparison <- identical(round(gtr_gamma,3), -8192.526)
 	expect_true(comparison)
 })
@@ -123,7 +123,7 @@ test_that("selac+GAMMA_likelihood", {
 	codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
 	aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
-	selac_gamma <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, .25, .25, .25, rep(1,5), 5)), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="GTR", codon.index.matrix, include.gamma=TRUE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+	selac_gamma <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, .25, .25, .25, rep(1,5), 5)), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="GTR", codon.index.matrix, include.gamma=TRUE, gamma.type="median", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
 	comparison <- identical(round(selac_gamma, 3), -7007.463)
 	expect_true(comparison)
 })
