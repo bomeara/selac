@@ -7,12 +7,12 @@
 SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   data.type = "codon", codon.model = "selac", edge.length = "optimize",
   edge.linked = TRUE, optimal.aa = "optimize", nuc.model = "GTR",
-  include.gamma = FALSE, ncats = 4, numcode = 1, diploid = TRUE,
-  k.levels = 0, aa.properties = NULL, verbose = FALSE, n.cores = NULL,
-  max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 3,
-  user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
-  recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
-  output.restart.filename = "restartResult",
+  include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
+  numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
+  verbose = FALSE, n.cores = NULL, max.tol = .Machine$double.eps^0.5,
+  max.evals = 1e+06, max.restarts = 3, user.optimal.aa = NULL,
+  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE,
+  output.by.restart = TRUE, output.restart.filename = "restartResult",
   user.supplied.starting.vals = NULL, tol.step = 1)
 }
 \arguments{
@@ -36,9 +36,11 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{include.gamma}{A logical indicating whether or not to include a discrete gamma model.}
 
+\item{gamma.type}{Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.}
+
 \item{ncats}{The number of discrete categories.}
 
-\item{numcode}{The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
+\item{numcode}{The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
 
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
 
