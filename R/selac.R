@@ -2135,44 +2135,74 @@ DiscreteGamma <- function (shape, ncats){
 
 
 LaguerreQuad <- function(shape, ncats) {
-    # Taken from the DECIPHER package written by Erik Wright: DECIPHER@cae.wisc.edu 
-    # Determine rates based on shape and the number of bins
+    # Determine rates based on alpha and the number of bins
     # bins roots normalized to 1 of the General Laguerre Quadrature
     # first ncats elements are rates with mean 1
     # second ncats elements are probabilities with sum 1
-    findRoots <- function(shape, ncats) {
-        # Determine rates based on Gamma's shape and the number of bins
-        # bins roots normalized to 1 of the General Laguerre Polynomial (GLP)
-        coeff  <- integer(ncats + 1)
-        for (i in 0:ncats) {
-            coeff[i + 1] <- (-1)^i*choose(ncats + shape, ncats - i)/factorial(i)
-        }
-        
-        return(sort(Re(polyroot(coeff))))
-    }
     roots <- findRoots(shape - 1, ncats)
-    
-    Laguerre <- function(x, shape, degree) {
-        y <- 0
-        for (i in 0:degree) {
-            y <- y + (-1)^i*choose(degree + shape, degree - i)*x^i/factorial(i)
-        }
-        return(y)
-    }
-    
     weights <- numeric(ncats)
     f <- prod(1 + (shape - 1)/(1:ncats))
     
     for (i in 1:ncats) {
-        weights[i] <- f*roots[i]/((ncats + 1)^2*Laguerre(roots[i],
-        shape - 1,
-        ncats + 1)^2)
+        weights[i] <- f*roots[i]/((ncats + 1)^2*Laguerre(roots[i], shape - 1, ncats + 1)^2)
     }
-    
     roots <- roots/shape
-    #Easier to output as a vector that we parse up than 
     return(c(roots, weights))
 }
+
+
+findRoots <- function(shape, ncats) {
+    # Determine rates based on Gamma's alpha and the number of bins
+    # bins roots normalized to 1 of the General Laguerre Polynomial (GLP)
+    coeff  <- integer(ncats + 1)
+    for (i in 0:ncats) {
+        coeff[i + 1] <- (-1)^i*nChooseK(ncats + shape, ncats - i)/factorial(i)
+    }
+    return(sort(Re(polyroot(coeff))))
+}
+
+
+Laguerre <- function(x, shape, degree) {
+    y <- 0
+    for (i in 0:degree) {
+        y <- y + (-1)^i*choose(degree + shape, degree - i)*x^i/factorial(i)
+    }
+    return(y)
+}
+
+
+#Took this from R.basic -- the C version did not work when LaguerreQuad was called internally. Adding this function fixed this issue (JMB 9-29-2016).
+nChooseK <- function(n, k, log=FALSE) {
+    nChooseK0 <- function(n, k) {
+        if((n == k) || (k==0))
+        return(1);
+        m <- min(k, n-k);
+        prod(seq(from=n, to=(n-m+1), by=-1)/(seq(from=m, to=1, by=-1)));
+    }
+    # Process the arguments
+    if (is.logical(log)) {
+        if (log == TRUE)
+        log <- exp(1)
+        else
+        log <- NULL;
+    }
+    # Repeat n or k to make the of equal length.
+    nn <- length(n);
+    nk <- length(k);
+    if (nn > nk) {
+        k <- rep(k, length.out=nn);
+        nk <- nn;
+    } else if (nn < nk) {
+        n <- rep(n, length.out=nk);
+        nn <- nk;
+    }
+    if (is.null(log)) {
+        gamma(n+1) / (gamma(n-k+1) * gamma(k+1));
+    } else {
+        (lgamma(n+1) - (lgamma(n-k+1) + lgamma(k+1))) / log(log);
+    }
+}
+
 
 
 PlotBubbleMatrix <- function(x, main="", special=Inf, cex=1){
@@ -3297,7 +3327,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     phy$edge.length <- colMeans(starting.branch.lengths)
                     #phy$edge.length <- colMeans(starting.branch.lengths) / (1/selac.starting.vals[number.of.current.restarts, 2])
                     opts.edge <- opts
-                    upper.edge <- rep(log(20), length(phy$edge.length))
+                    upper.edge <- rep(log(50), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=NULL, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
@@ -3514,7 +3544,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     phy$edge.length <- colMeans(starting.branch.lengths)
                     #phy$edge.length <- colMeans(starting.branch.lengths) / (1/selac.starting.vals[number.of.current.restarts, 2])
                     opts.edge <- opts
-                    upper.edge <- rep(log(20), length(phy$edge.length))
+                    upper.edge <- rep(log(50), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
                     results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=NULL, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
                     print(results.edge.final$objective)
