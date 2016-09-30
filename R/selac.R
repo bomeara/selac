@@ -3139,13 +3139,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 if(k.levels == 0){
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "shape.gamma")
-                    upper = c(log(50),  21, 21, 0, 0, 0, 21, 21)
+                    upper = c(log(50),  21, 21, 0, 0, 0, 21, 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 1
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma")
-                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 21)
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 2 + 1
                 }
@@ -3154,13 +3154,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 if(k.levels == 0){
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
-                    upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 21)
+                    upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 5 + 1
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
-                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 21)
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 5 + 2	+ 1
                 }
@@ -3169,13 +3169,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 if(k.levels == 0){
                     ip = c(selac.starting.vals[1,1:3], nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
-                    upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 21)
+                    upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 3 + 11 + 1
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
-                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 21)
+                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 3 + 11 + 2 + 1
                 }
@@ -3361,12 +3361,14 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     return(tmp.pars)
                 }
                 results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores)
+                print(results.set)
                 #if(include.gamma == TRUE){
                     #The number of columns is 3: [1] log-likelihood, [2] C.q.phi, [3] phi gamma:
                     #parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
                     #}else{
                     #The number of columns is 2: [1] log-likelihood, [2] C.q.phi:
                     parallelized.parameters <- t(matrix(unlist(results.set), 2, n.partitions))
+                    print(parallelized.parameters)
                     #}
                 results.final <- NULL
                 results.final$objective <- sum(parallelized.parameters[,1])

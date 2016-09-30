@@ -45,22 +45,22 @@ test_that("FMutSel0_likelihood", {
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
     yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-    chars <- selac:::DNAbinToCodonNumeric(yeast.gene)
+    chars <- DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
-    codon.data = selac:::SitePattern(codon.data)
-    fmutsel0 <- selac:::GetLikelihoodMutSel_CodonForManyCharGivenAllParams(log(c(.25,.25,.25, rep(1,5), .4, rep(1,19))), codon.data, phy, numcode=1,  nuc.model="GTR", logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    codon.data = SitePattern(codon.data)
+    fmutsel0 <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(log(c(.25,.25,.25, rep(1,5), .4, rep(1,19))), codon.data, phy, numcode=1,  nuc.model="GTR", logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
     comparison <- identical(round(fmutsel0,3), -8641.113)
     expect_true(comparison)
 })
 
 
-test_that("selac_likelihood", {
+test_that("selac_likelihood_gtr", {
 	set.seed(4)
 	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-	chars <- DNAbinToCodonNumeric(yeast.gene)
+	chars <- selac:DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
@@ -79,7 +79,7 @@ test_that("selac_likelihood", {
 })
 
 
-test_that("selac_likelihood", {
+test_that("selac_likelihood_unrest", {
     set.seed(4)
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
