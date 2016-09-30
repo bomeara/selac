@@ -60,7 +60,7 @@ test_that("selac_likelihood_gtr", {
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-	chars <- selac:DNAbinToCodonNumeric(yeast.gene)
+	chars <- DNAbinToCodonNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
 	aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
 	aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
