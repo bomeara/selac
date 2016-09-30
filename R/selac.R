@@ -3139,7 +3139,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 if(k.levels == 0){
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "shape.gamma")
-                    upper = c(log(50),  21, 21, 0, 0, 0, 21, 5)
+                    upper = c(log(50),  21, 21, 0, 0, 0, 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 1
                 }else{
@@ -3463,7 +3463,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores)
                     #if(include.gamma == TRUE){
                         #The number of columns is 3: [1] log-likelihood, [2] C.q.phi.Ne, [3] phi gamma:
-                        parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
+                        #parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
                     #}else{
                         #The number of columns is 2: [1] log-likelihood, [2] C.q.phi.Ne:
                         parallelized.parameters <- t(matrix(unlist(results.set), 2, n.partitions))
