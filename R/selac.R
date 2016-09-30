@@ -3361,14 +3361,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     return(tmp.pars)
                 }
                 results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores)
-                print(results.set)
                 #if(include.gamma == TRUE){
                     #The number of columns is 3: [1] log-likelihood, [2] C.q.phi, [3] phi gamma:
                     #parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
                     #}else{
                     #The number of columns is 2: [1] log-likelihood, [2] C.q.phi:
                     parallelized.parameters <- t(matrix(unlist(results.set), 2, n.partitions))
-                    print(parallelized.parameters)
                     #}
                 results.final <- NULL
                 results.final$objective <- sum(parallelized.parameters[,1])
