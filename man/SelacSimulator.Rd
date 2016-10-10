@@ -6,8 +6,8 @@
 \usage{
 SelacSimulator(phy, pars, aa.optim_array, codon.freq.by.aa = NULL,
   codon.freq.by.gene = NULL, numcode = 1, aa.properties = NULL, nuc.model,
-  include.gamma = FALSE, ncats = 4, k.levels = 0, diploid = TRUE,
-  site.cats.vector = NULL)
+  include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
+  k.levels = 0, diploid = TRUE, site.cats.vector = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -27,6 +27,8 @@ SelacSimulator(phy, pars, aa.optim_array, codon.freq.by.aa = NULL,
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
 
 \item{include.gamma}{A logical indicating whether or not to include a discrete gamma model.}
+
+\item{gamma.type}{Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.}
 
 \item{ncats}{The number of discrete categories.}
 

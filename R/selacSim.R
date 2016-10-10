@@ -140,6 +140,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
+#' @param gamma.type Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.
 #' @param ncats The number of discrete categories.
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
@@ -147,7 +148,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
+SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
     nsites <- length(aa.optim_array)
 
     #Start organizing the user input parameters:
@@ -210,7 +211,15 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
     codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
 
     if(include.gamma == TRUE){
-        rates.k <- DiscreteGamma(shape, ncats)
+        if(gamma.type == "median"){
+            rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+            weights.k <- rep(1/ncats, ncats)
+        }
+        if(gamma.type == "quadrature"){
+            rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
         rate.Q_codon.list <- as.list(ncats)
         for(cat.index in 1:ncats){
             if(k.levels > 0){
@@ -270,7 +279,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
     if(include.gamma == TRUE){
         for(site in 1:nsites){
             if(is.null(site.cats.vector)){
-                site.rate <- sample(1:4,1)
+                site.rate <- sample(1:4, 1, prob=weights.k)
             }else{
                 site.rate <- site.cats.vector[site]
             }
