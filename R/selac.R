@@ -42,6 +42,56 @@ library(parallel)
 # 22 scenedesmus.mitochondrial
 # 23 hraustochytrium.mitochondria
 
+
+######################################################################################################################################
+######################################################################################################################################
+### A collection of constants used by various functions
+######################################################################################################################################
+######################################################################################################################################
+
+
+.codon.sets <- matrix(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
+0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3), ncol=3)
+
+
+.codon.set.translate <- matrix(c("a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "c", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "g", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t", "t",
+"a", "a", "a", "a", "c", "c", "c", "c", "g", "g", "g", "g", "t", "t", "t", "t", "a", "a", "a", "a", "c", "c", "c", "c", "g", "g", "g", "g", "t", "t", "t", "t", "a", "a", "a", "a", "c", "c", "c", "c", "g", "g", "g", "g", "t", "t", "t", "t", "a", "a", "a", "a", "c", "c", "c", "c", "g", "g", "g", "g", "t", "t", "t", "t",
+"a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t", "a", "c", "g", "t"), ncol=3)
+
+
+.codon.name <- c("aaa" ,"aac" ,"aag" ,"aat" ,"aca" ,"acc" ,"acg" ,"act" ,"aga" ,"agc" ,"agg" ,"agt" ,"ata" ,"atc" ,"atg" ,"att" ,"caa" ,"cac" ,"cag" ,"cat", "cca" ,"ccc",
+"ccg" ,"cct" ,"cga" ,"cgc" ,"cgg" ,"cgt" ,"cta" ,"ctc" ,"ctg" ,"ctt" ,"gaa" ,"gac" ,"gag" ,"gat" ,"gca" ,"gcc" ,"gcg" ,"gct" ,"gga" ,"ggc", "ggg" ,"ggt",
+"gta" ,"gtc" ,"gtg" ,"gtt" ,"taa" ,"tac" ,"tag" ,"tat" ,"tca" ,"tcc" ,"tcg" ,"tct" ,"tga" ,"tgc" ,"tgg" ,"tgt" ,"tta" ,"ttc" ,"ttg" ,"ttt")
+
+
+TranslateCodon <- function(codon.string, numcode) {
+    return(translate(s2c(codon.string), numcode=numcode))
+}
+
+
+.aa.translation <- list(sapply(.codon.name, TranslateCodon, numcode=1),
+sapply(.codon.name, TranslateCodon, numcode=2),
+sapply(.codon.name, TranslateCodon, numcode=3),
+sapply(.codon.name, TranslateCodon, numcode=4),
+sapply(.codon.name, TranslateCodon, numcode=5),
+sapply(.codon.name, TranslateCodon, numcode=6),
+sapply(.codon.name, TranslateCodon, numcode=9),
+sapply(.codon.name, TranslateCodon, numcode=10),
+sapply(.codon.name, TranslateCodon, numcode=11),
+sapply(.codon.name, TranslateCodon, numcode=12),
+sapply(.codon.name, TranslateCodon, numcode=13),
+sapply(.codon.name, TranslateCodon, numcode=14),
+sapply(.codon.name, TranslateCodon, numcode=15),
+sapply(.codon.name, TranslateCodon, numcode=16),
+sapply(.codon.name, TranslateCodon, numcode=21),
+sapply(.codon.name, TranslateCodon, numcode=22),
+sapply(.codon.name, TranslateCodon, numcode=23))
+
+
+.unique.aa <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "*", "Y", "C", "W", "F")
+
+
 ######################################################################################################################################
 ######################################################################################################################################
 ### Various functions used by main function:
@@ -277,21 +327,21 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
 
 CreateCodonMutationMatrixIndex <- function() {
     nuc.rates.index = matrix(1:16, 4, 4)
-    codon.sets <- CreateCodonSets()
-    n.codons <- dim(codon.sets)[1]
+    #codon.sets <- CreateCodonSets()
+    n.codons <- dim(.codon.sets)[1]
     codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
     rownames(codon.mutation.rates) <- rep("",n.codons)
     colnames(codon.mutation.rates) <- rep("",n.codons)
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
-            if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
-                mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-                codon.mutation.rates[i,j] <- nuc.rates.index[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] #nucs numbered from 0:3, rows are 1:4, thus the add 1
+            if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                codon.mutation.rates[i,j] <- nuc.rates.index[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] #nucs numbered from 0:3, rows are 1:4, thus the add 1
             }
         }
-        codon.name <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
-        rownames(codon.mutation.rates)[i] <- codon.name
-        colnames(codon.mutation.rates)[i] <- codon.name
+        #codon.name <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
+        rownames(codon.mutation.rates)[i] <- .codon.name[i]
+        colnames(codon.mutation.rates)[i] <- .codon.name[i]
     }
     codon.mutation.rates[codon.mutation.rates==0] = 17
     return(codon.mutation.rates)
@@ -300,21 +350,21 @@ CreateCodonMutationMatrixIndex <- function() {
 
 
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
-    codon.sets <- CreateCodonSets()
-    n.codons <- dim(codon.sets)[1]
+    #codon.sets <- CreateCodonSets()
+    n.codons <- dim(.codon.sets)[1]
     codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
     rownames(codon.mutation.rates) <- rep("",n.codons)
     colnames(codon.mutation.rates) <- rep("",n.codons)
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
-            if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
-                mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-                codon.mutation.rates[i,j] <- nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] #nucs numbered from 0:3, rows are 1:4, thus the add 1
+            if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] #nucs numbered from 0:3, rows are 1:4, thus the add 1
             }
         }
-        codon.name <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
-        rownames(codon.mutation.rates)[i] <- codon.name
-        colnames(codon.mutation.rates)[i] <- codon.name
+        #codon.name <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
+        rownames(codon.mutation.rates)[i] <- .codon.name
+        colnames(codon.mutation.rates)[i] <- .codon.name
         
     }
     diag(codon.mutation.rates) <- 0
@@ -324,44 +374,44 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 
 
 CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutation.rates, numcode) {
-    codon.sets <- CreateCodonSets()
-    n.codons <- dim(codon.sets)[1]
+    #codon.sets <- CreateCodonSets()
+    n.codons <- dim(.codon.sets)[1]
     codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
     rownames(codon.mutation.rates) <- rep("",n.codons)
     colnames(codon.mutation.rates) <- rep("",n.codons)
-    codon.set.translate <- apply(codon.sets, 2, n2s)
-    codon.name <- apply(codon.set.translate, 1, paste, collapse="")
-    aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+    aa.translations <- .aa.translation[[numcode]][.codon.name]
     
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
-            if(aa.translation[i] == aa.translation[j]){ #synonymous
-                if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-                    matched.position <- which(codon.sets[i,] == codon.sets[j,])
+            if(aa.translations[i] == aa.translations[j]){ #synonymous
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
                     if((fitness.pars[j]-fitness.pars[i]) == 0){
                         codon.mutation.rates[i,j] = 1
                     }else{
-                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
+                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
                     }
                 }
             }else{ #nonsynonymous
-                if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-                    matched.position <- which(codon.sets[i,] == codon.sets[j,])
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
                     if((fitness.pars[j]-fitness.pars[i]) == 0){
                         codon.mutation.rates[i,j] = 1
                     }else{
-                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+codon.sets[i,mismatch.position], 1+codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
+                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
                     }
                 }
             }
         }
     }
     #Remove stop codon rates -- they should be removed already, but just in case...
-    codon.mutation.rates[which(aa.translation == "*"),] = codon.mutation.rates[,which(aa.translation == "*")] = 0
+    codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
     #Now let us finish up the matrix:
-    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- codon.name
+    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
     diag(codon.mutation.rates) <- 0
     diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
     return(codon.mutation.rates)
@@ -372,46 +422,46 @@ CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode)
     kappa.par = x[1]
     v.par <- x[2]
     #The last value is arbitrarily set to 0 per Yang and Nielsen (2008):
-    codon.sets <- CreateCodonSets()
-    n.codons <- dim(codon.sets)[1]
+    #codon.sets <- CreateCodonSets()
+    n.codons <- dim(.codon.sets)[1]
     codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
     rownames(codon.mutation.rates) <- rep("",n.codons)
     colnames(codon.mutation.rates) <- rep("",n.codons)
-    codon.set.translate <- apply(codon.sets, 2, n2s)
-    codon.name <- apply(codon.set.translate, 1, paste, collapse="")
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
     #We add this in because the stop codons are not included in Grantham's distance calculation:
     aa.distances <- rbind(aa.distances, "*"=0, deparse.level=2)
     aa.distances <- cbind(aa.distances, "*"=0, deparse.level=2)
-    aa.translation <- sapply(codon.name, TranslateCodon, numcode=numcode)
+    aa.translations <- .aa.translation[[numcode]][.codon.name]
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
-            if(aa.translation[i] == aa.translation[j]){ #synonymous -- set distance to zero.
-                if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-                    matched.position <- which(codon.sets[i,] == codon.sets[j,])
-                    if(codon.sets[i, mismatch.position] == 0 & codon.sets[j,mismatch.position] == 2 | codon.sets[i, mismatch.position] == 2 & codon.sets[j,mismatch.position] == 0 | codon.sets[i, mismatch.position] == 1 & codon.sets[j,mismatch.position] == 3 | codon.sets[i, mismatch.position] == 3 & codon.sets[j,mismatch.position] == 1){
+            if(aa.translations[i] == aa.translations[j]){ #synonymous -- set distance to zero.
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+                    if(.codon.sets[i, mismatch.position] == 0 & .codon.sets[j,mismatch.position] == 2 | .codon.sets[i, mismatch.position] == 2 & .codon.sets[j,mismatch.position] == 0 | .codon.sets[i, mismatch.position] == 1 & .codon.sets[j,mismatch.position] == 3 | .codon.sets[i, mismatch.position] == 3 & .codon.sets[j,mismatch.position] == 1){
                         codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * exp(-0/v.par)
                     }else{
                         codon.mutation.rates[i,j] <- codon.freqs[j] * exp(-0/v.par)
                     }
                 }
             }else{ #nonsynonymous -- so we need to know Grantham's distance.
-                if(sum(codon.sets[i,] == codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(codon.sets[i,] != codon.sets[j,])
-                    matched.position <- which(codon.sets[i,] == codon.sets[j,])
-                    if(codon.sets[i, mismatch.position] == 0 & codon.sets[j,mismatch.position] == 2 | codon.sets[i, mismatch.position] == 2 & codon.sets[j,mismatch.position] == 0 | codon.sets[i, mismatch.position] == 1 & codon.sets[j,mismatch.position] == 3 | codon.sets[i, mismatch.position] == 3 & codon.sets[j,mismatch.position] == 1){
-                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * exp(-aa.distances[aa.translation[i], aa.translation[j]]/v.par)
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+                    if(.codon.sets[i, mismatch.position] == 0 & .codon.sets[j,mismatch.position] == 2 | .codon.sets[i, mismatch.position] == 2 & .codon.sets[j,mismatch.position] == 0 | .codon.sets[i, mismatch.position] == 1 & .codon.sets[j,mismatch.position] == 3 | .codon.sets[i, mismatch.position] == 3 & .codon.sets[j,mismatch.position] == 1){
+                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * exp(-aa.distances[aa.translations[i], aa.translations[j]]/v.par)
                     }else{
-                        codon.mutation.rates[i,j] <- codon.freqs[j] * exp(-aa.distances[aa.translation[i], aa.translation[j]]/v.par)
+                        codon.mutation.rates[i,j] <- codon.freqs[j] * exp(-aa.distances[aa.translations[i], aa.translations[j]]/v.par)
                     }
                 }
             }
         }
     }
     #Remove stop codon rates -- they should be removed already, but just in case...
-    codon.mutation.rates[which(aa.translation == "*"),] = codon.mutation.rates[,which(aa.translation == "*")] = 0
+    codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
     #Now let us finish up the matrix:
-    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- codon.name
+    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
     diag(codon.mutation.rates) <- 0
     diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
     return(codon.mutation.rates)
@@ -570,9 +620,6 @@ GetPairwiseProteinFixationProbabilitySingleSite <- function(d1, d2, nsites, C=4,
 }
 
 
-TranslateCodon <- function(codon.string, numcode) {
-    return(translate(s2c(codon.string), numcode=numcode))
-}
 
 
 GetProteinProteinDistance <- function(protein1, protein2, aa.distances){
@@ -606,20 +653,20 @@ GetProteinProteinDistance <- function(protein1, protein2, aa.distances){
 
 
 #FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=2, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-##	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
-#	n.codons <- dim(codon.sets)[1]
+##	#codon.sets <- CreateCodonSets()
+#	.codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	.codon.sets <- data.frame(first=.codon.sets[,3], second=.codon.sets[,2], third=.codon.sets[,1]) #reordering to group similar codons
+#	n.codons <- dim(.codon.sets)[1]
 #	codon.names <- rep("", n.codons)
 #	for (i in sequence(n.codons)) {
-#		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+#		codon.names[i] <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
 #	}
 #	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
 #	unique.aa <- unique(codon.aa)
 #	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
 #	for (i in sequence(n.codons)) {
 #		for (j in sequence(n.codons)) {
-#			if(sum(codon.sets[i,] == codon.sets[j,])>=2) { #match at two or three sites of three
+#			if(sum(.codon.sets[i,] == .codon.sets[j,])>=2) { #match at two or three sites of three
 #				for (k in sequence(length(unique.aa))) {
 #					aa1 <- codon.aa[i]
 #					aa2 <- codon.aa[j]
@@ -666,27 +713,27 @@ CreateAAFixationMatrixForEverything <- function(aa.distances=CreateAADistanceMat
 
 
 FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-    codon.sets <- CreateCodonSets()
-    #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-    #	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
-    colnames(codon.sets) <- c("first", "second", "third")
-    n.codons <- dim(codon.sets)[1]
+    #codon.sets <- CreateCodonSets()
+    #codon.sets <- expand.grid(0:3, 0:3, 0:3)
+    #codon.sets[,c(3,2,1)] <- .codon.sets[,c(1,2,3)] #re-ordering as in the original one
+    colnames(.codon.sets) <- c("first", "second", "third")
+    n.codons <- dim(.codon.sets)[1]
     codon.names <- rep("", n.codons)
     aa.fixation.probs <- CreateAAFixationMatrixForEverything(aa.distances=aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid)
     for (i in sequence(n.codons)) {
-        codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+        codon.names[i] <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
     }
     codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
-    unique.aa <- unique(codon.aa)
+    #unique.aa <- unique(codon.aa)
     
-    codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+    codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(.unique.aa)), dimnames=list(codon.names, codon.names, .unique.aa))
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
-            if(sum(codon.sets[i,] == codon.sets[j,])>1 ) { #match at two or more sites
-                for (k in sequence(length(unique.aa))) {
+            if(sum(.codon.sets[i,] == .codon.sets[j,])>1 ) { #match at two or more sites
+                for (k in sequence(length(.unique.aa))) {
                     aa1 <- codon.aa[i]
                     aa2 <- codon.aa[j]
-                    codon.fixation.probs[i,j, k] <- aa.fixation.probs[aa1, aa2, unique.aa[k]]
+                    codon.fixation.probs[i,j, k] <- aa.fixation.probs[aa1, aa2, .unique.aa[k]]
                 }
             }
         }
@@ -723,26 +770,26 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 #	}
 #	return(codon_fixation_probs_aa);
 #}')
-#result <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1)
+#result <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(.codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1)
 
 ## Work in progress ##
 #CCQuestionablyFastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAADistanceMatrix(), nsites, C=4.0, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-#	codon.sets <- CreateCodonSets()
-#	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-#	codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
-#	colnames(codon.sets) <- c("first", "second", "third")
-#	n.codons <- dim(codon.sets)[1]
+#	.codon.sets <- CreateCodonSets()
+#	.codon.sets <- expand.grid(0:3, 0:3, 0:3)
+#	.codon.sets[,c(3,2,1)] <- .codon.sets[,c(1,2,3)] #re-ordering as in the original one
+#	colnames(.codon.sets) <- c("first", "second", "third")
+#	n.codons <- dim(.codon.sets)[1]
 #	codon.names <- rep("", n.codons)
 #	aa.fixation.probs <- CreateAAFixationMatrixForEverything(aa.distances=aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid)
 #	for (i in sequence(n.codons)) {
-#		codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+#		codon.names[i] <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
 #	}
 #	codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
 #	unique.aa <- unique(codon.aa)
 
 #	codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
 #	for (k in sequence(length(unique.aa))) {
-#		codon.fixation.probs[,,k] <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1) #k-1 due to C++ counting from zero
+#		codon.fixation.probs[,,k] <- CreateCodonFixationProbabilityMatrixGivenOptimalAA(.codon.sets, unname(codon.aa),  aa.distances, nsites, C, Phi, q, Ne, include.stop.codon,  numcode, diploid, GetProteinProteinDistance, GetPairwiseProteinFixationProbabilitySingleSite, k-1) #k-1 due to C++ counting from zero
 #	}
 #	return(codon.fixation.probs)
 #}
@@ -756,30 +803,30 @@ DiagArray <- function (dim){
 
 
 FastCreateAllCodonFixationProbabilityMatricesSetToOne <- function(numcode=1) {
-    codon.sets <- CreateCodonSets()
-    #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-    #	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
-    n.codons <- dim(codon.sets)[1]
+    #   codon.sets <- CreateCodonSets()
+    #	.codon.sets <- expand.grid(0:3, 0:3, 0:3)
+    #	.codon.sets <- data.frame(first=.codon.sets[,3], second=.codon.sets[,2], third=.codon.sets[,1]) #reordering to group similar codons
+    n.codons <- dim(.codon.sets)[1]
     codon.names <- rep("", n.codons)
     for (i in sequence(n.codons)) {
-        codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+        codon.names[i] <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
     }
     codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
-    unique.aa <- unique(codon.aa)
-    codon.fixation.rates <- array(data=1, dim=c(n.codons, n.codons, length(unique.aa)), dimnames=list(codon.names, codon.names, unique.aa))
+    #unique.aa <- unique(codon.aa)
+    codon.fixation.rates <- array(data=1, dim=c(n.codons, n.codons, length(.unique.aa)), dimnames=list(codon.names, codon.names, .unique.aa))
     return(codon.fixation.rates)
 }
 
 
 CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1){
-    codon.sets <- CreateCodonSets()
-    #	codon.sets <- expand.grid(0:3, 0:3, 0:3)
-    #	codon.sets <- data.frame(first=codon.sets[,3], second=codon.sets[,2], third=codon.sets[,1]) #reordering to group similar codons
-    n.codons <- dim(codon.sets)[1]
+    #   codon.sets <- CreateCodonSets()
+    #	.codon.sets <- expand.grid(0:3, 0:3, 0:3)
+    #	.codon.sets <- data.frame(first=.codon.sets[,3], second=.codon.sets[,2], third=.codon.sets[,1]) #reordering to group similar codons
+    n.codons <- dim(.codon.sets)[1]
     codon.fixation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
     codon.names <- rep("", n.codons)
     for (i in sequence(n.codons)) {
-        codon.names[i] <- paste(n2s(as.numeric(codon.sets[i,])), collapse="")
+        codon.names[i] <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
     }
     rownames(codon.fixation.rates) <- codon.names
     colnames(codon.fixation.rates) <- codon.names
@@ -787,9 +834,9 @@ CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites,
     
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
-            if(sum(codon.sets[i,] == codon.sets[j,])>=2) { #match at two or three sites of three
-                aa1 <- TranslateCodon(paste(n2s(as.numeric(codon.sets[i,])), collapse=""), numcode=numcode)
-                aa2 <- TranslateCodon(paste(n2s(as.numeric(codon.sets[j,])), collapse=""), numcode=numcode)
+            if(sum(.codon.sets[i,] == .codon.sets[j,])>=2) { #match at two or three sites of three
+                aa1 <- TranslateCodon(paste(n2s(as.numeric(.codon.sets[i,])), collapse=""), numcode=numcode)
+                aa2 <- TranslateCodon(paste(n2s(as.numeric(.codon.sets[j,])), collapse=""), numcode=numcode)
                 if(aa1!="*" && aa2!="*") { #says we cannot mutate to stop codons
                     d1 <- GetProteinProteinDistance(protein1=aa1, protein2=aa_op, aa.distances=aa.distances)
                     d2 <- GetProteinProteinDistance(protein1=aa2, protein2=aa_op, aa.distances=aa.distances)
@@ -828,9 +875,9 @@ CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=4, Phi=0.5, q=4e-7, Ne
 CreateCodonSets <- function() {
     codon.sets <- expand.grid(0:3, 0:3, 0:3)
     codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
-    colnames(codon.sets) <- c("first", "second", "third")
-    codon.sets <- as.matrix(codon.sets)
-    return(codon.sets)
+    colnames(.codon.sets) <- c("first", "second", "third")
+    codon.sets <- as.matrix(.codon.sets)
+    return(.codon.sets)
 }
 
 
@@ -900,7 +947,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     
     nsites <- dim(codon.data$unique.site.patterns)[2]-1
     final.likelihood.vector <- rep(NA, nsites)
-    unique.aa <- GetMatrixAANames(numcode)
+    #unique.aa <- GetMatrixAANames(numcode)
 
     #We rescale the codon matrix only:
     diag(codon_mutation_matrix) = 0
@@ -911,12 +958,12 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     #Finish the Q_array codon mutation matrix multiplication here:
     for(k in 1:21){
         if(diploid == TRUE){
-            Q_codon_array[,,unique.aa[k]] = (2 * Ne) * codon_mutation_matrix_scaled * Q_codon_array[,,unique.aa[k]]
+            Q_codon_array[,,.unique.aa[k]] = (2 * Ne) * codon_mutation_matrix_scaled * Q_codon_array[,,.unique.aa[k]]
         }else{
-            Q_codon_array[,,unique.aa[k]] = Ne * codon_mutation_matrix_scaled * Q_codon_array[,,unique.aa[k]]
+            Q_codon_array[,,.unique.aa[k]] = Ne * codon_mutation_matrix_scaled * Q_codon_array[,,.unique.aa[k]]
         }
-        diag(Q_codon_array[,,unique.aa[k]]) = 0
-        diag(Q_codon_array[,,unique.aa[k]]) = -rowSums(Q_codon_array[,,unique.aa[k]])
+        diag(Q_codon_array[,,.unique.aa[k]]) = 0
+        diag(Q_codon_array[,,.unique.aa[k]]) = -rowSums(Q_codon_array[,,.unique.aa[k]])
     }
     
     #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
@@ -950,7 +997,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     root.p_array <- matrix(codon.freq.by.aa, nrow=dim(Q_codon_array)[2], ncol=21)
     root.p_array <- t(root.p_array)
     root.p_array <- root.p_array / rowSums(root.p_array)
-    rownames(root.p_array) <- unique.aa
+    rownames(root.p_array) <- .unique.aa
     
     phy.sort <- reorder(phy, "pruningwise")
     anc.indices <- unique(phy.sort$edge[,1])
@@ -1176,8 +1223,8 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     if(!is.null(root.p_array[1])){
         codon.eq.freq <- root.p_array
     }else{
-        codon.sets <- CreateCodonSets()
-        n.codons <- dim(codon.sets)[1]
+        #.codon.sets <- .codon.sets
+        n.codons <- dim(.codon.sets)[1]
         codon.eq.freq <- numeric(n.codons)
         fitness.pars <- c(x[-1],0)
         fitness.pars.ordered <- numeric(n.codons)
@@ -1185,13 +1232,12 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
             fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
         }else{
             fitness.pars.ordered <- numeric(n.codons)
-            codon.set.translate <- apply(codon.sets, 2, n2s)
-            codon.name <- apply(codon.set.translate, 1, paste, collapse="")
-            aa.translation <- sapply(codon.name, TranslateCodon, numcode=numcode)
-            unique.aa <- unique(aa.translation)
-            unique.aa.nostop = unique.aa[-which(unique.aa=="*")]
+            #codon.set.translate <- apply(.codon.sets, 2, n2s)
+            #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+            aa.translations <- .aa.translation[[numcode]][.codon.name]
+            unique.aa.nostop = .unique.aa[-which(.unique.aa=="*")]
             for(par.index in 1:length(unique.aa.nostop)){
-                fitness.pars.ordered[which(aa.translation == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
+                fitness.pars.ordered[which(aa.translations == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
             }
         }
         for(codon.index in 1:n.codons){
@@ -1199,7 +1245,7 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
             if(codon.index == 49 | codon.index == 51 | codon.index == 57){
                 codon.eq.freq[codon.index] = 0
             }else{
-                codon.eq.freq[codon.index] <- base.freqs[unname(codon.sets[codon.index,1])+1] * base.freqs[unname(codon.sets[codon.index,2])+1] * base.freqs[unname(codon.sets[codon.index,3])+1] * exp(fitness.pars.ordered[codon.index])
+                codon.eq.freq[codon.index] <- base.freqs[unname(.codon.sets[codon.index,1])+1] * base.freqs[unname(.codon.sets[codon.index,2])+1] * base.freqs[unname(.codon.sets[codon.index,3])+1] * exp(fitness.pars.ordered[codon.index])
             }
         }
         codon.eq.freq <- codon.eq.freq/sum(codon.eq.freq)
@@ -1367,14 +1413,14 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
     codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
     
     optimal.vector.by.site <- rep(NA, nsites)
-    unique.aa <- GetMatrixAANames(numcode)
-    optimal.aa.likelihood.mat <- matrix(0, nrow=length(unique.aa), ncol=nsites)
+    #unique.aa <- GetMatrixAANames(numcode)
+    optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
     
-    for(i in 1:length(unique.aa)){
-        if(unique.aa[i]=="*"){
+    for(i in 1:length(.unique.aa)){
+        if(.unique.aa[i]=="*"){
             optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites)
         }else{
-            aa.optim_array = rep(unique.aa[i], nsites)
+            aa.optim_array = rep(.unique.aa[i], nsites)
             if(include.gamma==TRUE){
                 if(gamma.type == "median"){
                     rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -1413,7 +1459,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
         }
     }
     for(j in 1:nsites){
-        optimal.vector.by.site[j] <- unique.aa[which.is.max(optimal.aa.likelihood.mat[,j])]
+        optimal.vector.by.site[j] <- .unique.aa[which.is.max(optimal.aa.likelihood.mat[,j])]
     }
     return(optimal.vector.by.site)
 }
@@ -2119,8 +2165,8 @@ GetCAI <- function(codon.data, aa.optim, numcode=1, w){
     w.array <- t(w.array)
     w.array <- w.array / apply(w.array, 1, max)
     w.array[17,] <- 0
-    unique.aa <- GetMatrixAANames(numcode=numcode)
-    rownames(w.array) <- unique.aa
+    #unique.aa <- GetMatrixAANames(numcode=numcode)
+    rownames(w.array) <- .unique.aa
     wi <- apply(w.array, 2, max)
     wi[wi < 1e-4] <- 0.01
     wi = w
@@ -2414,26 +2460,26 @@ SitePattern <- function(codon.data, corHMM.format=TRUE, includes.optimal.aa=FALS
 
 
 GetMatrixAANames <-function(numcode){
-    codon.sets <- CreateCodonSets()
-    codon.set.translate <- apply(codon.sets, 2, n2s)
-    codon.name <- apply(codon.set.translate, 1, paste, collapse="")
-    codon.aa <- sapply(codon.name,TranslateCodon, numcode=numcode)
+    #codon.sets <- CreateCodonSets()
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+    codon.aa <- sapply(.codon.name,TranslateCodon, numcode=numcode)
     names(codon.aa ) = NULL
-    unique.aa <- unique(codon.aa)
-    return(unique.aa)
+    #unique.aa <- unique(codon.aa)
+    return(.unique.aa)
 }
 
 
 GetCodonFreqsByAA <- function(codon.data, aa.opt.vector, numcode){
-    codon.sets <- CreateCodonSets()
-    codon.set.translate <- apply(codon.sets, 2, n2s)
-    codon.name <- apply(codon.set.translate, 1, paste, collapse="")
-    aa.translation <- sapply(codon.name, TranslateCodon, numcode=numcode)
-    names(aa.translation) = NULL
-    unique.aa <- unique(aa.translation)
+    #codon.sets <- CreateCodonSets()
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+    aa.translations <- .aa.translation[[numcode=numcode]][codon.data=codon.data[,1]]
+    names(aa.translations) = NULL
+    #unique.aa <- unique(aa.translation)
     codon.freqs <- c()
     for(aa.id.index in sequence(21)) {
-        cols <- which(aa.opt.vector == unique.aa[aa.id.index])
+        cols <- which(aa.opt.vector == .unique.aa[aa.id.index])
         codon.freqs.tmp <- rep(0, 64)
         for(col.index in sequence(length(cols))) {
             for(row.index in sequence(dim(codon.data)[1])) {
@@ -2460,15 +2506,15 @@ GetCodonFreqsByGene <- function(codon.data){
 
 
 GetAAFreqsByGene <- function(codon.data, aa.opt.vector, numcode){
-    codon.sets <- CreateCodonSets()
-    codon.set.translate <- apply(codon.sets, 2, n2s)
-    codon.name <- apply(codon.set.translate, 1, paste, collapse="")
-    aa.translation <- sapply(codon.name,TranslateCodon, numcode=numcode)
-    names(aa.translation) = NULL
-    unique.aa <- unique(aa.translation)
+    #codon.sets <- CreateCodonSets()
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+    aa.translations <- .aa.translation[[numcode]][.codon.name]
+    names(aa.translations) = NULL
+    #unique.aa <- unique(aa.translation)
     eq.freqs <- c()
     for(aa.id.index in sequence(21)) {
-        cols <- which(aa.opt.vector == unique.aa[aa.id.index])
+        cols <- which(aa.opt.vector == .unique.aa[aa.id.index])
         eq.freqs.tmp <- rep(0, 64)
         for(col.index in sequence(length(cols))) {
             for(row.index in sequence(dim(codon.data)[1])) {
@@ -2497,6 +2543,7 @@ GetMaxName <- function(x) {
         return(names(table(x.tmp))[(which.is.max(table(x.tmp)))])
     }
 }
+
 
 
 ######################################################################################################################################
@@ -3786,7 +3833,11 @@ GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamm
     aa.distances <- c()
     #Note using only the second row, because we are comparing empirical S. cervisae rates:
     for(site.index in 1:gene.length){
-        aa.distances <- c(aa.distances, (1+((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
+        if(aa.data[,site.index]!="NA"){
+            aa.distances <- c(aa.distances, (1+((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
+        }else{
+            aa.distances <- c(aa.distances, 0)
+        }
     }
     functionality = 1/((1/gene.length) * sum(aa.distances))
     return(functionality)
