@@ -594,7 +594,7 @@ GetPairwiseProteinFixationProbabilityArbitraryLength <- function(protein1, prote
     }
 }
 
-GetFitness <- function(focal.protein, optimal.protein, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, diploid=TRUE) {
+GetFitness <- function(focal.protein, optimal.protein, aa.distances, nsites, C=4, Phi=0.5, q=4e-7) {
   focal.d <- GetProteinProteinDistance(focal.protein, optimal.protein, aa.distances)
   optimal.d <- GetProteinProteinDistance(optimal.protein, optimal.protein, aa.distances)
   return(exp(-(C+(C/nsites))*Phi*q*(focal.d-optimal.d)))

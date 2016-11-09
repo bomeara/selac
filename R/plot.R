@@ -1,6 +1,6 @@
 #' Function to plot frequency of distribution of different Wi given selac parameters
 
-ComputeEquilibriumFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
 #To test: nuc.model="JC"; base.freqs=rep(0.25, 4); nsites=1; C=4; Phi=0.5; q=4e-7; Ne=5e6; alpha=1.83; beta=0.10; gamma=0.0003990333; include.stop.codon=TRUE; numcode=1; diploid=TRUE; flee.stop.codon.rate=0.9999999
   nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
   codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
@@ -45,7 +45,7 @@ ComputeEquilibriumFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4
 #' phi.vector <- c(0.01, 0.5, 10)
 #' eq.freq.matrices <- array(dim=c(64, 20, 3))
 #' for (i in sequence(length(phi.vector))) {
-#'   eq.freq.matrices[,,i] <- ComputeEquilibriumFrequencies(Phi=phi.vector[i])
+#'   eq.freq.matrices[,,i] <- ComputeEquilibriumCodonFrequencies(Phi=phi.vector[i])
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
 #' PlotEquilbriumDistribution(eq.freq.matrices, values)
@@ -63,3 +63,20 @@ PlotEquilbriumDistribution <- function(eq.freq.matrices, values) {
     lines(sequence(length(distributions[[i]])), distributions[[i]])
   }
 }
+
+ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+  eq.freq.matrix <- ComputeEquilibriumCodonFrequencies(function(nuc.model, base.freqs, nsites, C, Phi, q, Ne, alpha, beta, gamma, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
+  codon.fitness.matrix <- eq.freq.matrix*NA
+  aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
+
+  for (col.index in sequence(dim(codon.fitness.matrix)[2])) {
+    for (row.index in sequence(dim(codon.fitness.matrix)[1])) {
+      codon.fitness.matrix[col.index, row.index] <- GetFitness(focal.protein=TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Phi=Phi, q=q)
+    }
+  }
+  aa.fitness.matrix <- codon.fitness.matrix * eq.freq.matrix
+  #now get weighted average of aa fitnesses for
+
+}
+
+PlotAAFitness <- nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi.vector=c(0.01, 0.5, 0., q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999
