@@ -51,10 +51,9 @@ ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.
 #'   eq.freq.matrices[,,i] <- ComputeEquilibriumCodonFrequencies(Phi=phi.vector[i])
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
-#' PlotEquilbriumDistribution(eq.freq.matrices, values)
-PlotEquilbriumDistribution <- function(eq.freq.matrices, values, palette="Set1", lwd=2, ...) {
-  library(RColorBrewer) #MOVE TO NAMESPACE
-  colors <- brewer.pal(dim(eq.freq.matrices)[3],palette)
+#' PlotEquilbriumCodonDistribution(eq.freq.matrices, values)
+PlotEquilbriumCodonDistribution <- function(eq.freq.matrices, values, palette="Set1", lwd=2, ...) {
+  colors <- RColorBrewer::brewer.pal(dim(eq.freq.matrices)[3],palette)
   distributions <- list()
   total.range <- c(NA)
   for (i in sequence(dim(eq.freq.matrices)[3])) {
@@ -70,18 +69,24 @@ PlotEquilbriumDistribution <- function(eq.freq.matrices, values, palette="Set1",
 }
 
 ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-  eq.freq.matrix <- ComputeEquilibriumCodonFrequencies(function(nuc.model, base.freqs, nsites, C, Phi, q, Ne, alpha, beta, gamma, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
+  eq.freq.matrix <- ComputeEquilibriumCodonFrequencies(nuc.model, base.freqs, nsites, C, Phi, q, Ne, alpha, beta, gamma, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
   codon.fitness.matrix <- eq.freq.matrix*NA
   aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
-
+  aa.names <- unique(sapply(rownames(eq.freq.matrix), selac:::TranslateCodon, numcode=numcode))
+  aa.fitnesses <- matrix(nrow=length(aa.names), ncol=dim(eq.freq.matrix)[2])
+  rownames(aa.fitnesses) <- aa.names
+  colnames(aa.fitnesses) <- colnames(eq.freq.matrix)
   for (col.index in sequence(dim(codon.fitness.matrix)[2])) {
     for (row.index in sequence(dim(codon.fitness.matrix)[1])) {
-      codon.fitness.matrix[col.index, row.index] <- GetFitness(focal.protein=TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Phi=Phi, q=q)
+      codon.fitness.matrix[row.index, col.index] <- selac:::GetFitness(focal.protein=selac:::TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Phi=Phi, q=q)
+      aa.fitnesses[selac:::TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), col.index] <- codon.fitness.matrix[row.index, col.index]
     }
   }
-  aa.fitness.matrix <- codon.fitness.matrix * eq.freq.matrix
-  #now get weighted average of aa fitnesses for
-
+  return(list(aa.fitness.matrix=aa.fitnesses, codon.fitnesses=codon.fitness.matrix, equilibrium.codon.frequency = eq.freq.matrix))
 }
 
-PlotAAFitness <- nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi.vector=c(0.01, 0.5, 0., q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999
+
+
+PlotAAFitness <- function(aa.fitness.matrices, values, palette="Set1", lwd=2, ...) {
+
+}
