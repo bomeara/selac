@@ -41,16 +41,20 @@ ComputeEquilibriumFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4
 #'
 #' @param eq.freq.matrices A 3d array of eq.freq.matrix returned from ComputeEquilibriumFrequencies
 #' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param palette Color palette to use from RColorBrewer
+#' @param lwd Line width
+#' @param ... Other paramters to pass to plot()
 #' @example
-#' phi.vector <- c(0.01, 0.5, 10)
-#' eq.freq.matrices <- array(dim=c(64, 20, 3))
+#' phi.vector <- c(0.01, .1, 0.5, 2)
+#' eq.freq.matrices <- array(dim=c(64, 20, length(phi.vector)))
 #' for (i in sequence(length(phi.vector))) {
 #'   eq.freq.matrices[,,i] <- ComputeEquilibriumFrequencies(Phi=phi.vector[i])
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
 #' PlotEquilbriumDistribution(eq.freq.matrices, values)
-PlotEquilbriumDistribution <- function(eq.freq.matrices, values) {
+PlotEquilbriumDistribution <- function(eq.freq.matrices, values, palette="Set1", lwd=2, ...) {
   library(RColorBrewer) #MOVE TO NAMESPACE
+  colors <- brewer.pal(dim(eq.freq.matrices)[3],palette)
   distributions <- list()
   total.range <- c(NA)
   for (i in sequence(dim(eq.freq.matrices)[3])) {
@@ -58,8 +62,9 @@ PlotEquilbriumDistribution <- function(eq.freq.matrices, values) {
     distributions[[i]] <- apply(sorted, 1, mean)
     total.range <- range(c(distributions[i], total.range), na.rm=TRUE)
   }
-  plot(x=c(1,64), y=total.range, type="n", bty="n", xlab="index", ylab="Average frequency")
+  plot(x=c(1,64), y=total.range, type="n", bty="n", xlab="index", ylab="Average frequency", ...)
   for (i in sequence(dim(eq.freq.matrices)[3])) {
-    lines(sequence(length(distributions[[i]])), distributions[[i]])
+    lines(sequence(length(distributions[[i]])), distributions[[i]], lwd=lwd, col=colors[i])
   }
+  legend(x="topright", legend=values, fill=colors)
 }
