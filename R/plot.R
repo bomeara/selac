@@ -7,7 +7,7 @@ ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
-  Q_codon_array <- selac:::FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+  Q_codon_array <- selac:::FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
   diag(codon_mutation_matrix) = 0
   diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
   .unique.aa <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "*", "Y", "C", "W", "F")
@@ -86,7 +86,51 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 }
 
 
+' Function to plot a distribution of frequencies of codons given a 3d array of equilibrium frequency matrices
+#'
+#' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
+#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
+#' @param palette Color palette to use from RColorBrewer
+#' @param lwd Line width
+#' @param include.stop.codon Include stop codons
+#' @param ... Other paramters to pass to plot()
+#' @example
+#' phi.vector <- c(0.01, .1, 0.5, 2)
+#'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
+#'    aa.fitness.matrices[,,i] <- local.matrix
+#'    dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
+#' }
+#' values = paste("Phi = ", phi.vector, sep="")
+#' PlotAAFitness(aa.fitness.matrices, values)
+PlotAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
+  colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
+  distributions <- list()
+  y.range <- c()
+  x.range <- c()
+  if(!include.stop.codon) {
 
-PlotAAFitness <- function(aa.fitness.matrices, values, palette="Set1", lwd=2, ...) {
-
+    aa.fitness.matrices <- aa.fitness.matrices[-which(dimnames(aa.fitness.matrices)[1] == "*"),,]
+  }
+  for (i in sequence(dim(aa.fitness.matrices)[3])) {
+    distribution <- NA
+    local.matrix <- aa.fitness.matrices[,,i]
+    if(!include.stop.codon) {
+      local.matrix <- local.matrix[which(rownames(local.matrix) != "*"),]
+    }
+    if (is.null(optimal.aa)) {
+      distribution <- stats::density(local.matrix)
+    } else {
+      distribution <- stats::density(local.matrix[,optimal.aa])
+    }
+    distribution$y <- distribution$y / sum(distribution$y)
+    distributions[[i]] <- distribution
+    y.range <- range(c(y.range, distribution$y), na.rm=TRUE)
+    x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
+  }
+  plot(x=x.range, y=y.range, type="n", bty="n", xlab="W", ylab="Frequency", ...)
+  for (i in sequence(length(distributions))) {
+    lines(distributions[[i]]$x, distributions[[i]]$y, lwd=lwd, col=colors[i])
+  }
+  legend(x="topright", legend=values, fill=colors)
 }
