@@ -108,10 +108,7 @@ PlotAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette=
   distributions <- list()
   y.range <- c()
   x.range <- c()
-  if(!include.stop.codon) {
 
-    aa.fitness.matrices <- aa.fitness.matrices[-which(dimnames(aa.fitness.matrices)[1] == "*"),,]
-  }
   for (i in sequence(dim(aa.fitness.matrices)[3])) {
     distribution <- NA
     local.matrix <- aa.fitness.matrices[,,i]
@@ -132,5 +129,5 @@ PlotAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette=
   for (i in sequence(length(distributions))) {
     lines(distributions[[i]]$x, distributions[[i]]$y, lwd=lwd, col=colors[i])
   }
-  legend(x="topright", legend=values, fill=colors)
+  legend(x="topleft", legend=values, fill=colors)
 }
