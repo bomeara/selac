@@ -104,7 +104,7 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #'  dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
-#' PlotAAFitness(aa.fitness.matrices, values, optimal.aa="L")
+#' PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa="L")
 PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
   colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
   distributions <- list()
