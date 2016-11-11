@@ -152,11 +152,15 @@ PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palet
     x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
   }
   plot(x=x.range, y=y.range, type="n", bty="n", xlab=ifelse(fitness, "W", "S"), ylab="Frequency", ...)
-  for (i in sequence(length(distributions))) {
-    points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
-    for (j in sequence(length(distributions[[i]]$x))) {
-      lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
+  if(type=="histogram") {
+    for (i in sequence(length(distributions))) {
+      points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
+      for (j in sequence(length(distributions[[i]]$x))) {
+        lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
+      }
     }
+  } else {
+    lines(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], lwd=lwd)
   }
   legend(x="topleft", legend=values, fill=colors)
 }
@@ -188,4 +192,12 @@ function(x)
 #' values = paste("Phi = ", phi.vector, sep="")
 #' PlotPerAAFitness(aa.fitness.matrices, values)
 PlotExpectedFitness <- function(codon.fitnesses.matrices, equilibrium.codon.frequency.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
+  colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
+  distributions <- list()
+  y.range <- c()
+  if(!fitness) {
+    aa.fitness.matrices <- 1 - aa.fitness.matrices
+  }
+  x.range <- c(NA)
+
 }
