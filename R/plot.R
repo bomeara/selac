@@ -94,6 +94,8 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
 #' @param include.stop.codon Include stop codons
+#' @param type If "histogram", do a histogram plot; if "density", do a density plot
+#' @param fitness If TRUE, plot W; if FALSE, plot S (= 1 - W)
 #' @param ... Other paramters to pass to plot()
 #' @example
 #' phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
@@ -105,35 +107,68 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
 #' PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa="L")
-PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
+PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, ...) {
   colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
   distributions <- list()
   y.range <- c()
-  x.range <- c()
-
+  if(!fitness) {
+    aa.fitness.matrices <- 1 - aa.fitness.matrices
+  }
+  x.range <- c(NA)
   for (i in sequence(dim(aa.fitness.matrices)[3])) {
     distribution <- NA
     local.matrix <- aa.fitness.matrices[,,i]
     if(!include.stop.codon) {
       local.matrix <- local.matrix[which(rownames(local.matrix) != "*"),]
     }
+    input.values <- NA
     if (is.null(optimal.aa)) {
-      distribution <- stats::density(local.matrix)
+      input.values <- c(local.matrix)
     } else {
-      distribution <- stats::density(local.matrix[,optimal.aa])
+      input.values <- c(local.matrix[,optimal.aa])
     }
-    distribution$y <- distribution$y / sum(distribution$y)
-    distributions[[i]] <- distribution
+    distribution <- list()
+    if(type=="density") {
+      distribution <- stats::density(input.values, to=1)
+      distribution$y <- distribution$y / sum(distribution$y)
+      distributions[[i]] <- distribution
+    }
+    if(type=="histogram") {
+    #  table.of.dist <- table(input.values)
+
+     distribution <- graphics::hist(input.values, plot=FALSE)
+      distribution$x <- distribution$mids
+      distribution$y <- distribution$counts / length(input.values)
+      if(length(distribution$x)==1) {
+        distribution$x <- median(input.values)
+        distribution$y <- 1
+      }
+    #  distribution$x <- as.numeric(names(table.of.dist))
+    #  distribution$y <- unname(table.of.dist)/length(input.values)
+      distributions[[i]] <- distribution
+      print(cbind(distribution$x, distribution$y))
+    }
     y.range <- range(c(y.range, distribution$y), na.rm=TRUE)
     x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
   }
-  plot(x=x.range, y=y.range, type="n", bty="n", xlab="W", ylab="Frequency", ...)
+  plot(x=x.range, y=y.range, type="n", bty="n", xlab=ifelse(fitness, "W", "S"), ylab="Frequency", ...)
   for (i in sequence(length(distributions))) {
-    lines(distributions[[i]]$x, distributions[[i]]$y, lwd=lwd, col=colors[i])
+    points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
+    for (j in sequence(length(distributions[[i]]$x))) {
+      lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
+    }
   }
   legend(x="topleft", legend=values, fill=colors)
 }
 
+# from http://www.magesblog.com/2013/04/how-to-change-alpha-value-of-colours-in.html
+add.alpha <- function(col, alpha=1){
+if(missing(col))
+    stop("Please provide a vector of colours.")
+  apply(sapply(col, col2rgb)/255, 2,
+function(x)
+     rgb(x[1], x[2], x[3], alpha=alpha))
+}
 
 #' Function to plot a distribution of fitnesses based on codon equilibrium freqs
 #'
