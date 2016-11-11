@@ -86,7 +86,7 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 }
 
 
-' Function to plot a distribution of frequencies of codons given a 3d array of equilibrium frequency matrices
+#' Function to plot a distribution of fitnesses across amino acids
 #'
 #' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
 #' @param values The vector of labels for each matrix (i.e., different Phi values)
@@ -96,14 +96,16 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' @param include.stop.codon Include stop codons
 #' @param ... Other paramters to pass to plot()
 #' @example
-#' phi.vector <- c(0.01, .1, 0.5, 2)
-#'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
-#'    aa.fitness.matrices[,,i] <- local.matrix
-#'    dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
+#' phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
+#' aa.fitness.matrices <- array(dim=c(21, 20, length(phi.vector)))
+#' for (i in sequence(length(phi.vector))) {
+#'  local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
+#'  aa.fitness.matrices[,,i] <- local.matrix
+#'  dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
-#' PlotAAFitness(aa.fitness.matrices, values)
-PlotAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
+#' PlotAAFitness(aa.fitness.matrices, values, optimal.aa="L")
+PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
   colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
   distributions <- list()
   y.range <- c()
@@ -130,4 +132,25 @@ PlotAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette=
     lines(distributions[[i]]$x, distributions[[i]]$y, lwd=lwd, col=colors[i])
   }
   legend(x="topleft", legend=values, fill=colors)
+}
+
+
+#' Function to plot a distribution of fitnesses based on codon equilibrium freqs
+#'
+#' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
+#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
+#' @param palette Color palette to use from RColorBrewer
+#' @param lwd Line width
+#' @param include.stop.codon Include stop codons
+#' @param ... Other paramters to pass to plot()
+#' @example
+#' phi.vector <- c(0.01, .1, 0.5, 2)
+#'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
+#'    aa.fitness.matrices[,,i] <- local.matrix
+#'    dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
+#' }
+#' values = paste("Phi = ", phi.vector, sep="")
+#' PlotPerAAFitness(aa.fitness.matrices, values)
+PlotExpectedFitness <- function(codon.fitnesses.matrices, equilibrium.codon.frequency.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
 }
