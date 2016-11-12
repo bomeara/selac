@@ -370,7 +370,7 @@ GetMarginalGene <- function(pars, codon.data, phy, codon.freq.by.aa=NULL, codon.
 }
 
 
-GetMarginalAllGenes <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL) {
+GetMarginalAllGenes <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxa.to.drop) {
     
     codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
     phy <- selac.obj$phy
@@ -410,7 +410,7 @@ GetMarginalAllGenes <- function(selac.obj, codon.data.path, aa.optim.input=NULL,
             aa.optim_array <- selac.obj$aa.optim[[partition.index]]
         }
         
-        tmp = GetMarginalGene(pars=x, codon.data=codon.data, phy=phy, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, numcode=numcode, diploid=diploid)
+        tmp = GetMarginalGene(pars=x, codon.data=codon.data, phy=phy, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, numcode=numcode, diploid=diploid, taxa.to.drop=taxa.to.drop)
         
         obj.gene <- tmp
         obj.final[[partition.index]] <- obj.gene
