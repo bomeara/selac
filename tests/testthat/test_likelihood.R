@@ -31,9 +31,9 @@ test_that("GY94_likelihood", {
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
     yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-    chars <- DNAbinToCodonNumeric(yeast.gene)
+    chars <- selac:::DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
-    codon.data = SitePattern(codon.data)
+    codon.data = selac:::SitePattern(codon.data)
     gy94 <- GetLikelihoodGY94_CodonForManyCharGivenAllParams(log(c(1,1)), codon.data, phy, numcode=1, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
     comparison <- identical(round(gy94,3), -7826.123)
     expect_true(comparison)
