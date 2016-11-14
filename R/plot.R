@@ -44,7 +44,8 @@ ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
 #' @param ... Other paramters to pass to plot()
-#' @example
+#' @examples
+#'
 #' phi.vector <- c(0.01, .1, 0.5, 2)
 #' eq.freq.matrices <- array(dim=c(64, 20, length(phi.vector)))
 #' for (i in sequence(length(phi.vector))) {
@@ -97,7 +98,7 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' @param type If "histogram", do a histogram plot; if "density", do a density plot
 #' @param fitness If TRUE, plot W; if FALSE, plot S (= 1 - W)
 #' @param ... Other paramters to pass to plot()
-#' @example
+#' @examples
 #' phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
 #' aa.fitness.matrices <- array(dim=c(21, 20, length(phi.vector)))
 #' for (i in sequence(length(phi.vector))) {
@@ -183,21 +184,74 @@ function(x)
 #' @param lwd Line width
 #' @param include.stop.codon Include stop codons
 #' @param ... Other paramters to pass to plot()
-#' @example
-#' phi.vector <- c(0.01, .1, 0.5, 2)
-#'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
-#'    aa.fitness.matrices[,,i] <- local.matrix
-#'    dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
+#' @examples
+#' phi.vector <- c(0.02, .1, 0.5, 2)
+#' codon.fitness.matrices <- array(dim=c(64, 64, length(phi.vector)))
+#' codon.eq.matrices <- array(dim=c(64, 64, length(phi.vector)))
+#' for (i in sequence(length(phi.vector))) {
+#'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])
+#'    codon.fitness.matrices[,,i] <-  local.matrix$codon.fitnesses
+#'    codon.eq.matrices[,,i] <-  local.matrix$equilibrium.codon.frequency
+#'    dimnames(codon.fitness.matrices) <- list(rownames(local.matrix$codon.fitnesses), colnames(local.matrix$codon.fitnesses), NULL)
+#'    dimnames(codon.eq.matrices) <- list(rownames(local.matrix$equilibrium.codon.frequency), colnames(local.matrix$equilibrium.codon.frequency), NULL)
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
-#' PlotPerAAFitness(aa.fitness.matrices, values)
-PlotExpectedFitness <- function(codon.fitnesses.matrices, equilibrium.codon.frequency.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
+#' PlotExpectedFitness(codon.fitnesses.matrices, values)
+PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
   colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
   distributions <- list()
   y.range <- c()
   if(!fitness) {
-    aa.fitness.matrices <- 1 - aa.fitness.matrices
+    codon.fitness.matrices <- 1 - codon.fitness.matrices
   }
   x.range <- c(NA)
+  for (i in sequence(dim(codon.fitness.matrices)[3])) {
+    distribution <- NA
+    local.codon.fitness.matrix <- codon.fitness.matrices[,,i]
+    local.codon.equilibrium.matrix <- local.codon.equilibrium.matrix[,,i]
+    #if(!include.stop.codon) {
+    #  local.codon.fitness.matrix <- local.codon.fitness.matrix[which(rownames(local.codon.fitness.matrix) != "*"),]
+    #}
+    input.values <- NA
+    if (is.null(optimal.aa)) {
+      input.values <- rep(c(local.codon.fitness.matrix), round(10000*c(local.codon.equilibrium.matrix)))
+    } else {
+      input.values <- rep(c(local.codon.fitness.matrix[,optimal.aa]), round(10000*c(local.codon.equilibrium.matrix[,optimal.aa])))
+    }
+    distribution <- list()
+    if(type=="density") {
+      distribution <- stats::density(input.values, to=1)
+      distribution$y <- distribution$y / sum(distribution$y)
+      distributions[[i]] <- distribution
+    }
+    if(type=="histogram") {
+    #  table.of.dist <- table(input.values)
 
+     distribution <- graphics::hist(input.values, plot=FALSE)
+      distribution$x <- distribution$mids
+      distribution$y <- distribution$counts / length(input.values)
+      if(length(distribution$x)==1) {
+        distribution$x <- median(input.values)
+        distribution$y <- 1
+      }
+    #  distribution$x <- as.numeric(names(table.of.dist))
+    #  distribution$y <- unname(table.of.dist)/length(input.values)
+      distributions[[i]] <- distribution
+      print(cbind(distribution$x, distribution$y))
+    }
+    y.range <- range(c(y.range, distribution$y), na.rm=TRUE)
+    x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
+  }
+  plot(x=x.range, y=y.range, type="n", bty="n", xlab=ifelse(fitness, "W", "S"), ylab="Frequency", ...)
+  if(type=="histogram") {
+    for (i in sequence(length(distributions))) {
+      points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
+      for (j in sequence(length(distributions[[i]]$x))) {
+        lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
+      }
+    }
+  } else {
+    lines(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], lwd=lwd)
+  }
+  legend(x="topleft", legend=values, fill=colors)
 }
