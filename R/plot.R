@@ -281,7 +281,9 @@ PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, val
 #' Function to plot info by site in a gene
 #'
 #' @param info.by.site The output of GetGeneSiteInfo
-PlotGeneSiteInfo <- function(info.by.site, aa.properties=NULL) {
+#' @param aa.properties The aa.properties you want to use; if NULL, uses Grantham
+#' @param mean.width Sliding window width
+PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   if(is.null(aa.properties)) {
     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
     1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
@@ -292,10 +294,13 @@ PlotGeneSiteInfo <- function(info.by.site, aa.properties=NULL) {
     "H", "I", "K", "L", "M", "N", "P", "Q", "R",
     "S", "T", "V", "W", "Y"), c("c", "p", "v"))) #properties from Grantham paper
   }
-  #TODO: filter out stop aa weights
-  stop("you have to finish writing code to pull out stop aa")
-  #END TODO
-  AIC.site.information <- -2*info.by.site$site.information
+
+  aa.properties.reordered <- aa.properties[order(match(rownames(aa.properties), .unique.aa)),]
+
+  info.by.site <- all.info$site.information
+  dimnames(info.by.site)[[1]] <- .unique.aa
+  info.by.site <- info.by.site[which(.unique.aa!="*"),,]
+  AIC.site.information <- -2*info.by.site
   get.delta <- function(x) {
     return(x-min(x))
   }
@@ -305,10 +310,26 @@ PlotGeneSiteInfo <- function(info.by.site, aa.properties=NULL) {
   delta.AIC.site.information <- apply(AIC.site.information, c(2,3), get.delta)
   rel.likelihood.site.information <- exp(-0.5* delta.AIC.site.information)
   weight.site.information <- apply(rel.likelihood.site.information, c(2,3), normalize.rel)
-  dimnames(weight.site.information)[1] <- .unique.aa
-  #TODO: get weighted estimate of aa properties for given phi
-  #TODO: Get weighted esetimate (weighted by phi weight) across phi
-  #TODO: Plot these three properties
-  #TODO: Plot sliding window of them
-  #TODO: Plot average weight of Phi
+
+  weights.integrating.phi <- apply(weight.site.information, c(1,2), weighted.mean, w=all.info$phi.weights)
+
+  reverse.weighted.mean <- function(w, x) {
+    return(stats::weighted.mean(x, w))
+  }
+
+  average.c <- apply(weights.integrating.phi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"c"])
+  average.p <- apply(weights.integrating.phi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"p"])
+  average.v <- apply(weights.integrating.phi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"v"])
+  sliding.c <- zoo::rollmean(average.c, k=mean.width)
+  sliding.p <- zoo::rollmean(average.p, k=mean.width)
+  sliding.v <- zoo::rollmean(average.v, k=mean.width)
+  #average.phi <- apply()
+  par(mfcol=c(1,4))
+  plot(x=sequence(length(average.c)), y=average.c, main="Composition", xlab="Site", pch=20,ylab="", bty="n", col=rgb(0,0,0,.5))
+  lines(x=sequence(length(sliding.c)), y=sliding.c, lwd=2)
+  plot(x=sequence(length(average.p)), y=average.p, main="Polarity", xlab="Site", pch=20, ylab="", bty="n", col=rgb(0,0,0,.5))
+  lines(x=sequence(length(sliding.p)), y=sliding.p, lwd=2)
+  plot(x=sequence(length(average.v)), y=average.v, main="Molecular volume", xlab="Site", pch=20, ylab="", bty="n", col=rgb(0,0,0,.5))
+  lines(x=sequence(length(sliding.v)), y=sliding.v, lwd=2)
+
 }

@@ -18,7 +18,8 @@ Imports:
     MASS,
     parallel,
     phangorn,
-    seqinr
+    seqinr,
+    zoo
 License: GPL
 ByteCompile: TRUE
 RoxygenNote: 5.0.1
