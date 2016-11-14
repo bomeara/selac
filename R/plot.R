@@ -147,7 +147,6 @@ PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palet
     #  distribution$x <- as.numeric(names(table.of.dist))
     #  distribution$y <- unname(table.of.dist)/length(input.values)
       distributions[[i]] <- distribution
-      print(cbind(distribution$x, distribution$y))
     }
     y.range <- range(c(y.range, distribution$y), na.rm=TRUE)
     x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
@@ -183,35 +182,42 @@ function(x)
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
 #' @param include.stop.codon Include stop codons
+#' @param type If "histogram", do a histogram plot; if "density", do a density plot
+#' @param fitness If TRUE, plot W; if FALSE, plot S (= 1 - W)
+#' @param numcode The genetic code
 #' @param ... Other paramters to pass to plot()
 #' @examples
-#' phi.vector <- c(0.02, .1, 0.5, 2)
-#' codon.fitness.matrices <- array(dim=c(64, 64, length(phi.vector)))
-#' codon.eq.matrices <- array(dim=c(64, 64, length(phi.vector)))
+#' phi.vector <- c(.1, 0.5, 2)
+#' codon.fitnesses.matrices <- array(dim=c(64, 20, length(phi.vector)))
+#' codon.eq.matrices <- array(dim=c(64, 20, length(phi.vector)))
 #' for (i in sequence(length(phi.vector))) {
 #'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])
-#'    codon.fitness.matrices[,,i] <-  local.matrix$codon.fitnesses
+#'    codon.fitnesses.matrices[,,i] <-  local.matrix$codon.fitnesses
 #'    codon.eq.matrices[,,i] <-  local.matrix$equilibrium.codon.frequency
-#'    dimnames(codon.fitness.matrices) <- list(rownames(local.matrix$codon.fitnesses), colnames(local.matrix$codon.fitnesses), NULL)
+#'    dimnames(codon.fitnesses.matrices) <- list(rownames(local.matrix$codon.fitnesses), colnames(local.matrix$codon.fitnesses), NULL)
 #'    dimnames(codon.eq.matrices) <- list(rownames(local.matrix$equilibrium.codon.frequency), colnames(local.matrix$equilibrium.codon.frequency), NULL)
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
-#' PlotExpectedFitness(codon.fitnesses.matrices, values)
-PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, ...) {
-  colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
+#' PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values)
+PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, numcode=1, ...) {
+  colors <- RColorBrewer::brewer.pal(dim(codon.fitnesses.matrices)[3],palette)
   distributions <- list()
   y.range <- c()
   if(!fitness) {
-    codon.fitness.matrices <- 1 - codon.fitness.matrices
+    codon.fitnesses.matrices <- 1 - codon.fitnesses.matrices
   }
   x.range <- c(NA)
-  for (i in sequence(dim(codon.fitness.matrices)[3])) {
+  for (i in sequence(dim(codon.fitnesses.matrices)[3])) {
     distribution <- NA
-    local.codon.fitness.matrix <- codon.fitness.matrices[,,i]
-    local.codon.equilibrium.matrix <- local.codon.equilibrium.matrix[,,i]
-    #if(!include.stop.codon) {
-    #  local.codon.fitness.matrix <- local.codon.fitness.matrix[which(rownames(local.codon.fitness.matrix) != "*"),]
-    #}
+
+    local.codon.fitness.matrix <- codon.fitnesses.matrices[,,i]
+    local.codon.equilibrium.matrix <- codon.eq.matrices[,,i]
+    if(!include.stop.codon) {
+      aa.vector <- unname(sapply(rownames(local.codon.fitness.matrix), TranslateCodon, numcode=numcode))
+      local.codon.fitness.matrix <- local.codon.fitness.matrix[which(aa.vector != "*"),]
+      local.codon.equilibrium.matrix <- local.codon.equilibrium.matrix[which(aa.vector != "*"),]
+    }
+
     input.values <- NA
     if (is.null(optimal.aa)) {
       input.values <- rep(c(local.codon.fitness.matrix), round(10000*c(local.codon.equilibrium.matrix)))
@@ -237,7 +243,6 @@ PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, val
     #  distribution$x <- as.numeric(names(table.of.dist))
     #  distribution$y <- unname(table.of.dist)/length(input.values)
       distributions[[i]] <- distribution
-      print(cbind(distribution$x, distribution$y))
     }
     y.range <- range(c(y.range, distribution$y), na.rm=TRUE)
     x.range <- range(c(x.range, distribution$x), na.rm=TRUE)

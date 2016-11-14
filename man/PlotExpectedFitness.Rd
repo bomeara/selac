@@ -6,7 +6,8 @@
 \usage{
 PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values,
   optimal.aa = NULL, palette = "Set1", lwd = 2,
-  include.stop.codon = FALSE, ...)
+  include.stop.codon = FALSE, type = "histogram", fitness = TRUE,
+  numcode = 1, ...)
 }
 \arguments{
 \item{values}{The vector of labels for each matrix (i.e., different Phi values)}
@@ -19,6 +20,12 @@ PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values,
 
 \item{include.stop.codon}{Include stop codons}
 
+\item{type}{If "histogram", do a histogram plot; if "density", do a density plot}
+
+\item{fitness}{If TRUE, plot W; if FALSE, plot S (= 1 - W)}
+
+\item{numcode}{The genetic code}
+
 \item{...}{Other paramters to pass to plot()}
 
 \item{aa.fitness.matrices, }{A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)}
@@ -27,17 +34,17 @@ PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values,
 Function to plot a distribution of fitnesses based on codon equilibrium freqs
 }
 \examples{
-phi.vector <- c(0.02, .1, 0.5, 2)
-codon.fitness.matrices <- array(dim=c(64, 64, length(phi.vector)))
-codon.eq.matrices <- array(dim=c(64, 64, length(phi.vector)))
+phi.vector <- c(.1, 0.5, 2)
+codon.fitnesses.matrices <- array(dim=c(64, 20, length(phi.vector)))
+codon.eq.matrices <- array(dim=c(64, 20, length(phi.vector)))
 for (i in sequence(length(phi.vector))) {
    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])
-   codon.fitness.matrices[,,i] <-  local.matrix$codon.fitnesses
+   codon.fitnesses.matrices[,,i] <-  local.matrix$codon.fitnesses
    codon.eq.matrices[,,i] <-  local.matrix$equilibrium.codon.frequency
-   dimnames(codon.fitness.matrices) <- list(rownames(local.matrix$codon.fitnesses), colnames(local.matrix$codon.fitnesses), NULL)
+   dimnames(codon.fitnesses.matrices) <- list(rownames(local.matrix$codon.fitnesses), colnames(local.matrix$codon.fitnesses), NULL)
    dimnames(codon.eq.matrices) <- list(rownames(local.matrix$equilibrium.codon.frequency), colnames(local.matrix$equilibrium.codon.frequency), NULL)
 }
 values = paste("Phi = ", phi.vector, sep="")
-PlotExpectedFitness(codon.fitnesses.matrices, values)
+PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values)
 }
 
