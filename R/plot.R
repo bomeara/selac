@@ -87,7 +87,7 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 }
 
 
-#' Function to plot a distribution of fitnesses across amino acids
+#' Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.
 #'
 #' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
 #' @param values The vector of labels for each matrix (i.e., different Phi values)
@@ -96,7 +96,9 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' @param lwd Line width
 #' @param include.stop.codon Include stop codons
 #' @param type If "histogram", do a histogram plot; if "density", do a density plot
-#' @param fitness If TRUE, plot W; if FALSE, plot S (= 1 - W)
+#' @param fitness If TRUE, plot fitness W; if FALSE, plot selection coefficient S (= W- 1)
+#' @param scale.x.axis.by.Ne if TRUE, x axis is transformed from S to S*Ne; if FALSE no scaling is done
+#' @param Ne used to scale x axis when scale.x.axis.by.Ne is TRUE
 #' @param ... Other paramters to pass to plot()
 #' @examples
 #' phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
@@ -108,12 +110,27 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' }
 #' values = paste("Phi = ", phi.vector, sep="")
 #' PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa="L")
-PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, ...) {
+PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, scale.x.axis.by.Ne=FALSE, legend.title=NULL,Ne=10^6, ...) {
   colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
   distributions <- list()
   y.range <- c()
-  if(!fitness) {
-    aa.fitness.matrices <- 1 - aa.fitness.matrices
+
+  ##scale values based on 'fitness' and set legend label if necessary
+  if(fitness) {
+      if(is.null(legend.title)) {
+          legend.title="W"
+      }
+  }else{
+      aa.fitness.matrices <- aa.fitness.matrices -1 #S_i = W_i - W_*
+      if(is.null(legend.title)) {
+          legend.title="s"
+      }
+      if(scale.x.axis.by.Ne){
+          aa.fitness.matrices <- aa.fitness.matrices * Ne
+          if(is.null(legend.title)) {
+              legend.title="s Ne"
+          }
+      }
   }
   x.range <- c(NA)
   for (i in sequence(dim(aa.fitness.matrices)[3])) {
@@ -151,13 +168,11 @@ PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palet
     y.range <- range(c(y.range, distribution$y), na.rm=TRUE)
     x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
   }
-  plot(x=x.range, y=y.range, type="n", bty="n", xlab=ifelse(fitness, "W", "S"), ylab="Frequency", ...)
-  if(type=="histogram") {
-    for (i in sequence(length(distributions))) {
-      points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
-      for (j in sequence(length(distributions[[i]]$x))) {
-        lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
-      }
+  plot(x=x.range, y=y.range, type="n", bty="n", xlab=ifelse(fitness, "W", ifelse(scale.x.axis.by.Ne, "s Ne", "s")), ylab="Frequency", ...)
+  for (i in sequence(length(distributions))) {
+    points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
+    for (j in sequence(length(distributions[[i]]$x))) {
+      lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
     }
   } else {
     lines(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], lwd=lwd)
