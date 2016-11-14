@@ -260,3 +260,38 @@ PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, val
   }
   legend(x="topleft", legend=values, fill=colors)
 }
+
+#' Function to plot info by site in a gene
+#'
+#' @param info.by.site The output of GetGeneSiteInfo
+PlotGeneSiteInfo <- function(info.by.site, aa.properties=NULL) {
+  if(is.null(aa.properties)) {
+    aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
+    1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
+    12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5,
+    9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119,
+    111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L,
+    3L), .Dimnames = list(c("A", "C", "D", "E", "F", "G",
+    "H", "I", "K", "L", "M", "N", "P", "Q", "R",
+    "S", "T", "V", "W", "Y"), c("c", "p", "v"))) #properties from Grantham paper
+  }
+  #TODO: filter out stop aa weights
+  stop("you have to finish writing code to pull out stop aa")
+  #END TODO
+  AIC.site.information <- -2*info.by.site$site.information
+  get.delta <- function(x) {
+    return(x-min(x))
+  }
+  normalize.rel <- function(x) {
+    return(x/sum(x))
+  }
+  delta.AIC.site.information <- apply(AIC.site.information, c(2,3), get.delta)
+  rel.likelihood.site.information <- exp(-0.5* delta.AIC.site.information)
+  weight.site.information <- apply(rel.likelihood.site.information, c(2,3), normalize.rel)
+  dimnames(weight.site.information)[1] <- .unique.aa
+  #TODO: get weighted estimate of aa properties for given phi
+  #TODO: Get weighted esetimate (weighted by phi weight) across phi
+  #TODO: Plot these three properties
+  #TODO: Plot sliding window of them
+  #TODO: Plot average weight of Phi
+}
