@@ -169,10 +169,12 @@ PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palet
     x.range <- range(c(x.range, distribution$x), na.rm=TRUE)
   }
   plot(x=x.range, y=y.range, type="n", bty="n", xlab=ifelse(fitness, "W", ifelse(scale.x.axis.by.Ne, "s Ne", "s")), ylab="Frequency", ...)
-  for (i in sequence(length(distributions))) {
-    points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
-    for (j in sequence(length(distributions[[i]]$x))) {
-      lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
+  if(type="histogram") {
+    for (i in sequence(length(distributions))) {
+      points(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], pch=20)
+      for (j in sequence(length(distributions[[i]]$x))) {
+        lines(rep(distributions[[i]]$x[j],2), c(0, distributions[[i]]$y[j]), col=add.alpha(colors[i],0.2), lwd=lwd)
+      }
     }
   } else {
     lines(distributions[[i]]$x, distributions[[i]]$y, col=colors[i], lwd=lwd)
