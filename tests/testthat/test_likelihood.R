@@ -19,7 +19,7 @@ test_that("GTR+GAMMA_likelihood", {
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
 	chars <- DNAbinToNucleotideNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
-	nuc.sites = SitePattern(codon.data)
+	nuc.sites <- SitePattern(codon.data)
 	gtr_gamma <- GetLikelihoodNucleotideForManyCharGivenAllParams(log(c(.5,1,1,1,1,1)), nuc.sites, phy, nuc.model="GTR", include.gamma=TRUE, gamma.type="median", logspace=TRUE, ncats=4, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
 	comparison <- identical(round(gtr_gamma,3), -8192.526)
 	expect_true(comparison)
@@ -31,9 +31,9 @@ test_that("GY94_likelihood", {
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
     yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-    chars <- selac:::DNAbinToCodonNumeric(yeast.gene)
+    chars <- DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
-    codon.data = selac:::SitePattern(codon.data)
+    codon.data <- SitePattern(codon.data)
     gy94 <- GetLikelihoodGY94_CodonForManyCharGivenAllParams(log(c(1,1)), codon.data, phy, numcode=1, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
     comparison <- identical(round(gy94,3), -7826.123)
     expect_true(comparison)
