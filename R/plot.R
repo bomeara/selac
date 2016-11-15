@@ -97,7 +97,7 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 #' frequency.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are frequencies that that mutation is attempted given the optimal aa (column)
 #'
 ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-  equlibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
+  equilibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
   codon.fitness.matrix <- equilibrium.values$codon.fitnesses
   equilibrium.codon.frequency <- equilibrium.values$equilibrium.codon.frequency
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -105,9 +105,11 @@ ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), ns
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   diag(codon_mutation_matrix) = 0
+  scaling.factors <- rowSums(codon_mutation_matrix)
   diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
   codon.relative.rate.matrix <- codon_mutation_matrix
-  codon.relative.rate.matrix <- codon.relative.rate.matrix / rowSums(codon.relative.rate.matrix) #so we know the freq of each move
+  diag(codon.relative.rate.matrix) <- 0
+  codon.relative.rate.matrix <- codon.relative.rate.matrix / scaling.factors #so we know the freq of each move
   delta.fitness.array <- array(dim=c(64,20,64)) #row is which codon coming from, col is which aa is optimal, depth is which codon going to
   dimnames(delta.fitness.array) <- list(rownames(equilibrium.codon.frequency), colnames(equilibrium.codon.frequency), rownames(equilibrium.codon.frequency))
   frequency.array <- delta.fitness.array
@@ -119,7 +121,7 @@ ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), ns
       }
     }
   }
-  return(list(aa.fitness.matrix=equlibrium.values$aa.fitnesses, codon.fitnesses=equilibrium.values$codon.fitnesses, equilibrium.codon.frequency = equilibrium.values$equilibrium.codon.frequency, codon.mutation.matrix=codon_mutation_matrix, codon.relative.rate.matrix=codon.relative.rate.matrix, delta.fitness.array=delta.fitness.array, frequency.array=frequency.array))
+  return(list(aa.fitness.matrix=equilibrium.values$aa.fitnesses, codon.fitnesses=equilibrium.values$codon.fitnesses, equilibrium.codon.frequency = equilibrium.values$equilibrium.codon.frequency, codon.mutation.matrix=codon_mutation_matrix, codon.relative.rate.matrix=codon.relative.rate.matrix, delta.fitness.array=delta.fitness.array, frequency.array=frequency.array))
 }
 
 #' Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.
@@ -313,11 +315,50 @@ PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, val
   legend(x="topleft", legend=values, fill=colors)
 }
 
-
-PlotMutationFitnessSpectra <- function(nuc.model="JC", base.freqs=rep(0.25, 4)) {
-
-
+#' Generates a line for mutation fitness spectra
+LineMutationFitnessSpectra <- function(mutation.fitness.object, optimal.aa=NULL) {
+  delta.fitness.array <- mutation.fitness.object$delta.fitness.array
+  frequency.array <- mutation.fitness.object$frequency.array
+  if(!is.null(optimal.aa)) {
+    delta.fitness.array <- delta.fitness.array[,which(dimnames(delta.fitness.array)[[2]]==optimal.aa),]
+    frequency.array <- frequency.array[,which(dimnames(frequency.array)[[2]]==optimal.aa),]
+  }
+  result <- stats::density(x=c(delta.fitness.array), weights=c(frequency.array)/sum(frequency.array))
+  return(result)
 }
+
+#' Plot fitness of mutations, weighted by frequency of those mutations
+#'
+#' @param mutation.fitness.object.list List that contains multiple objects from ComputeMutationFitnesses() calls
+#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
+#' @param palette Color palette to use from RColorBrewer
+#' @param lwd Line width
+#' @param ... other arguments to pass to plot()
+#'
+#' @examples
+#' phi.vector <- c(.1, 0.5, 2)
+#' mutation.fitness.object.list <- list()
+#' for (i in sequence(length(phi.vector))) {
+#'    mutation.fitness.object.list[[i]] <- ComputeMutationFitnesses(Phi=phi.vector[i])
+#' }
+#' PlotMutationFitnessSpectra(mutation.fitness.object.list, values=paste("Phi =", phi.vector), optimal.aa="C")
+PlotMutationFitnessSpectra <- function(mutation.fitness.object.list, values, optimal.aa=NULL, palette="Set1", lwd=2, ...) {
+  colors <- add.alpha(RColorBrewer::brewer.pal(length(mutation.fitness.object.list),palette),0.5)
+  results.to.plot <- lapply(mutation.fitness.object.list, LineMutationFitnessSpectra, optimal.aa=optimal.aa)
+  x.range <- c(NA)
+  y.range <- c(NA)
+  for (i in sequence(length(results.to.plot))) {
+    x.range <- range(results.to.plot[[i]]$x, na.rm=TRUE)
+    y.range <- range(results.to.plot[[i]]$y, na.rm=TRUE)
+  }
+  plot(x=x.range, y=y.range, bty="n", xlab="W", ylab="density", type="n",...)
+  for (i in sequence(length(results.to.plot))) {
+    lines(results.to.plot[[i]], lwd=lwd,col=colors[i])
+  }
+  legend(x="topleft", legend=values, fill=colors)
+}
+
 
 #' Function to plot info by site in a gene
 #'
