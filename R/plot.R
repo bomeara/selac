@@ -2,12 +2,12 @@
 
 ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
 #To test: nuc.model="JC"; base.freqs=rep(0.25, 4); nsites=1; C=4; Phi=0.5; q=4e-7; Ne=5e6; alpha=1.83; beta=0.10; gamma=0.0003990333; include.stop.codon=TRUE; numcode=1; diploid=TRUE; flee.stop.codon.rate=0.9999999
-  nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
-  codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
+  nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+  codon.index.matrix = CreateCodonMutationMatrixIndex()
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-  aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
-  Q_codon_array <- selac:::FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+  aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
+  Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
   diag(codon_mutation_matrix) = 0
   diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
   .unique.aa <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "*", "Y", "C", "W", "F")
@@ -72,15 +72,15 @@ PlotEquilbriumCodonDistribution <- function(eq.freq.matrices, values, palette="S
 ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
   eq.freq.matrix <- ComputeEquilibriumCodonFrequencies(nuc.model, base.freqs, nsites, C, Phi, q, Ne, alpha, beta, gamma, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
   codon.fitness.matrix <- eq.freq.matrix*NA
-  aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
-  aa.names <- unique(sapply(rownames(eq.freq.matrix), selac:::TranslateCodon, numcode=numcode))
+  aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
+  aa.names <- unique(sapply(rownames(eq.freq.matrix), TranslateCodon, numcode=numcode))
   aa.fitnesses <- matrix(nrow=length(aa.names), ncol=dim(eq.freq.matrix)[2])
   rownames(aa.fitnesses) <- aa.names
   colnames(aa.fitnesses) <- colnames(eq.freq.matrix)
   for (col.index in sequence(dim(codon.fitness.matrix)[2])) {
     for (row.index in sequence(dim(codon.fitness.matrix)[1])) {
-      codon.fitness.matrix[row.index, col.index] <- selac:::GetFitness(focal.protein=selac:::TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Phi=Phi, q=q)
-      aa.fitnesses[selac:::TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), col.index] <- codon.fitness.matrix[row.index, col.index]
+      codon.fitness.matrix[row.index, col.index] <- GetFitness(focal.protein=TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Phi=Phi, q=q)
+      aa.fitnesses[TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), col.index] <- codon.fitness.matrix[row.index, col.index]
     }
   }
   return(list(aa.fitness.matrix=aa.fitnesses, codon.fitnesses=codon.fitness.matrix, equilibrium.codon.frequency = eq.freq.matrix))
@@ -100,8 +100,8 @@ ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), ns
   equlibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
   codon.fitness.matrix <- equilibrium.values$codon.fitnesses
   equilibrium.codon.frequency <- equilibrium.values$equilibrium.codon.frequency
-  nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
-  codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
+  nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+  codon.index.matrix = CreateCodonMutationMatrixIndex()
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   diag(codon_mutation_matrix) = 0
