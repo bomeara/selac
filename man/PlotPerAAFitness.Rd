@@ -2,11 +2,12 @@
 % Please edit documentation in R/plot.R
 \name{PlotPerAAFitness}
 \alias{PlotPerAAFitness}
-\title{Function to plot a distribution of fitnesses across amino acids}
+\title{Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.}
 \usage{
 PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa = NULL,
   palette = "Set1", lwd = 2, include.stop.codon = FALSE,
-  type = "histogram", fitness = TRUE, ...)
+  type = "histogram", fitness = TRUE, scale.x.axis.by.Ne = FALSE,
+  legend.title = NULL, Ne = 10^6, ...)
 }
 \arguments{
 \item{aa.fitness.matrices, }{A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)}
@@ -23,12 +24,16 @@ PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa = NULL,
 
 \item{type}{If "histogram", do a histogram plot; if "density", do a density plot}
 
-\item{fitness}{If TRUE, plot W; if FALSE, plot S (= 1 - W)}
+\item{fitness}{If TRUE, plot fitness W; if FALSE, plot selection coefficient S (= W- 1)}
+
+\item{scale.x.axis.by.Ne}{if TRUE, x axis is transformed from S to S*Ne; if FALSE no scaling is done}
+
+\item{Ne}{used to scale x axis when scale.x.axis.by.Ne is TRUE}
 
 \item{...}{Other paramters to pass to plot()}
 }
 \description{
-Function to plot a distribution of fitnesses across amino acids
+Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.
 }
 \examples{
 phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
