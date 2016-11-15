@@ -87,6 +87,41 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 }
 
 
+#' Computes the distribution of fitness differences between new and original mutations as well as the frequency with which those are attempted
+#'
+#' @details
+#' Returns a list; most of the return objects are the same as from ComputeEquilibriumAAFitness() but the new things are
+#' codon.mutation.matrix: instantaneous rate matrix for codon mutations
+#' codon.relative.rate.matrix: the above, but scaled so that each row sums to 1
+#' delta.fitness.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are new codon fitness - original codon fitness
+#' frequency.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are frequencies that that mutation is attempted given the optimal aa (column)
+#'
+ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+  equlibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
+  codon.fitness.matrix <- equilibrium.values$codon.fitnesses
+  equilibrium.codon.frequency <- equilibrium.values$equilibrium.codon.frequency
+  nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+  codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
+  codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
+  codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
+  diag(codon_mutation_matrix) = 0
+  diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
+  codon.relative.rate.matrix <- codon_mutation_matrix
+  codon.relative.rate.matrix <- codon.relative.rate.matrix / rowSums(codon.relative.rate.matrix) #so we know the freq of each move
+  delta.fitness.array <- array(dim=c(64,20,64)) #row is which codon coming from, col is which aa is optimal, depth is which codon going to
+  dimnames(delta.fitness.array) <- list(rownames(equilibrium.codon.frequency), colnames(equilibrium.codon.frequency), rownames(equilibrium.codon.frequency))
+  frequency.array <- delta.fitness.array
+  for (optimal.aa.index in sequence(20)) {
+    for (from.codon.index in sequence(64)) {
+      for (to.codon.index in sequence(64)) {
+        frequency.array[from.codon.index, optimal.aa.index, to.codon.index] <- codon.relative.rate.matrix[from.codon.index, to.codon.index] * equilibrium.codon.frequency[from.codon.index, optimal.aa.index]
+        delta.fitness.array[from.codon.index, optimal.aa.index, to.codon.index] <- codon.fitness.matrix[to.codon.index, optimal.aa.index] - codon.fitness.matrix[from.codon.index, optimal.aa.index] #new codon - old codon
+      }
+    }
+  }
+  return(list(aa.fitness.matrix=equlibrium.values$aa.fitnesses, codon.fitnesses=equilibrium.values$codon.fitnesses, equilibrium.codon.frequency = equilibrium.values$equilibrium.codon.frequency, codon.mutation.matrix=codon_mutation_matrix, codon.relative.rate.matrix=codon.relative.rate.matrix, delta.fitness.array=delta.fitness.array, frequency.array=frequency.array))
+}
+
 #' Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.
 #'
 #' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
@@ -278,6 +313,12 @@ PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, val
   legend(x="topleft", legend=values, fill=colors)
 }
 
+
+PlotMutationFitnessSpectra <- function(nuc.model="JC", base.freqs=rep(0.25, 4)) {
+
+
+}
+
 #' Function to plot info by site in a gene
 #'
 #' @param info.by.site The output of GetGeneSiteInfo
@@ -310,7 +351,6 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   delta.AIC.site.information <- apply(AIC.site.information, c(2,3), get.delta)
   rel.likelihood.site.information <- exp(-0.5* delta.AIC.site.information)
   weight.site.information <- apply(rel.likelihood.site.information, c(2,3), normalize.rel)
-
   weights.integrating.phi <- apply(weight.site.information, c(1,2), weighted.mean, w=all.info$phi.weights)
 
   reverse.weighted.mean <- function(w, x) {
