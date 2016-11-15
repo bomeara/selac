@@ -379,20 +379,20 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
 
   aa.properties.reordered <- aa.properties[order(match(rownames(aa.properties), .unique.aa)),]
 
-  info.by.site <- all.info$site.information
+  info.by.site <- all.info$site.aa.information
   dimnames(info.by.site)[[1]] <- .unique.aa
   info.by.site <- info.by.site[which(.unique.aa!="*"),,]
   AIC.site.information <- -2*info.by.site
   get.delta <- function(x) {
     return(x-min(x))
   }
-  normalize.rel <- function(x) {
-    return(x/sum(x))
+  weights.integrating.phi <- matrix(nrow=dim(AIC.site.information)[1], ncol=dim(AIC.site.information)[2])
+  for (site.number in sequence(dim(AIC.site.information)[2])) { #fine, I give up on the apply across three dimensions. BCO.
+    local.matrix <- exp(-0.5*get.delta(AIC.site.information[,site.number,]))
+    local.matrix <- local.matrix / sum(local.matrix)
+    weights.integrating.phi[,site.number] <- rowSums(local.matrix)
   }
-  delta.AIC.site.information <- apply(AIC.site.information, c(2,3), get.delta)
-  rel.likelihood.site.information <- exp(-0.5* delta.AIC.site.information)
-  weight.site.information <- apply(rel.likelihood.site.information, c(2,3), normalize.rel)
-  weights.integrating.phi <- apply(weight.site.information, c(1,2), weighted.mean, w=all.info$phi.weights)
+  rownames(weights.integrating.phi) <- dimnames(AIC.site.information)[[1]]
 
   reverse.weighted.mean <- function(w, x) {
     return(stats::weighted.mean(x, w))
@@ -412,5 +412,4 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   lines(x=sequence(length(sliding.p)), y=sliding.p, lwd=2)
   plot(x=sequence(length(average.v)), y=average.v, main="Molecular volume", xlab="Site", pch=20, ylab="", bty="n", col=rgb(0,0,0,.5))
   lines(x=sequence(length(sliding.v)), y=sliding.v, lwd=2)
-
 }
