@@ -36,11 +36,11 @@ sapply(.codon.name, TranslateCodon, numcode=22),
 sapply(.codon.name, TranslateCodon, numcode=23))
 
 
-GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=NULL, taxon.to.drop=1){
+GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, root.p=NULL, taxon.to.drop=1, Q.to.reconstruct, Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"){
     
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
-    nl <- nrow(Q)
+    nl <- nrow(Q.to.reconstruct)
     #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
     liks <- matrix(0, nb.tip + nb.node, nl)
     #Now loop through the tips.
@@ -59,13 +59,13 @@ GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=
     TIPS <- 1:nb.tip
     anc <- unique(phy$edge[,1])
     
-    diag(Q) <- 0
-    diag(Q) <- -rowSums(Q)
+    diag(Q.to.reconstruct) <- 0
+    diag(Q.to.reconstruct) <- -rowSums(Q.to.reconstruct)
     
     #A temporary likelihood matrix so that the original does not get written over:
     liks.down <- liks
     #A transpose of Q for assessing probability of j to i, rather than i to j:
-    tranQ <- t(Q)
+    tranQ <- t(Q.to.reconstruct)
     comp <- matrix(0, nb.tip+nb.node, ncol(liks))
     #The first down-pass: The same algorithm as in the main function to calculate the conditional likelihood at each node:
     for (i  in seq(from = 1, length.out = nb.node)) {
@@ -77,7 +77,7 @@ GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=
         v <- 1
         for (desIndex in sequence(length(desRows))){
             if(!desNodes[desIndex] == taxon.to.drop){
-                v <- v*expm(Q * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks.down[desNodes[desIndex],]
+                v <- v*expm(Q.to.reconstruct * phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks.down[desNodes[desIndex],]
             }
         }
         comp[focal] <- sum(v)
@@ -86,11 +86,11 @@ GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=
     root <- nb.tip + 1L
     #Enter the root defined root probabilities if they are supplied by the user:
     equil.root <- NULL
-    for(i in 1:ncol(Q)){
-        posrows <- which(Q[,i] >= 0)
-        rowsum <- sum(Q[posrows,i])
-        poscols <- which(Q[i,] >= 0)
-        colsum <- sum(Q[i,poscols])
+    for(i in 1:ncol(Q.to.reconstruct)){
+        posrows <- which(Q.to.reconstruct[,i] >= 0)
+        rowsum <- sum(Q.to.reconstruct[posrows,i])
+        poscols <- which(Q.to.reconstruct[i,] >= 0)
+        colsum <- sum(Q.to.reconstruct[i,poscols])
         equil.root <- c(equil.root,rowsum/(rowsum+colsum))
     }
     if (is.null(root.p)){
@@ -132,7 +132,7 @@ GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=
             #This is essentially calculating the product of the mothers probability and the sisters probability:
             for (sisterIndex in sequence(length(sisterRows))){
                 if(!sisterNodes[sisterIndex] == taxon.to.drop){
-                    v <- v*expm(Q * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
+                    v <- v*expm(Q.to.reconstruct * phy$edge.length[sisterRows[sisterIndex]], method=c("Ward77")) %*% liks.down[sisterNodes[sisterIndex],]
                 }
             }
             comp[focal] <- sum(v)
@@ -142,6 +142,7 @@ GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=
     #The final pass
     liks.final <- liks
     comp <- numeric(nb.tip + nb.node)
+
     #In this final pass, root is never encountered. But its OK, because root likelihoods are set after the loop:
     for (i in seq(from = 1, length.out = nb.node-1)) {
         #the ancestral node at row i is called focal
@@ -154,21 +155,60 @@ GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=
         liks.final[focal, ] <- v/comp[focal]
     }
     
-    #Now get the states for the tips (will do, not available for general use):
     tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
     prop.interval <- seq(0,1 , by=0.05)
     time.interval <- tot.interval * prop.interval
     focal <- taxon.to.drop
     focalRows <- which(phy$edge[,2]==focal)
     starting.probs <- liks.final[phy$edge[focalRows,1],]
-    focal.starting.state <- sample(1:dim(Q)[2], 1, prob=starting.probs)
-    reconstructed.sequence <- c(focal.starting.state)
-    for (time.index in 2:length(time.interval)){
-        p <- expm(Q * time.interval[time.index], method="Ward77")[focal.starting.state, ]
-        focal.starting.state <- sample.int(dim(Q)[2], size = 1, FALSE, prob = p)
-        reconstructed.sequence <- c(reconstructed.sequence, focal.starting.state)
+    focal.starting.state <- sample(1:dim(Q.to.reconstruct)[2], 1, prob=starting.probs)
+    
+    if(model.to.reconstruct.under == "selac"){
+        if(dim(Q.to.simulate)==4){
+            focal.starting.state.converted <- as.vector(s2n(strsplit(.codon.name[focal.starting.state], "")[[1]]))+1
+            reconstructed.sequence <- c()
+            for(site.index in 1:3){
+                site.by.site.codon.reconstruction <- c()
+                focal.starting.state <- focal.starting.state.converted[site.index]
+                for (time.index in 2:length(time.interval)){
+                    p <- expm(Q.to.simulate * time.interval[time.index], method="Ward77")[focal.starting.state, ]
+                    focal.starting.state <- sample.int(dim(Q.to.simulate)[2], size = 1, FALSE, prob = p)
+                    site.by.site.codon.reconstruction <- c(site.by.site.codon.reconstruction, focal.starting.state)
+                }
+                reconstructed.sequence <- cbind(reconstructed.sequence, site.by.site.codon.reconstruction)
+            }
+            reconstructed.sequence <- rbind(focal.starting.state.converted, reconstructed.sequence)
+            reconstructed.sequence.codon <- c()
+            for(time.index in 1:length(time.interval)){
+                reconstructed.sequence.codon <- c(reconstructed.sequence.codon, which(.codon.name==paste(as.vector(n2s(reconstructed.sequence[time.index,]-1)), collapse="")))
+            }
+        }else{
+            reconstructed.sequence.codon <- c(focal.starting.state)
+            for (time.index in 2:length(time.interval)){
+                p <- expm(Q.to.simulate * time.interval[time.index], method="Ward77")[focal.starting.state, ]
+                focal.starting.state <- sample.int(dim(Q.to.simulate)[2], size = 1, FALSE, prob = p)
+                reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state)
+            }
+        }
+    }else{
+        if(model.to.simulate.under == "selac"){
+            focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
+            reconstructed.sequence.codon <- c(focal.starting.state.converted)
+            for (time.index in 2:length(time.interval)){
+                p <- expm(Q.to.simulate * time.interval[time.index], method="Ward77")[focal.starting.state.converted, ]
+                focal.starting.state.converted <- sample.int(dim(Q.to.simulate)[2], size = 1, FALSE, prob = p)
+                reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state.converted)
+            }
+        }
+        reconstructed.sequence.codon <- c(focal.starting.state)
+        for (time.index in 2:length(time.interval)){
+            p <- expm(Q.to.simulate * time.interval[time.index], method="Ward77")[focal.starting.state, ]
+            focal.starting.state <- sample.int(dim(Q.to.simulate)[2], size = 1, FALSE, prob = p)
+            reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state)
+        }
+
     }
-    return(reconstructed.sequence)
+    return(reconstructed.sequence.codon)
 }
 
 
@@ -684,7 +724,11 @@ GetFunctionalityMod <- function(gene.length, aa.data, optimal.aa, alpha, beta, g
 
 
 
-GetIntervalSequencesAllSites <- function(selac.obj, aa.optim.input, fasta.rows.to.keep, taxon.to.drop, partition.number, data.type){
+GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.reconstruct.under, aa.optim.input, fasta.rows.to.keep, taxon.to.drop, partition.number, data.type){
+    
+    #Step 1: Get all the proper objects for the model we are reconstructing under -- requires the most stuff.
+    #Step 2: Generate the Q matrix for model we are simulating under
+    #Step 3: Put the kids to bed, and go to the kitchen and look for some dinner.
     
     phy <- selac.obj$phy
     partitions <- selac.obj$partitions
@@ -772,7 +816,7 @@ GetIntervalSequencesAllSites <- function(selac.obj, aa.optim.input, fasta.rows.t
             
             for(i in 1:nsites){
                 Q_tmp <- nuc.mutation.rates * rates.k[rate.indicator[i]]
-                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_tmp, root.p=root.p_array, taxon.to.drop=taxon.to.drop))
+                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_tmp, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"))
             }
             
         }else{
@@ -792,7 +836,7 @@ GetIntervalSequencesAllSites <- function(selac.obj, aa.optim.input, fasta.rows.t
                 
                 phy.sort <- reorder(phy, "pruningwise")
                 
-                interval.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=nuc.mutation.rates, root.p=root.p_array, taxon.to.drop=taxon.to.drop)
+                interval.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=nuc.mutation.rates, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=nuc.mutation.rates, model.to.reconstruct.under="selac", model.to.simulate.under="selac")
             }
         }
     }else{
@@ -898,7 +942,7 @@ GetIntervalSequencesAllSites <- function(selac.obj, aa.optim.input, fasta.rows.t
                 site.rate <- sample(1:4, 1, prob=weights.k)
                 Q_codon_array <- rate.Q_codon.list[[site.rate]]
                 Q_codon <- Q_codon_array[,,aa.optim_array[i]]
-                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop))
+                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"))
             }
         }else{
             if(k.levels > 0){
@@ -930,7 +974,7 @@ GetIntervalSequencesAllSites <- function(selac.obj, aa.optim.input, fasta.rows.t
             phy.sort <- reorder(phy, "pruningwise")
             
             for (i in sequence(nsites)) {
-                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop))
+                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"))
             }
         }
     }
