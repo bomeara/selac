@@ -724,57 +724,135 @@ GetFunctionalityMod <- function(gene.length, aa.data, optimal.aa, alpha, beta, g
 
 
 
-GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.reconstruct.under, aa.optim.input, fasta.rows.to.keep, taxon.to.drop, partition.number, data.type){
+GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.reconstruct.under, selac.obj1, selac.obj2, aa.optim.input, fasta.rows.to.keep, taxon.to.drop, partition.number){
     
     #Step 1: Get all the proper objects for the model we are reconstructing under -- requires the most stuff.
     #Step 2: Generate the Q matrix for model we are simulating under
     #Step 3: Put the kids to bed, and go to the kitchen and look for some dinner.
-    
-    phy <- selac.obj$phy
-    partitions <- selac.obj$partitions
-    include.gamma <- selac.obj$include.gamma
-    aa.properties <- selac.obj$aa.properties
-    diploid <- selac.obj$diploid
-    gamma.type <- selac.obj$gamma.type
-    ncats <- selac.obj$ncats
-    numcode <- selac.obj$numcode
-    gamma <- selac.obj$volume.fixed.value
-    nuc.model <- selac.obj$nuc.model
-    k.levels <- selac.obj$k.levels
-    parallel.type <- "by.gene"
-    n.cores <- NULL
-    
-    for(partition.index in partition.number:partition.number){
-        pars <- c(selac.obj$mle.pars[partition.index,])
-        gene.tmp <- read.dna(partitions[partition.index], format='fasta')
-        if(!is.null(fasta.rows.to.keep)){
-            gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
-        }else{
-            gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+    if(model.to.simulate.under == "selac"){
+        phy <- selac.obj2$phy
+        partitions <- selac.obj2$partitions
+        include.gamma <- selac.obj2$include.gamma
+        aa.properties <- selac.obj2$aa.properties
+        diploid <- selac.obj2$diploid
+        gamma.type <- selac.obj2$gamma.type
+        ncats <- selac.obj2$ncats
+        numcode <- selac.obj2$numcode
+        gamma <- selac.obj2$volume.fixed.value
+        nuc.model <- selac.obj2$nuc.model
+        k.levels <- selac.obj2$k.levels
+        parallel.type <- "by.gene"
+        n.cores <- NULL
+        
+        codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
+        
+        if(include.gamma == TRUE){
+            shape = pars[length(pars)]
+            pars = pars[-length(pars)]
         }
         
-        if(data.type == "nucleotide"){
-            codon.data <- selac:::DNAbinToNucleotideNumeric(gene.tmp)
-            codon.data <- codon.data[phy$tip.label,]
-            codon.freq.by.gene <- selac.obj$empirical.base.freqs[[partition.index]]
-            codon.freq.by.aa=NULL
+        C.Phi.q.Ne <- pars[1]
+        C <- 4
+        q <- 4e-7
+        Ne <- 5e6
+        Phi.q.Ne <- C.Phi.q.Ne / C
+        Phi.Ne <- Phi.q.Ne / q
+        Phi <- Phi.Ne / Ne
+        alpha <- pars[2]
+        beta <- pars[3]
+        gamma <- 0.0003990333
+        
+        if(k.levels > 0){
+            if(nuc.model == "JC") {
+                base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+                nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "GTR") {
+                base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+                nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(x[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "UNREST") {
+                nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(x[6:length(pars)], model=nuc.model)
+            }
         }else{
-            codon.data <- selac:::DNAbinToCodonNumeric(gene.tmp)
-            codon.data <- codon.data[phy$tip.label,]
-            codon.freq.by.aa <- selac.obj$codon.freq.by.aa[[partition.index]]
-            codon.freq.by.gene <- selac.obj$codon.freq.by.gene[[partition.index]]
-            if(is.null(aa.optim.input)){
-                aa.optim_array <- selac.obj$aa.optim[[partition.index]]
+            if(nuc.model == "JC") {
+                base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+                nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "GTR") {
+                base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+                nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            }
+            if(nuc.model == "UNREST") {
+                nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(pars[4:length(pars)], model=nuc.model)
             }
         }
-    }
-    
-    nsites <- dim(codon.data)[2]-1
-    prop.interval <- seq(0, 1, by=0.05)
-    
-    if(data.type == "nucleotide"){
-        interval.recon_array <- c()
         
+        codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
+        codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
+        
+        #We rescale the codon matrix only:
+        diag(codon_mutation_matrix) = 0
+        diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
+        scale.factor <- -sum(diag(codon_mutation_matrix) * codon.freq.by.gene, na.rm=TRUE)
+        codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
+        
+        if(include.gamma==TRUE){
+            if(gamma.type == "median"){
+                rates.k <- selac:::DiscreteGamma(shape=shape, ncats=ncats)
+                weights.k <- rep(1/ncats, ncats)
+            }
+            if(gamma.type == "quadrature"){
+                rates.and.weights <- selac:::LaguerreQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
+            rate.Q_codon.list <- as.list(ncats)
+            for(cat.index in 1:ncats){
+                if(k.levels > 0){
+                    aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
+                }else{
+                    aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+                }
+                rate.Q_codon.list[[cat.index]] <- selac:::FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            }
+            for(cat.index in 1:ncats){
+                Q_codon_array <- rate.Q_codon.list[[cat.index]]
+                for(aa.index in 1:21){
+                    if(diploid == TRUE){
+                        Q_codon_array[,,.unique.aa[aa.index]] <- 2 * Ne * (codon_mutation_matrix_scaled * Q_codon_array[,,.unique.aa[aa.index]])
+                    }else{
+                        Q_codon_array[,,.unique.aa[aa.index]] <- Ne * (codon_mutation_matrix_scaled * Q_codon_array[,,.unique.aa[aa.index]])
+                    }
+                    diag(Q_codon_array[,,.unique.aa[aa.index]]) <- 0
+                    diag(Q_codon_array[,,.unique.aa[aa.index]]) <- -rowSums(Q_codon_array[,,.unique.aa[aa.index]])
+                    Q_codon_array[,,.unique.aa[aa.index]] <- Q_codon_array[,,.unique.aa[aa.index]]
+                }
+                rate.Q_codon.list[[cat.index]] <- Q_codon_array
+            }
+            
+            Q_simulate_array <- rate.Q_codon.list
+            
+        }else{
+            if(k.levels > 0){
+                aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
+            }else{
+                aa.distances <- selac:::CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+            }
+            Q_codon_array <- selac:::FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
+            #Finish the Q_array codon mutation matrix multiplication here:
+            for(k in 1:21){
+                if(diploid == TRUE){
+                    Q_codon_array[,,.unique.aa[k]] = (2 * Ne) * codon_mutation_matrix_scaled * Q_codon_array[,,.unique.aa[k]]
+                }else{
+                    Q_codon_array[,,.unique.aa[k]] = Ne * codon_mutation_matrix_scaled * Q_codon_array[,,.unique.aa[k]]
+                }
+                diag(Q_codon_array[,,.unique.aa[k]]) = 0
+                diag(Q_codon_array[,,.unique.aa[k]]) = -rowSums(Q_codon_array[,,.unique.aa[k]])
+            }
+            Q_simulate_array <- Q_codon_array
+        }
+    }else{
         if(include.gamma == TRUE){
             shape = pars[1]
             pars = pars[-1]
@@ -805,20 +883,12 @@ GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.recon
                 root.p_array <- codon.freq.by.gene
             }
             
-            phy.sort <- reorder(phy, "pruningwise")
-            
             diag(nuc.mutation.rates) = 0
             nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
             diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
             scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
             
-            rate.indicator <- sample.int(dim(nuc.mutation.rates)[2], nsites, TRUE, prob=weights.k)
-            
-            for(i in 1:nsites){
-                Q_tmp <- nuc.mutation.rates * rates.k[rate.indicator[i]]
-                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_tmp, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"))
-            }
-            
+            Q_simulate_array <- nuc.mutation.rates * (1/scale.factor)
         }else{
             if(is.null(codon.freq.by.gene)) {
                 #Generate matrix of equal frequencies for each site:
@@ -832,14 +902,46 @@ GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.recon
             nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
             diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
             scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
-            for (i in sequence(nsites)) {
-                
-                phy.sort <- reorder(phy, "pruningwise")
-                
-                interval.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=nuc.mutation.rates, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=nuc.mutation.rates, model.to.reconstruct.under="selac", model.to.simulate.under="selac")
+            Q_simulate_array <- nuc.mutation.rates * (1/scale.factor)
+        }
+    }
+
+    if(model.to.reconstruct.under == "selac"){
+        phy <- selac.obj1$phy
+        partitions <- selac.obj1$partitions
+        include.gamma <- selac.obj1$include.gamma
+        aa.properties <- selac.obj1$aa.properties
+        diploid <- selac.obj1$diploid
+        gamma.type <- selac.obj1$gamma.type
+        ncats <- selac.obj1$ncats
+        numcode <- selac.obj1$numcode
+        gamma <- selac.obj1$volume.fixed.value
+        nuc.model <- selac.obj1$nuc.model
+        k.levels <- selac.obj1$k.levels
+        parallel.type <- "by.gene"
+        n.cores <- NULL
+        
+        for(partition.index in partition.number:partition.number){
+            pars <- c(selac.obj1$mle.pars[partition.index,])
+            gene.tmp <- read.dna(partitions[partition.index], format='fasta')
+            if(!is.null(fasta.rows.to.keep)){
+                gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
+            }else{
+                gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+            }
+            
+            codon.data <- selac:::DNAbinToCodonNumeric(gene.tmp)
+            codon.data <- codon.data[phy$tip.label,]
+            codon.freq.by.aa <- selac.obj1$codon.freq.by.aa[[partition.index]]
+            codon.freq.by.gene <- selac.obj1$codon.freq.by.gene[[partition.index]]
+            if(is.null(aa.optim.input)){
+                aa.optim_array <- selac.obj1$aa.optim[[partition.index]]
             }
         }
-    }else{
+        
+        nsites <- dim(codon.data)[2]-1
+        prop.interval <- seq(0, 1, by=0.05)
+        
         codon.index.matrix = selac:::CreateCodonMutationMatrixIndex()
         nsites <- dim(codon.data)[2]-1
         interval.recon_array <- c()
@@ -942,7 +1044,7 @@ GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.recon
                 site.rate <- sample(1:4, 1, prob=weights.k)
                 Q_codon_array <- rate.Q_codon.list[[site.rate]]
                 Q_codon <- Q_codon_array[,,aa.optim_array[i]]
-                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"))
+                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_array[,,aa.optim_array[i]], Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
             }
         }else{
             if(k.levels > 0){
@@ -974,7 +1076,89 @@ GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.recon
             phy.sort <- reorder(phy, "pruningwise")
             
             for (i in sequence(nsites)) {
-                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=Q_codon_array[,,aa.optim_array[i]], root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"))
+                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_array[,,aa.optim_array[i]], Q.to.simulate=Q.to.simulate,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
+            }
+        }
+    }else{
+        for(partition.index in partition.number:partition.number){
+            pars <- c(selac.obj1$mle.pars[partition.index,])
+            gene.tmp <- read.dna(partitions[partition.index], format='fasta')
+            if(!is.null(fasta.rows.to.keep)){
+                gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
+            }else{
+                gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+            }
+            
+            codon.data <- selac:::DNAbinToNucleotideNumeric(gene.tmp)
+            codon.data <- codon.data[phy$tip.label,]
+            codon.freq.by.gene <- selac.obj1$empirical.base.freqs[[partition.index]]
+            codon.freq.by.aa=NULL
+        }
+        
+        nsites <- dim(codon.data)[2]-1
+        prop.interval <- seq(0, 1, by=0.05)
+        
+        interval.recon_array <- c()
+        
+        if(include.gamma == TRUE){
+            shape = pars[1]
+            pars = pars[-1]
+        }
+        if(length(pars)==0){
+            transition.rates <- 1
+        }else{
+            transition.rates <- pars[1:length(pars)]
+        }
+        nsites <- dim(codon.data)[2]-1
+        nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(transition.rates, model=nuc.model)
+        if(include.gamma==TRUE){
+            if(gamma.type == "median"){
+                rates.k <- selac:::DiscreteGamma(shape=shape, ncats=ncats)
+                weights.k <- rep(1/ncats, ncats)
+            }
+            if(gamma.type == "quadrature"){
+                rates.and.weights <- selac:::LaguerreQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
+            
+            #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
+            if(is.null(codon.freq.by.gene)) {
+                #Generate matrix of equal frequencies for each site:
+                root.p_array <- rep(0.25, 4)
+            }else{
+                root.p_array <- codon.freq.by.gene
+            }
+            
+            phy.sort <- reorder(phy, "pruningwise")
+            
+            diag(nuc.mutation.rates) = 0
+            nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
+            diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
+            scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
+            
+            rate.indicator <- sample.int(dim(nuc.mutation.rates)[2], nsites, TRUE, prob=weights.k)
+            
+            for(i in 1:nsites){
+                Q_tmp <- nuc.mutation.rates * rates.k[rate.indicator[i]]
+                interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_tmp, Q.to.simulate=Q.to.simulate, model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
+            }
+        }else{
+            if(is.null(codon.freq.by.gene)) {
+                #Generate matrix of equal frequencies for each site:
+                root.p_array <- rep(0.25, 4)
+            }else{
+                root.p_array <- codon.freq.by.gene
+            }
+            
+            #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
+            diag(nuc.mutation.rates) = 0
+            nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
+            diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
+            scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
+            for (i in sequence(nsites)) {
+                phy.sort <- reorder(phy, "pruningwise")
+                interval.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, Q=nuc.mutation.rates, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q.to.reconstruct, Q.to.simulate=nuc.mutation.rates, model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under)
             }
         }
     }
@@ -1004,10 +1188,13 @@ GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.recon
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-GetAdequateSelac <- function(selac.obj, selac.obj2, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1, data.type="codon"){
+GetAdequateSelac <- function(model.to.simulate.under, model.to.reconstruct.under, selac.obj1, selac.obj2, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1){
     prop.intervals <- seq(0,1 , by=0.05)
-    if(data.type == "nucleotide"){
-        simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(selac.obj=selac.obj, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=taxon.to.drop, partition.number=partition.number, data.type="nucleotide")
+    
+    GetIntervalSequencesAllSites <- function(model.to.simulate.under, model.to.reconstruct.under, selac.obj1, selac.obj2, aa.optim.input, fasta.rows.to.keep, taxon.to.drop, partition.number)
+
+    if(model.to.simulate.under == "gtr") {
+        simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj1, selac.obj2=selac.obj2, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
@@ -1019,9 +1206,8 @@ GetAdequateSelac <- function(selac.obj, selac.obj2, aa.optim.input=NULL, fasta.r
             functionality.taxon.interval <- GetFunctionalityMod(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj2$aa.optim[[partition.number]], alpha=selac.obj2$mle.pars[1,2], beta=selac.obj2$mle.pars[1,3], gamma=selac.obj2$volume.fixed.value, aa.properties=selac.obj2$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
-    }
-    if(data.type == "codon"){
-        simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(selac.obj=selac.obj, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=taxon.to.drop, partition.number=partition.number, data.type="codon")
+    }else{
+        simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj1, selac.obj2=selac.obj2, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
@@ -1035,7 +1221,6 @@ GetAdequateSelac <- function(selac.obj, selac.obj2, aa.optim.input=NULL, fasta.r
     }
     return(functionality.taxon)
 }
-
 
 
 
