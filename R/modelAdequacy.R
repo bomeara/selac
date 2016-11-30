@@ -875,11 +875,10 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
-            for(site.index in 1:selac.obj.to.simulate$nsites[partition.number]){
+            for(site.index in 1:selac.obj.to.reconstruct$nsites[partition.number]){
                 reconstructed.sequence <- c(reconstructed.sequence, .aa.translation[[numcode]][simulated.across.intervals.and.sites[interval.index,site.index]])
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
-            selac.obj.to.reconstruct <- selac.obj.to.simulate
             functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
