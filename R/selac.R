@@ -9,14 +9,14 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-library(ape)
-library(expm)
-library(nnet)
-library(nloptr)
-library(seqinr)
-library(phangorn)
-library(MASS)
-library(parallel)
+#library(ape)
+#library(expm)
+#library(nnet)
+#library(nloptr)
+#library(seqinr)
+#library(phangorn)
+#library(MASS)
+#library(parallel)
 #library(Rcpp)
 #library(RcppArmadillo)
 #library(inline)
@@ -3763,10 +3763,19 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         colnames(mle.pars.mat) <- parameter.column.names
 
         if(edge.length == "optimize"){
-            np <- max(index.matrix) + length(phy$edge.length) + sum(nsites.vector)
+            if(optimal.aa == "user"){
+                np <- max(index.matrix) + length(phy$edge.length)
+            }else{
+                np <- max(index.matrix) + length(phy$edge.length) + sum(nsites.vector)
+            }
         }else{
-            np <- max(index.matrix) + sum(nsites.vector)
+            if(optimal.aa == "user"){
+                np <- max(index.matrix)
+            }else{
+                np <- max(index.matrix) + sum(nsites.vector)
+            }
         }
+        
         #Counting parameters: Do we count the nsites too? Yup.
         obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, data.type=data.type, codon.model=codon.model, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, max.tol=max.tol, max.evals=max.evals, selac.starting.vals=selac.starting.vals)
         class(obj) = "selac"
