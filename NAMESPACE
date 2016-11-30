@@ -14,3 +14,6 @@ importFrom("stats", "dist", "pgamma", "qgamma", "quantile", "reorder",
            "rnorm", "runif")
 importFrom("utils", "read.delim")
 importFrom("RColorBrewer", "brewer.pal")
+importFrom("grDevices", "col2rgb", "rgb")
+importFrom("graphics", "legend", "lines", "points")
+importFrom("stats", "median")

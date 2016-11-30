@@ -5,7 +5,7 @@
 \title{Get marginal reconstruction all genes}
 \usage{
 GetMarginalAllGenes(selac.obj, aa.optim.input = NULL,
-  fasta.rows.to.keep = NULL, taxon.to.drop, partition.number)
+  fasta.rows.to.keep = NULL, taxon.to.drop, partition.number = NULL)
 }
 \arguments{
 \item{selac.obj}{An object of class SELAC.}

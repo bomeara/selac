@@ -1,4 +1,11 @@
 
+######################################################################################################################################
+######################################################################################################################################
+### Marginal reconstruction across genes and nodes in a tree
+######################################################################################################################################
+######################################################################################################################################
+
+#written by Jeremy M. Beaulieu
 
 
 GetMarginalSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=NULL, taxon.to.drop=NULL){
@@ -128,33 +135,7 @@ GetMarginalSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=NULL, ta
         comp[focal] <- sum(v)
         liks.final[focal, ] <- v/comp[focal]
     }
-    
-    #Now get the states for the tips (will do, not available for general use):
-    likelihoods.vector <- c()
-    
-    if(nl > 4){
-        for (k in 1:64){
-            if(k == 49 | k == 51 | k==57){
-                likelihoods.vector <- c(likelihoods.vector, -1000000)
-            }else{
-                #the ancestral node at row i is called focal
-                tmp <- GetTipMarginalSingleSite(charnum=charnum, codon.data=codon.data, phy=phy, Q=Q, root.p=root.p, taxon.to.drop=taxon.to.drop, state=k)
-                likelihoods.vector <- c(likelihoods.vector, tmp)
-            }
-        }
-    }else{
-        for (k in 1:4){
-            #the ancestral node at row i is called focal
-            tmp <- GetTipMarginalSingleSite(charnum=charnum, codon.data=codon.data, phy=phy, Q=Q, root.p=root.p, taxon.to.drop=taxon.to.drop, state=k)
-            likelihoods.vector <- c(likelihoods.vector, tmp)
-        }
-    }
-    
-    best.probs <- max(likelihoods.vector)
-    marginal.probs.tmp <- likelihoods.vector - best.probs
-    marginal.probs <- exp(marginal.probs.tmp) / sum(exp(marginal.probs.tmp))
-    liks.final[taxon.to.drop,] <- marginal.probs
-    
+
     #Just add in the marginal at the root calculated on the original downpass or if supplied by the user:
     liks.final[root,] <- liks.down[root,] * root.p
     root.final <- liks.down[root,] * root.p
@@ -163,31 +144,6 @@ GetMarginalSingleSite <- function(charnum=1, codon.data, phy, Q, root.p=NULL, ta
     return(liks.final)
 }
 
-
-#' @title Get marginal reconstruction a single
-#'
-#' @description
-#' Calculates the marginal probability of each codon at all sites across a single gene
-#'
-#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
-#' @codon.data
-#' @param phy The phylogenetic tree with branch lengths.
-#' @param codon.freq.by.aa A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
-#' @param codon.freq.by.gene A matrix of codon frequencies for each gene.
-#' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
-#' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
-#' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
-#' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
-#' @param gamma.type Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.
-#' @param ncats The number of discrete categories.
-#' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
-#' @param diploid A logical indicating whether or not the organism is diploid or not.
-#' @param taxon.to.drop A single taxon (defined by number in phy object) to be removed from the reconstruction.
-#' @param aa.properties User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.
-#' @param data.type The data type being tested. Options are "codon" or "nucleotide".
-#'
-#' @details
-#' Provides marginal probabilities for all nodes across a single gene.
 
 GetMarginalGene <- function(pars, codon.data, phy, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, numcode, nuc.model="UNREST", include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, taxon.to.drop=NULL, aa.properties=NULL, data.type="codon"){
     
@@ -285,13 +241,16 @@ GetMarginalGene <- function(pars, codon.data, phy, codon.freq.by.aa=NULL, codon.
             if(nuc.model == "JC") {
                 base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
                 nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+                poly.params <- pars[7:8]
             }
             if(nuc.model == "GTR") {
                 base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
-                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+                poly.params <- pars[7:8]
             }
             if(nuc.model == "UNREST") {
-                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[6:length(pars)], model=nuc.model)
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[6:length(pars)], model=nuc.model)
+                poly.params <- pars[4:5]
             }
         }else{
             if(nuc.model == "JC") {
@@ -413,7 +372,7 @@ GetMarginalGene <- function(pars, codon.data, phy, codon.freq.by.aa=NULL, codon.
 #'
 #' @details
 #' Provides marginal probabilities for all nodes across all genes. The function is fairly simple to use as it only requires as input the selac output object and the working directory that the original analysis took place.
-GetMarginalAllGenes <- function(selac.obj, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop, partition.number) {
+GetMarginalAllGenes <- function(selac.obj, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop, partition.number=NULL) {
     
     phy <- selac.obj$phy
     partitions <- selac.obj$partitions

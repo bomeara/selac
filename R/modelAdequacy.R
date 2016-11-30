@@ -5,6 +5,8 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
+#written by Jeremy M. Beaulieu
+
 
 GetTipIntervalStateSingleSite <- function(charnum=1, codon.data, phy, root.p=NULL, taxon.to.drop=1, Q.to.reconstruct, Q.to.simulate,  model.to.reconstruct.under="selac", model.to.simulate.under="selac"){
     
@@ -357,13 +359,16 @@ GetSelacSimulateInfo <- function(selac.obj, partition.number){
         if(nuc.model == "JC") {
             base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[7:8]
         }
         if(nuc.model == "GTR") {
             base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[7:8]
         }
         if(nuc.model == "UNREST") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[6:length(pars)], model=nuc.model)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[6:length(pars)], model=nuc.model)
+            poly.params <- pars[4:5]
         }
     }else{
         if(nuc.model == "JC") {
@@ -517,13 +522,16 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
             if(nuc.model == "JC") {
                 base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
                 nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+                poly.params <- pars[7:8]
             }
             if(nuc.model == "GTR") {
                 base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
-                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+                poly.params <- pars[7:8]
             }
             if(nuc.model == "UNREST") {
-                nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[6:length(pars)], model=nuc.model)
+                nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[6:length(pars)], model=nuc.model)
+                poly.params <- pars[4:5]
             }
         }else{
             if(nuc.model == "JC") {
@@ -737,7 +745,6 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
             scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
             Q_array <- nuc.mutation.rates * (1/scale.factor)
             if(model.to.simulate.under == "selac"){
-                print("um, hi!")
                 simulation.model.info <- GetSelacSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
                 marginal.recon_array <- array(1, dim=c(Ntip(phy)+Nnode(phy), 4, nsites))
                 for(i in sequence(nsites)){
@@ -821,98 +828,6 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
                     site.rate <- sample(1:4, 1, prob=weights.k)
                     Q_codon_recon <- Q_array * rates.k[site.rate]
                     Q_nuc.mat <- simulation.model.info$Q_mat
-                    interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_array[,,aa.optim_array[i]], Q.to.simulate=Q_nuc.mat*simulation.model.info$gamma.rates[site.rate], model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
-                }
-            }
-        }else{
-            if(is.null(codon.freq.by.gene)) {
-                #Generate matrix of equal frequencies for each site:
-                root.p_array <- rep(0.25, 4)
-            }else{
-                root.p_array <- codon.freq.by.gene
-            }
-            
-            #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
-            diag(nuc.mutation.rates) = 0
-            nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
-            diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
-            scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
-            Q_array <- nuc.mutation.rates * (1/scale.factor)
-            
-            if(model.to.simulate.under == "selac"){
-                simulation.model.info <- GetSelacSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
-                marginal.recon_array <- array(1, dim=c(Ntip(phy)+Nnode(phy), 4, nsites))
-                for(i in sequence(nsites)){
-                    site.rate <- sample(1:4, 1, prob=weights.k)
-                    Q_codon_recon <- Q_array * rates.k[site.rate]
-                    Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
-                    Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[i]]
-                    marginal.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim, model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under)
-                }
-                
-                if(!is.null(simulation.model.info$gamma.rates)){
-                    tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
-                    prop.interval <- seq(0,1 , by=0.05)
-                    time.interval <- tot.interval * prop.interval
-                    focal <- taxon.to.drop
-                    focalRows <- which(phy$edge[,2]==focal)
-                    for(i in seq(1, nsites, by=3)){
-                        site.rate <- sample(1:4, 1, prob=weights.k)
-                        Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[i]]
-                        end.codon <- seq(3,99, by=3)
-                        starting.probs <- liks.final[phy$edge[focalRows,1],]
-                        focal.starting.state <- c()
-                        for(k in i:end.codon){
-                            focal.starting.state <- c(focal.starting.state, sample(1:dim(Q.to.reconstruct)[2], 1, prob=liks.final[phy$edge[focalRows,1],,k]))
-                        }
-                        focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
-                        reconstructed.sequence.codon <- c(focal.starting.state.converted)
-                        for (time.index in 2:length(time.interval)){
-                            p <- expm(Q_codon_sim * time.interval[time.index], method="Ward77")[focal.starting.state, ]
-                            focal.starting.state <- sample.int(dim(Q.to.simulate)[2], size = 1, FALSE, prob = p)
-                            reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state)
-                        }
-                        interval.recon_array <- cbind(interval.recon_array, reconstructed.sequence.codon)
-                    }
-                }else{
-                    tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
-                    prop.interval <- seq(0,1 , by=0.05)
-                    time.interval <- tot.interval * prop.interval
-                    focal <- taxon.to.drop
-                    focalRows <- which(phy$edge[,2]==focal)
-                    for(i in seq(1, nsites, by=3)){
-                        site.rate <- sample(1:4, 1, prob=weights.k)
-                        Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[i]]
-                        end.codon <- seq(3,99, by=3)
-                        starting.probs <- liks.final[phy$edge[focalRows,1],]
-                        #Adds a slight bias to this, but cannot have stop codons in the selac case -- nothing holding this back
-                        stop.codon <- 1
-                        while(stop.codon == 1){
-                            focal.starting.state <- c()
-                            for(k in i:end.codon){
-                                focal.starting.state <- c(focal.starting.state, sample(1:dim(Q.to.reconstruct)[2], 1, prob=liks.final[phy$edge[focalRows,1],,k]))
-                            }
-                            focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
-                            if(!focal.starting.state.converted == 49 | !focal.starting.state.converted == 51 | !focal.starting.state.converted == 57){
-                                stop.codon = 0
-                            }
-                        }
-                        reconstructed.sequence.codon <- c(focal.starting.state.converted)
-                        for (time.index in 2:length(time.interval)){
-                            p <- expm(Q_codon_sim * time.interval[time.index], method="Ward77")[focal.starting.state, ]
-                            focal.starting.state <- sample.int(dim(Q.to.simulate)[2], size = 1, FALSE, prob = p)
-                            reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state)
-                        }
-                        interval.recon_array <- cbind(interval.recon_array, reconstructed.sequence.codon)
-                    }
-                }
-            }else{
-                simulation.model.info <- GetGtrSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
-                for(i in sequence(nsites)){
-                    site.rate <- sample(1:4, 1, prob=weights.k)
-                    Q_codon_recon <- Q_array * rates.k[site.rate]
-                    Q_nuc.mat <- simulation.model.info$Q_mat
-                    site.rate <- sample(1:4, 1, prob=simulation.model.info$gamma.weights)
                     interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_array[,,aa.optim_array[i]], Q.to.simulate=Q_nuc.mat*simulation.model.info$gamma.rates[site.rate], model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
                 }
             }
