@@ -413,3 +413,19 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   plot(x=sequence(length(average.v)), y=average.v, main="Molecular volume", xlab="Site", pch=20, ylab="", bty="n", col=rgb(0,0,0,.5))
   lines(x=sequence(length(sliding.v)), y=sliding.v, lwd=2)
 }
+
+# TODO
+#
+# Y axis: fixation probability relative to neutral
+#
+# Do for different amino acids
+#
+# Phi*g
+#
+# X axis is log(W)*Ne
+#
+# Lines are cdfs for diff amino acids
+#
+# Could have theta curve also on the plot
+#
+# When have gamma, pull from distribution, not just the category midpoints
