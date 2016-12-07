@@ -416,7 +416,7 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
 
 ComputeMutationFitnessesUnderGammaRates <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999, shape.gamma=1, n.pulls=1000) {
   Phi.vector <- Phi*rgamma(n.pulls, shape=shape.gamma, rate=shape.gamma)
-  ComputeMutationFitnessesPhiFirst <- function(Phi=0.5, nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+  ComputeMutationFitnessesPhiFirst <- function(Phi=0.5, nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
     return(ComputeMutationFitnesses(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=fee.stop.codon.rate))
   }
   results <- lapply(Phi.vector, ComputeMutationFitnessesPhiFirst, nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=fee.stop.codon.rate)
