@@ -414,3 +414,33 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   plot(x=sequence(length(average.v)), y=average.v, main="Molecular volume", xlab="Site", pch=20, ylab="", bty="n", col=rgb(0,0,0,.5))
   lines(x=sequence(length(sliding.v)), y=sliding.v, lwd=2)
 }
+
+ComputeMutationFitnessesUnderGammaRates <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999, shape.gamma=1, n.pulls=1000) {
+  Phi.vector <- Phi*rgamma(n.pulls, shape=shape.gamma, rate=shape.gamma)
+  ComputeMutationFitnessesPhiFirst <- function(Phi=0.5, nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+    return(ComputeMutationFitnesses(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=fee.stop.codon.rate))
+  }
+  results <- lapply(Phi.vector, ComputeMutationFitnessesPhiFirst, nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=fee.stop.codon.rate)
+  return(results)
+}
+
+# PlotCDFOfMutations <- function(mutation.fitness.object.list, values, optimal.aa=NULL, palette="Set1", lwd=2, ...) {
+#   colors <- add.alpha(RColorBrewer::brewer.pal(length(mutation.fitness.object.list),palette),0.5)
+#   results.to.plot <- lapply(mutation.fitness.object.list, LineMutationFitnessSpectra, optimal.aa=optimal.aa)
+# }
+
+# TODO
+#
+# Y axis: fixation probability relative to neutral
+#
+# Do for different amino acids
+#
+# Phi*g
+#
+# X axis is log(W)*Ne
+#
+# Lines are cdfs for diff amino acids
+#
+# Could have theta curve also on the plot
+#
+# When have gamma, pull from distribution, not just the category midpoints
