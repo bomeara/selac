@@ -382,7 +382,6 @@ CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutatio
     #codon.set.translate <- apply(.codon.sets, 2, n2s)
     #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
     aa.translations <- .aa.translation[[numcode]][.codon.name]
-
     for (i in sequence(n.codons)) {
         for (j in sequence(n.codons)) {
             if(aa.translations[i] == aa.translations[j]){ #synonymous
@@ -390,9 +389,9 @@ CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutatio
                     mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
                     matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
                     if((fitness.pars[j]-fitness.pars[i]) == 0){
-                        codon.mutation.rates[i,j] = 1
+                        codon.mutation.rates[i,j] = nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
                     }else{
-                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
+                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
                     }
                 }
             }else{ #nonsynonymous
@@ -400,9 +399,9 @@ CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutatio
                     mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
                     matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
                     if((fitness.pars[j]-fitness.pars[i]) == 0){
-                        codon.mutation.rates[i,j] = 1
+                        codon.mutation.rates[i,j] = omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
                     }else{
-                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1 - exp(fitness.pars[i] - fitness.pars[j])))
+                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
                     }
                 }
             }
@@ -959,7 +958,6 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
     scale.factor <- -sum(diag(codon_mutation_matrix) * codon.freq.by.gene, na.rm=TRUE)
     codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
-
     #Finish the Q_array codon mutation matrix multiplication here:
     for(k in 1:21){
         if(diploid == TRUE){
@@ -1029,7 +1027,7 @@ GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, r
     diag(Q_codon) = 0
     diag(Q_codon) = -rowSums(Q_codon)
     scale.factor <- -sum(diag(Q_codon) * root.p_array, na.rm=TRUE)
-
+    print(Q_codon * (1/scale.factor))
     expQt <- GetExpQt(phy=phy, Q=Q_codon, scale.factor=scale.factor, rates=NULL)
 
     phy.sort <- reorder(phy, "pruningwise")
@@ -1201,6 +1199,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
     }
 }
 
+
 GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode, nuc.model, logspace=FALSE, verbose=TRUE, neglnl=FALSE, parallel.type="by.gene", n.cores=NULL) {
     if(logspace) {
         x = exp(x)
@@ -1254,6 +1253,7 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
         }
         codon.eq.freq <- codon.eq.freq[1:64]/sum(codon.eq.freq[1:64])
     }
+    
     Q_codon = CreateCodonMutationMatrixMutSel(omega.par=x[1], fitness.pars=fitness.pars.ordered, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
     final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.eq.freq, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)

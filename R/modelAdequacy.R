@@ -485,7 +485,6 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
             }else{
                 gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
             }
-            
             codon.data <- DNAbinToCodonNumeric(gene.tmp)
             codon.data <- codon.data[phy$tip.label,]
             codon.freq.by.aa <- selac.obj1$codon.freq.by.aa[[partition.index]]
@@ -892,6 +891,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
     
     if(model.to.reconstruct.under == "selac" & model.to.simulate.under == "gtr" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "selac"){
         simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
+        print(simulated.across.intervals.and.sites)
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
@@ -899,6 +899,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
                 reconstructed.sequence <- c(reconstructed.sequence, .aa.translation[[numcode]][simulated.across.intervals.and.sites[interval.index,site.index]])
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
+            print(reconstructed.sequence)
             functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
