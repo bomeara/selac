@@ -269,7 +269,9 @@ GetGtrSimulateInfo <- function(selac.obj, partition.number){
     }else{
         transition.rates <- pars[1:length(pars)]
     }
+    
     nuc.mutation.rates <- CreateNucleotideMutationMatrix(transition.rates, model=nuc.model)
+    
     if(include.gamma==TRUE){
         if(gamma.type == "median"){
             rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -316,6 +318,85 @@ GetGtrSimulateInfo <- function(selac.obj, partition.number){
     obj$Q_matrix <- Q_array
     return(obj)
 }
+
+
+GetFMutSelSimulateInfo <- function(selac.obj, partition.number){
+    
+    pars <- c(selac.obj$mle.pars[partition.number,])
+    phy <- selac.obj$phy
+    partitions <- selac.obj$partitions
+    include.gamma <- selac.obj$include.gamma
+    aa.properties <- selac.obj$aa.properties
+    diploid <- selac.obj$diploid
+    gamma.type <- selac.obj$gamma.type
+    ncats <- selac.obj$ncats
+    numcode <- selac.obj$numcode
+    gamma <- selac.obj$volume.fixed.value
+    nuc.model <- selac.obj$nuc.model
+    k.levels <- selac.obj$k.levels
+    nuc.model <- selac.obj$nuc.model
+    parallel.type <- "by.gene"
+    n.cores <- NULL
+    codon.freq.by.aa <- NULL
+    codon.freq.by.gene <- NULL
+    nsites <- selac.obj$nsites[partition.number]
+    pars <- c(selac.obj$mle.pars[partition.number,])
+    if(nuc.model == "JC") {
+        base.freqs <- c(pars[1:3], 1-sum(pars[1:3]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+        pars = pars[-(1:3)]
+    }
+    if(nuc.model == "GTR") {
+        base.freqs <- c(pars[1:3], 1-sum(pars[1:3]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[4:8], model=nuc.model, base.freqs=base.freqs)
+        pars = pars[-(1:8)]
+    }
+    if(nuc.model == "UNREST") {
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[1:11], model=nuc.model, base.freqs=NULL)
+        pars = pars[-(1:11)]
+    }
+    #.codon.sets <- .codon.sets
+    n.codons <- dim(.codon.sets)[1]
+    codon.eq.freq <- numeric(n.codons)
+    fitness.pars <- c(pars[-1],0)
+    fitness.pars.ordered <- numeric(n.codons)
+    if(length(fitness.pars)>21){
+        fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
+    }else{
+        fitness.pars.ordered <- numeric(n.codons)
+        #codon.set.translate <- apply(.codon.sets, 2, n2s)
+        #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+        aa.translations <- .aa.translation[[numcode]][.codon.name]
+        unique.aa.nostop = .unique.aa[-which(.unique.aa=="*")]
+        for(par.index in 1:length(unique.aa.nostop)){
+            fitness.pars.ordered[which(aa.translations == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
+        }
+    }
+    for(codon.index in 1:n.codons){
+        #In the canonical model stop codons are ignored. We do the same here.
+        if(codon.index == 49 | codon.index == 51 | codon.index == 57){
+            codon.eq.freq[codon.index] = 0
+        }else{
+            codon.eq.freq[codon.index] <- base.freqs[unname(.codon.sets[codon.index,1])+1] * base.freqs[unname(.codon.sets[codon.index,2])+1] * base.freqs[unname(.codon.sets[codon.index,3])+1] * exp(fitness.pars.ordered[codon.index])
+        }
+    }
+    codon.eq.freq <- codon.eq.freq[1:64]/sum(codon.eq.freq[1:64])
+    
+    Q_codon = CreateCodonMutationMatrixMutSel(omega.par=pars[1], fitness.pars=fitness.pars.ordered, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
+ 
+    #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
+    diag(Q_codon) = 0
+    diag(Q_codon) = -rowSums(Q_codon)
+    scale.factor <- -sum(diag(Q_codon) * codon.eq.freq, na.rm=TRUE)
+    Q_array = Q_codon * (1/scale.factor)
+
+    obj <- NULL
+    obj$gamma.rates <- NULL
+    obj$gamma.weights <- NULL
+    obj$Q_matrix <- Q_array
+    return(obj)
+}
+
 
 
 GetSelacSimulateInfo <- function(selac.obj, partition.number){
@@ -459,6 +540,7 @@ GetSelacSimulateInfo <- function(selac.obj, partition.number){
 }
 
 
+
 GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.simulate.under, selac.obj1, selac.obj2, aa.optim.input, fasta.rows.to.keep, taxon.to.drop, partition.number){
     
     phy <- selac.obj1$phy
@@ -598,23 +680,34 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
             root.p_array <- root.p_array / rowSums(root.p_array)
             rownames(root.p_array) <- .unique.aa
             
-            if(model.to.simulate.under == "selac"){
-                simulation.model.info <- GetSelacSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
-                if(!is.null(simulation.model.info$gamma.rates)){
-                    for(i in sequence(nsites)){
-                        site.rate <- sample(1:4, 1, prob=weights.k)
-                        Q_codon_array <- rate.Q_codon.list[[site.rate]]
-                        Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
-                        Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
-                        Q_codon_sim <- Q_codon_array[,,aa.optim_array[i]]
-                        interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
+            if(model.to.simulate.under == "selac" | model.to.simulate.under == "fmutsel"){
+                if(model.to.simulate.under == "selac"){
+                    simulation.model.info <- GetSelacSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
+                    if(!is.null(simulation.model.info$gamma.rates)){
+                        for(i in sequence(nsites)){
+                            site.rate <- sample(1:4, 1, prob=weights.k)
+                            Q_codon_array <- rate.Q_codon.list[[site.rate]]
+                            Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
+                            Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
+                            Q_codon_sim <- Q_codon_array[,,aa.optim_array[i]]
+                            interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
+                        }
+                    }else{
+                        for(i in sequence(nsites)){
+                            site.rate <- sample(1:4, 1, prob=weights.k)
+                            Q_codon_array <- rate.Q_codon.list[[site.rate]]
+                            Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
+                            Q_codon_sim <- simulation.model.info$Q_matrix[,,aa.optim_array[i]]
+                            interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
+                        }
                     }
                 }else{
+                    simulation.model.info <- GetFMutSelSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
                     for(i in sequence(nsites)){
                         site.rate <- sample(1:4, 1, prob=weights.k)
                         Q_codon_array <- rate.Q_codon.list[[site.rate]]
                         Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
-                        Q_codon_sim <- simulation.model.info$Q_matrix[,,aa.optim_array[i]]
+                        Q_codon_sim <- simulation.model.info$Q_matrix
                         interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
                     }
                 }
@@ -743,83 +836,88 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
             diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
             scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
             Q_array <- nuc.mutation.rates * (1/scale.factor)
-            if(model.to.simulate.under == "selac"){
-                simulation.model.info <- GetSelacSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
-                marginal.recon_array <- array(1, dim=c(Ntip(phy)+Nnode(phy), 4, nsites))
-                for(i in sequence(nsites)){
-                    site.rate <- sample(1:4, 1, prob=weights.k)
-                    Q_codon_recon <- Q_array * rates.k[site.rate]
-                    Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
-                    Q_codon_sim <- Q_codon_array
-                    marginal.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim, model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under)
-                }
-                if(!is.null(simulation.model.info$gamma.rates)){
-                    tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
-                    prop.interval <- seq(0,1 , by=0.05)
-                    time.interval <- tot.interval * prop.interval
-                    focal <- taxon.to.drop
-                    focalRows <- which(phy$edge[,2]==focal)
-                    codon.count <- 1
-                    Q_codon_array <- simulation.model.info$Q_matrix
-                    end.codon <- seq(3,nsites, by=3)
-                    for(i in seq(1, nsites, by=3)){
+            if(model.to.simulate.under == "selac" | model.to.simulate.under == "fmutsel"){
+                if(model.to.simulate.under == "selac"){
+                    simulation.model.info <- GetSelacSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
+                    marginal.recon_array <- array(1, dim=c(Ntip(phy)+Nnode(phy), 4, nsites))
+                    for(i in sequence(nsites)){
                         site.rate <- sample(1:4, 1, prob=weights.k)
+                        Q_codon_recon <- Q_array * rates.k[site.rate]
                         Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
-                        Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[codon.count]]
-                        #Adds a slight bias to this, but cannot have stop codons in the selac case -- nothing holding this back
-                        stop.codon <- 1
-                        while(stop.codon == 1){
-                            focal.starting.state <- c()
-                            for(k in i:end.codon[codon.count]){
-                                focal.starting.state <- c(focal.starting.state, sample(1:4, 1, prob=marginal.recon_array[phy$edge[focalRows,1],,k]))
+                        Q_codon_sim <- Q_codon_array
+                        marginal.recon_array[,,i] <- GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array, taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim, model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under)
+                    }
+                    if(!is.null(simulation.model.info$gamma.rates)){
+                        tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
+                        prop.interval <- seq(0,1 , by=0.05)
+                        time.interval <- tot.interval * prop.interval
+                        focal <- taxon.to.drop
+                        focalRows <- which(phy$edge[,2]==focal)
+                        codon.count <- 1
+                        Q_codon_array <- simulation.model.info$Q_matrix
+                        end.codon <- seq(3,nsites, by=3)
+                        for(i in seq(1, nsites, by=3)){
+                            site.rate <- sample(1:4, 1, prob=weights.k)
+                            Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
+                            Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[codon.count]]
+                            #Adds a slight bias to this, but cannot have stop codons in the selac case -- nothing holding this back
+                            stop.codon <- 1
+                            while(stop.codon == 1){
+                                focal.starting.state <- c()
+                                for(k in i:end.codon[codon.count]){
+                                    focal.starting.state <- c(focal.starting.state, sample(1:4, 1, prob=marginal.recon_array[phy$edge[focalRows,1],,k]))
+                                }
+                                focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
+                                if(!focal.starting.state.converted == 49 | !focal.starting.state.converted == 51 | !focal.starting.state.converted == 57){
+                                    stop.codon = 0
+                                }
                             }
-                            focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
-                            if(!focal.starting.state.converted == 49 | !focal.starting.state.converted == 51 | !focal.starting.state.converted == 57){
-                                stop.codon = 0
+                            reconstructed.sequence.codon <- c(focal.starting.state.converted)
+                            for (time.index in 2:length(time.interval)){
+                                p <- expm(Q_codon_sim * time.interval[time.index], method="Ward77")[focal.starting.state.converted, ]
+                                focal.starting.state.converted <- sample.int(64, size = 1, FALSE, prob = p)
+                                reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state.converted)
                             }
+                            interval.recon_array <- cbind(interval.recon_array, reconstructed.sequence.codon)
+                            codon.count <- codon.count+1
                         }
-                        reconstructed.sequence.codon <- c(focal.starting.state.converted)
-                        for (time.index in 2:length(time.interval)){
-                            p <- expm(Q_codon_sim * time.interval[time.index], method="Ward77")[focal.starting.state.converted, ]
-                            focal.starting.state.converted <- sample.int(64, size = 1, FALSE, prob = p)
-                            reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state.converted)
+                    }else{
+                        tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
+                        prop.interval <- seq(0,1 , by=0.05)
+                        time.interval <- tot.interval * prop.interval
+                        focal <- taxon.to.drop
+                        focalRows <- which(phy$edge[,2]==focal)
+                        codon.count <- 1
+                        Q_codon_array <- simulation.model.info$Q_matrix
+                        end.codon <- seq(3,nsites, by=3)
+                        for(i in seq(1, nsites, by=3)){
+                            site.rate <- sample(1:4, 1, prob=weights.k)
+                            Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[codon.count]]
+                            #Adds a slight bias to this, but cannot have stop codons in the selac case -- nothing holding this back
+                            stop.codon <- 1
+                            while(stop.codon == 1){
+                                focal.starting.state <- c()
+                                for(k in i:end.codon[codon.count]){
+                                    focal.starting.state <- c(focal.starting.state, sample(1:4, 1, prob=marginal.recon_array[phy$edge[focalRows,1],,k]))
+                                }
+                                focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
+                                if(!focal.starting.state.converted == 49 | !focal.starting.state.converted == 51 | !focal.starting.state.converted == 57){
+                                    stop.codon = 0
+                                }
+                            }
+                            reconstructed.sequence.codon <- c(focal.starting.state.converted)
+                            for (time.index in 2:length(time.interval)){
+                                p <- expm(Q_codon_sim * time.interval[time.index], method="Ward77")[focal.starting.state.converted, ]
+                                focal.starting.state.converted <- sample.int(64, size = 1, FALSE, prob = p)
+                                reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state.converted)
+                            }
+                            interval.recon_array <- cbind(interval.recon_array, reconstructed.sequence.codon)
+                            codon.count <- codon.count+1
                         }
-                        interval.recon_array <- cbind(interval.recon_array, reconstructed.sequence.codon)
-                        codon.count <- codon.count+1
                     }
                 }else{
-                    tot.interval <- phy$edge.length[phy$edge[,2]==taxon.to.drop]
-                    prop.interval <- seq(0,1 , by=0.05)
-                    time.interval <- tot.interval * prop.interval
-                    focal <- taxon.to.drop
-                    focalRows <- which(phy$edge[,2]==focal)
-                    codon.count <- 1
-                    Q_codon_array <- simulation.model.info$Q_matrix
-                    end.codon <- seq(3,nsites, by=3)
-                    for(i in seq(1, nsites, by=3)){
-                        site.rate <- sample(1:4, 1, prob=weights.k)
-                        Q_codon_sim <- Q_codon_array[,,simulation.model.info$aa.optim_array[codon.count]]
-                        #Adds a slight bias to this, but cannot have stop codons in the selac case -- nothing holding this back
-                        stop.codon <- 1
-                        while(stop.codon == 1){
-                            focal.starting.state <- c()
-                            for(k in i:end.codon[codon.count]){
-                                focal.starting.state <- c(focal.starting.state, sample(1:4, 1, prob=marginal.recon_array[phy$edge[focalRows,1],,k]))
-                            }
-                            focal.starting.state.converted <- which(.codon.name==paste(as.vector(n2s(focal.starting.state-1)), collapse=""))
-                            if(!focal.starting.state.converted == 49 | !focal.starting.state.converted == 51 | !focal.starting.state.converted == 57){
-                                stop.codon = 0
-                            }
-                        }
-                        reconstructed.sequence.codon <- c(focal.starting.state.converted)
-                        for (time.index in 2:length(time.interval)){
-                            p <- expm(Q_codon_sim * time.interval[time.index], method="Ward77")[focal.starting.state.converted, ]
-                            focal.starting.state.converted <- sample.int(64, size = 1, FALSE, prob = p)
-                            reconstructed.sequence.codon <- c(reconstructed.sequence.codon, focal.starting.state.converted)
-                        }
-                        interval.recon_array <- cbind(interval.recon_array, reconstructed.sequence.codon)
-                        codon.count <- codon.count+1
-                    }
+                    print("why are we here?")
+                    
                 }
             }else{
                 simulation.model.info <- GetGtrSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
@@ -871,6 +969,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
         }
     }
     
+    
     if(model.to.reconstruct.under == "gtr" & model.to.simulate.under == "gtr"){
         simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
         reconstructed.sequence <- c()
@@ -889,9 +988,8 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
         }
     }
     
-    if(model.to.reconstruct.under == "selac" & model.to.simulate.under == "gtr" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "selac"){
+    if(model.to.reconstruct.under == "selac" & model.to.simulate.under == "gtr" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "selac" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "fmutsel"){
         simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
-        print(simulated.across.intervals.and.sites)
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
@@ -899,11 +997,11 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
                 reconstructed.sequence <- c(reconstructed.sequence, .aa.translation[[numcode]][simulated.across.intervals.and.sites[interval.index,site.index]])
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
-            print(reconstructed.sequence)
             functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
     }
+    
     return(functionality.taxon)
 }
 

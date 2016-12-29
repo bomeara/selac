@@ -1027,7 +1027,6 @@ GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, r
     diag(Q_codon) = 0
     diag(Q_codon) = -rowSums(Q_codon)
     scale.factor <- -sum(diag(Q_codon) * root.p_array, na.rm=TRUE)
-    print(Q_codon * (1/scale.factor))
     expQt <- GetExpQt(phy=phy, Q=Q_codon, scale.factor=scale.factor, rates=NULL)
 
     phy.sort <- reorder(phy, "pruningwise")
@@ -3567,10 +3566,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     best.codon.freq.by.gene <- codon.freq.by.gene.list
                 }
                 number.of.current.restarts <- number.of.current.restarts + 1
-                print(ip.vector)
                 ip.vector[c(index.matrix[,1])] <- selac.starting.vals[number.of.current.restarts, 1]
                 ip.vector[2:3] <- selac.starting.vals[number.of.current.restarts, 2:3]
-                print(ip.vector)
                 aa.optim.list <- aa.optim.original
             }
             selac.starting.vals <- best.ip
