@@ -41,7 +41,6 @@ test_that("GY94_likelihood", {
 
 
 test_that("FMutSel0_likelihood", {
-    source("/Users/jeremy/selac/R/selac.R")
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
@@ -74,7 +73,7 @@ test_that("selac_likelihood_gtr", {
 	codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
     aa.optim = codon.data$optimal.aa
 	codon.index.matrix = CreateCodonMutationMatrixIndex()
-    selac.gtr <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(0, 1.829272, 0.101799, .25, .25, .25, rep(1,5))), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="GTR", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    selac.gtr <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, .25, .25, .25, rep(1,5))), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="GTR", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
     comparison <- identical(round(selac.gtr, 3), -7066.494)
 	expect_true(comparison)
 })

@@ -1027,7 +1027,6 @@ GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, r
     diag(Q_codon) = 0
     diag(Q_codon) = -rowSums(Q_codon)
     scale.factor <- -sum(diag(Q_codon) * root.p_array, na.rm=TRUE)
-    print(Q_codon * (1/scale.factor))
     expQt <- GetExpQt(phy=phy, Q=Q_codon, scale.factor=scale.factor, rates=NULL)
 
     phy.sort <- reorder(phy, "pruningwise")
@@ -2106,6 +2105,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                 try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl, parallel.type=parallel.type, n.cores=NULL))
                 if(is.na(likelihood.vector.tmp[1])){
                     print(paste("fuck you", partition.index))
+                    print(nsites.vector)
                     return(10000000)
                 }else{
                     likelihood.vector <- c(likelihood.vector, likelihood.vector.tmp)
