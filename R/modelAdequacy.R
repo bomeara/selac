@@ -381,7 +381,6 @@ GetFMutSelSimulateInfo <- function(selac.obj, partition.number){
         }
     }
     codon.eq.freq <- codon.eq.freq[1:64]/sum(codon.eq.freq[1:64])
-    
     Q_codon = CreateCodonMutationMatrixMutSel(omega.par=pars[1], fitness.pars=fitness.pars.ordered, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
  
     #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
