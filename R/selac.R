@@ -3567,10 +3567,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     best.codon.freq.by.gene <- codon.freq.by.gene.list
                 }
                 number.of.current.restarts <- number.of.current.restarts + 1
-                print(ip.vector)
                 ip.vector[c(index.matrix[,1])] <- selac.starting.vals[number.of.current.restarts, 1]
                 ip.vector[2:3] <- selac.starting.vals[number.of.current.restarts, 2:3]
-                print(ip.vector)
                 aa.optim.list <- aa.optim.original
             }
             selac.starting.vals <- best.ip
