@@ -4066,6 +4066,7 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
         obj$likelihood <- phi.likelihoods.per.site
         rate.vector <- c()
         indicator.vector <- c()
+        #######CHECK TO SEE SIGN ON LIKELIHOOD##########
         for(i in length(phi.likelihoods.per.site[1,])){
             tmp.rate.class <- which.max(phi.likelihoods.per.site[,i])
             rate.vector <- c(rate.vector, rates[indicator.vector])
