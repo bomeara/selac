@@ -202,7 +202,7 @@ GetKnownFunctionality <- function(selac.obj, partition.number, fasta.rows.to.kee
 
 
 
-GetFunctionalityModelAdequacy <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamma, aa.properties=NULL){
+GetFunctionalityModelAdequacy <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamma, rate.gamma, aa.properties=NULL){
     if(is.null(aa.properties)) {
         #     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
         # 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
@@ -228,7 +228,7 @@ GetFunctionalityModelAdequacy <- function(gene.length, aa.data, optimal.aa, alph
             gene.length = gene.length - 1
         }else{
             if(aa.data[site.index]!="NA"){
-                aa.distances <- c(aa.distances, (1+((alpha*(aa.properties[aa.data[site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
+                aa.distances <- c(aa.distances, (1+rate.gamma*((alpha*(aa.properties[aa.data[site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
             }else{
                 aa.distances <- c(aa.distances, 0)
             }
@@ -916,7 +916,6 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
                     }
                 }else{
                     print("why are we here?")
-                    
                 }
             }else{
                 simulation.model.info <- GetGtrSimulateInfo(selac.obj=selac.obj2, partition.number=partition.number)
@@ -951,7 +950,7 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
 #' @details
 #' Performs a single model adequacy simulation. The test prunes out a user-specified taxon from the tree, performs site data reconstruction for all nodes in the tree under a user-specified model, then simulates the expected data of the pruned taxon according to a user-specified model along uniformly sampled points along the branch. The functionality of the reconstructed sequence is also calculated along the way to see how functionality changes as the simulation reaches the end of the known branch length. The output is a vector with elements containing the functionality of the simulated points along equally spaced sampling points along the known branch length (i.e., edge.length * seq(0, 1, by=0.05))
 GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under, selac.obj.to.reconstruct, selac.obj.to.simulate, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1, for.gtr.only=NULL){
-    prop.intervals <- seq(0,1 , by=0.05)
+    prop.intervals <- seq(0,1, by=0.05)
     
     if(model.to.reconstruct.under == "gtr" & model.to.simulate.under == "selac"){
         simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
@@ -967,8 +966,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
     }
-    
-    
+
     if(model.to.reconstruct.under == "gtr" & model.to.simulate.under == "gtr"){
         simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
         reconstructed.sequence <- c()
