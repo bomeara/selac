@@ -3852,7 +3852,7 @@ GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamm
     #Note using only the second row, because we are comparing empirical S. cervisae rates:
     for(site.index in 1:gene.length){
         if(aa.data[,site.index]!="NA"){
-            aa.distances <- c(aa.distances, (1+(gp*((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2)))))
+            aa.distances <- c(aa.distances, (1+gp*((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
         }else{
             aa.distances <- c(aa.distances, 0)
         }
@@ -4024,24 +4024,27 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
     gamma <- selac.obj$volume.fixed.value
     nuc.model <- selac.obj$nuc.model
     k.levels <- selac.obj$k.levels
+    volume.fixed.value <- selac.obj$volume.fixed.value
     parallel.type <- "by.gene"
     n.cores <- NULL
     obj.final <- as.list(1:length(partitions))
 
-    if(include.gamma==TRUE){
-        if(gamma.type == "median"){
-            rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
-            weights.k <- rep(1/ncats, ncats)
-        }
-        if(gamma.type == "quadrature"){
-            rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
-            rates.k <- rates.and.weights[1:ncats]
-            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
-        }
-    }
-
     for(partition.index in 1:length(partitions)){
         x <- c(selac.obj$mle.pars[partition.index,])
+        if(include.gamma == TRUE){
+            shape = x[length(x)]
+        }
+        if(include.gamma==TRUE){
+            if(gamma.type == "median"){
+                rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+                weights.k <- rep(1/ncats, ncats)
+            }
+            if(gamma.type == "quadrature"){
+                rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
+        }
         gene.tmp <- read.dna(partitions[partition.index], format='fasta')
         if(!is.null(fasta.rows.to.keep)){
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
@@ -4061,19 +4064,43 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
         if(is.null(aa.optim.input)){
             aa.optim_array <- selac.obj$aa.optim[[partition.index]]
         }
-        phi.likelihoods.per.site <- GetPhiLikelihoodPerSite(x, codon.data=codon.data, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=FALSE, verbose=FALSE, neglnl=FALSE, parallel.type=parallel.type, n.cores=ncores)
-        obj = NULL
+        phi.likelihoods.per.site <- GetPhiLikelihoodPerSite(x, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=FALSE, verbose=FALSE, neglnl=FALSE, parallel.type=parallel.type, n.cores=ncores)
+        C.Phi.q.Ne <- x[1]
+        C <- 4
+        q <- 4e-7
+        Ne <- 5e6
+        Phi.q.Ne <- C.Phi.q.Ne / C
+        Phi.Ne <- Phi.q.Ne / q
+        Phi <- Phi.Ne / Ne
+        obj <- NULL
         obj$likelihood <- phi.likelihoods.per.site
         rate.vector <- c()
-        indicator.vector <- c()
-        #######CHECK TO SEE SIGN ON LIKELIHOOD##########
-        for(i in length(phi.likelihoods.per.site[1,])){
+        indicator.raw.vector <- c()
+        indicator.weighted.vector <- c()
+        model.ave.phi.vector <- c()
+        model.weight.ave.phi.vector <- c()
+        for(i in 1:dim(phi.likelihoods.per.site)[2]){
+            #model-average based solely on the raw likelihoods:
             tmp.rate.class <- which.max(phi.likelihoods.per.site[,i])
-            rate.vector <- c(rate.vector, rates[indicator.vector])
-            indicator.vector <- c(indicator.vector, tmp.rate.class)
+            rate.vector <- c(rate.vector, rates.k[tmp.rate.class])
+            indicator.raw.vector <- c(indicator.raw.vector, tmp.rate.class)
+            aic <- -2 * phi.likelihoods.per.site[,i]
+            daic <- aic - aic[tmp.rate.class]
+            w.aic <- exp(-.5 * daic) / sum(exp(-.5 * daic))
+            model.ave.phi.vector <- c(model.ave.phi.vector, sum(Phi * rates.k * w.aic))
+            #model-average based on rescaling of the likelihoods according to laguerre weights:
+            tmp.rate.class <- which.max(log(exp(phi.likelihoods.per.site[,i]) * weights.k))
+            indicator.weighted.vector <- c(indicator.weighted.vector, tmp.rate.class)
+            aic <- -2 * log(exp(phi.likelihoods.per.site[,i]) * weights.k)
+            daic <- aic - aic[tmp.rate.class]
+            w.aic <- exp(-.5 * daic) / sum(exp(-.5 * daic))
+            model.weight.ave.phi.vector <- c(model.weight.ave.phi.vector, sum(Phi * rates.k * w.aic))
         }
-        obj$rates <- rate.vector
-        obj$indicator <- indicator.vector
+        obj$best.rate.by.site <- rate.vector
+        obj$model.ave.rawLik.phi <- model.ave.phi.vector
+        obj$model.ave.weightedLik.phi <- model.weight.ave.phi.vector
+        obj$indicator.by.site.rawLik <- indicator.raw.vector
+        obj$indicator.by.site.weightedLik <- indicator.weighted.vector
         obj.final[[partition.index]] <- obj
     }
     return(obj.final)
