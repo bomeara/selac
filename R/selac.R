@@ -3852,7 +3852,9 @@ GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamm
     #Note using only the second row, because we are comparing empirical S. cervisae rates:
     for(site.index in 1:gene.length){
         if(aa.data[,site.index]!="NA"){
-            aa.distances <- c(aa.distances, (1+gp*((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
+            #broke this up to make debugging easier:
+            distance <- ((alpha*(aa.properties[aa.data[,site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[,site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[,site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))
+            aa.distances <- c(aa.distances, (1+gp[site.index]*distance))
         }else{
             aa.distances <- c(aa.distances, 0)
         }

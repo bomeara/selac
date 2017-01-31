@@ -202,43 +202,6 @@ GetKnownFunctionality <- function(selac.obj, partition.number, fasta.rows.to.kee
 
 
 
-GetFunctionalityModelAdequacy <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamma, rate.gamma, aa.properties=NULL){
-    if(is.null(aa.properties)) {
-        #     aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
-        # 1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
-        # 12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5,
-        # 9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119,
-        # 111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L,
-        # 3L), .Dimnames = list(c("Ala", "Cys", "Asp", "Glu", "Phe", "Gly",
-        # "His", "Ile", "Lys", "Leu", "Met", "Asn", "Pro", "Gln", "Arg",
-        # "Ser", "Thr", "Val", "Trp", "Tyr"), c("c", "p", "v"))) #properties from Grantham paper
-        aa.properties <- structure(c(0, 2.75, 1.38, 0.92, 0, 0.74, 0.58, 0, 0.33, 0, 0,
-        1.33, 0.39, 0.89, 0.65, 1.42, 0.71, 0, 0.13, 0.2, 8.1, 5.5, 13,
-        12.3, 5.2, 9, 10.4, 5.2, 11.3, 4.9, 5.7, 11.6, 8, 10.5, 10.5,
-        9.2, 8.6, 5.9, 5.4, 6.2, 31, 55, 54, 83, 132, 3, 96, 111, 119,
-        111, 105, 56, 32.5, 85, 124, 32, 61, 84, 170, 136), .Dim = c(20L,
-        3L), .Dimnames = list(c("A", "C", "D", "E", "F", "G",
-        "H", "I", "K", "L", "M", "N", "P", "Q", "R",
-        "S", "T", "V", "W", "Y"), c("c", "p", "v"))) #properties from Grantham paper
-    }
-    aa.distances <- c()
-    #Note using only the second row, because we are comparing empirical S. cervisae rates:
-    for(site.index in 1:gene.length){
-        if(aa.data[site.index]=="*"){
-            gene.length = gene.length - 1
-        }else{
-            if(aa.data[site.index]!="NA"){
-                aa.distances <- c(aa.distances, (1+rate.gamma*((alpha*(aa.properties[aa.data[site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))))
-            }else{
-                aa.distances <- c(aa.distances, 0)
-            }
-        }
-    }
-    functionality = 1/((1/gene.length) * sum(aa.distances))
-    return(functionality)
-}
-
-
 GetGtrSimulateInfo <- function(selac.obj, partition.number){
     
     pars <- c(selac.obj$mle.pars[partition.number,])
@@ -949,7 +912,7 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
 #'
 #' @details
 #' Performs a single model adequacy simulation. The test prunes out a user-specified taxon from the tree, performs site data reconstruction for all nodes in the tree under a user-specified model, then simulates the expected data of the pruned taxon according to a user-specified model along uniformly sampled points along the branch. The functionality of the reconstructed sequence is also calculated along the way to see how functionality changes as the simulation reaches the end of the known branch length. The output is a vector with elements containing the functionality of the simulated points along equally spaced sampling points along the known branch length (i.e., edge.length * seq(0, 1, by=0.05))
-GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under, selac.obj.to.reconstruct, selac.obj.to.simulate, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1, for.gtr.only=NULL){
+GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under, selac.obj.to.reconstruct, selac.obj.to.simulate, gp=NULL, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1, for.gtr.only=NULL){
     prop.intervals <- seq(0,1, by=0.05)
     
     if(model.to.reconstruct.under == "gtr" & model.to.simulate.under == "selac"){
@@ -962,7 +925,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
             selac.obj.to.reconstruct <- selac.obj.to.simulate
-            functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
+            functionality.taxon.interval <- GetFunctionality(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
     }
@@ -980,7 +943,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
                 reconstructed.sequence.codon <- c(reconstructed.sequence.codon, .aa.translation[[numcode]][which(.codon.name==paste(as.vector(n2s(simulated.across.intervals.and.sites[interval.index,start.site:end.site[count]]-1)), collapse=""))])
                 count <- count + 1
             }
-            functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence.codon), aa.data=reconstructed.sequence.codon, optimal.aa=for.gtr.only$aa.optim[[partition.number]], alpha=for.gtr.only$mle.pars[1,2], beta=for.gtr.only$mle.pars[1,3], gamma=for.gtr.only$volume.fixed.value, aa.properties=for.gtr.only$aa.properties)
+            functionality.taxon.interval <- GetFunctionality(gene.length=length(reconstructed.sequence.codon), aa.data=reconstructed.sequence.codon, optimal.aa=for.gtr.only$aa.optim[[partition.number]], alpha=for.gtr.only$mle.pars[1,2], beta=for.gtr.only$mle.pars[1,3], gamma=for.gtr.only$volume.fixed.value, aa.properties=for.gtr.only$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
     }
@@ -994,7 +957,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
                 reconstructed.sequence <- c(reconstructed.sequence, .aa.translation[[numcode]][simulated.across.intervals.and.sites[interval.index,site.index]])
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
-            functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
+            functionality.taxon.interval <- GetFunctionality(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, aa.properties=selac.obj.to.reconstruct$aa.properties)
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
     }
