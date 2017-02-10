@@ -232,6 +232,7 @@ GetFunctionalityModelAdequacy <- function(gene.length, aa.data, optimal.aa, alph
             aa.distances <- c(aa.distances, (1+gp[site.index]*distance))
         }else{
             aa.distances <- c(aa.distances, 0)
+            gene.length <- gene.length - 1
         }
     }
     functionality = 1/((1/gene.length) * sum(aa.distances))
