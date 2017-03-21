@@ -188,9 +188,11 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
 }
 
 
+#################### TO DO ######################
 GetOptimalNucPerSite <- function(x, logspace=TRUE, verbose=verbose, neglnl=TRUE){
 	
 }
+#################################################
 
 
 OptimizeModelParsUCE <- function(x, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {

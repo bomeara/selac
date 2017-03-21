@@ -17,9 +17,9 @@ library(seqinr)
 library(phangorn)
 library(MASS)
 library(parallel)
-#library(Rcpp)
-#library(RcppArmadillo)
-#library(inline)
+library(Rcpp)
+library(RcppArmadillo)
+library(inline)
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -90,6 +90,8 @@ sapply(.codon.name, TranslateCodon, numcode=23))
 
 
 .unique.aa <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "*", "Y", "C", "W", "F")
+
+.numcode.translation.idx <- c(1:6, 1, 1, 7:14, rep(1,5), 15:17)
 
 
 ######################################################################################################################################
@@ -343,10 +345,29 @@ CreateCodonMutationMatrixIndex <- function() {
         rownames(codon.mutation.rates)[i] <- .codon.name[i]
         colnames(codon.mutation.rates)[i] <- .codon.name[i]
     }
-    codon.mutation.rates[codon.mutation.rates==0] = 17
+    codon.mutation.rates[codon.mutation.rates==0] = NA
     return(codon.mutation.rates)
 }
 
+
+CreateCodonMutationMatrixIndexEvolveAA <- function() {
+    codon.mut.index.mat <- CreateCodonMutationMatrixIndex()
+    
+    n.codons <- dim(.codon.sets)[1]
+    mat.dim <- 21*n.codons
+    evolv.codon.mut.index.mat <- matrix(data=0, nrow=mat.dim, ncol=mat.dim)
+    
+    for(i in 1:21)
+    {
+        index.vec.diag <- (1+(i-1)*64):(64+(i-1)*64)
+        # fill in a complete coloumn of matrices, has to be done before the matrix on the diagonal
+        evolv.codon.mut.index.mat[index.vec.diag, -index.vec.diag] <- diag(17, 64, 64)#do.call(cbind, replicate(20, diag(18, 64, 64), simplify = FALSE))
+        evolv.codon.mut.index.mat[index.vec.diag, index.vec.diag] <- codon.mut.index.mat # fill in matrix on the diagonal
+    }
+    
+    evolv.codon.mut.index.mat[evolv.codon.mut.index.mat == 0] = NA
+    return(evolv.codon.mut.index.mat)
+}
 
 
 CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
@@ -747,6 +768,54 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 }
 
 
+FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1) {
+    aa.dist.names <- colnames(aa.distances)
+    
+    aa.distances <- cbind(aa.distances, 0)
+    aa.distances <- rbind(aa.distances, 0)
+    colnames(aa.distances) <- c(aa.dist.names, "*")
+    rownames(aa.distances) <- c(aa.dist.names, "*")
+    
+    numcode.idx <- .numcode.translation.idx[numcode]
+    aa.names <- .aa.translation[[numcode.idx]]
+    
+    aa.trans.mat <- aa.distances[.unique.aa, .unique.aa]
+    
+    aa.trans.matrices <- vector("list", 21)
+    for(j in 1:21) {
+        trans.matrix <- matrix(0, ncol=1344, nrow=64)
+        for(i in 1:21) {
+            index.vec.diag <- (1+(i-1)*64):(64+(i-1)*64)
+            trans.matrix[, index.vec.diag] <- diag(aa.trans.mat[.unique.aa[j], .unique.aa[i]]/Ne, ncol=64, nrow=64)
+        }
+        aa.trans.matrices[[j]] <- trans.matrix
+    }
+    names(aa.trans.matrices) <- .unique.aa
+    return(aa.trans.matrices)
+}
+
+
+FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites, C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE, numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999) {
+    codon.fixation.probs <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
+    opt.aa.transition.rate <- FastCreateOptAATransitionMatrices(aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid, numcode=numcode)
+    
+    n.codons <- dim(.codon.sets)[1]
+    mat.dim <- 21*n.codons
+    evolv.codon.fixation.probs <- matrix(data=0, nrow=mat.dim, ncol=mat.dim)
+    
+    for(i in 1:21) {
+        index.vec.diag <- (1+(i-1)*64):(64+(i-1)*64)
+        evolv.codon.fixation.probs[index.vec.diag, ] <- opt.aa.transition.rate[[i]] # fill in a complete coloumn of matrices, has to be done before the matrix on the diagonal
+        evolv.codon.fixation.probs[index.vec.diag, index.vec.diag] <- codon.fixation.probs[,,.unique.aa[i]] # fill in matrix on the diagonal
+    }
+    
+    rownames(evolv.codon.fixation.probs) <- paste(rep(.codon.name, times=21), rep(.unique.aa, each=64), sep="")
+    colnames(evolv.codon.fixation.probs) <- paste(rep(.codon.name, times=21), rep(.unique.aa, each=64), sep="")
+    
+    return(evolv.codon.fixation.probs)
+}
+
+
 ## Work in progress ##
 #cppFunction('NumericMatrix CreateCodonFixationProbabilityMatrixGivenOptimalAA(NumericMatrix codon_sets, StringVector aa, NumericMatrix aa_distances, int nsites, double C, double Phi, double q, double Ne, bool include_stop_codon,  int numcode, bool diploid, Function GetProteinProteinDistance, Function GetPairwiseProteinFixationProbabilitySingleSite, int optimalaa_offset0index) {
 #	NumericMatrix codon_fixation_probs_aa(codon_sets.nrow(), codon_sets.nrow());
@@ -914,6 +983,39 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 }
 
 
+GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    
+    nl <- 64
+    #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
+    liks <- matrix(0, nb.tip + nb.node, nl)
+    #Now loop through the tips.
+    for(i in 1:nb.tip){
+        #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
+        #Note: We add charnum+1, because the first column in the data is the species labels:
+        if(codon.data[i,charnum+1] < 65){
+            liks[i,codon.data[i,charnum+1]] <- 1
+        }else{
+            #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
+            liks[i,] <- 1
+            #This is to deal with stop codons, which are effectively removed from the model at this point. Someday they might be allowed back in. If so, the following line needs to be dealt with.
+            if(nl > 4){
+                liks[i,c(49, 51, 57)] <- 0
+            }
+        }
+    }
+    ## Now HMM this matrix by pasting these together:
+    liks.HMM <- c()
+    for(amino.acid.index in 1:21){
+        liks.HMM <- cbind(liks.HMM, liks)
+    }
+    #The result here is just the likelihood:
+    result <- -FinishLikelihoodCalculationHMM(phy=phy, liks=liks.HMM, Q=Q_codon, root.p=root.p, anc=anc.indices)
+    ifelse(return.all, stop("return all not currently implemented"), return(result))
+}
+
+
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
@@ -944,6 +1046,56 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.dat
 
 GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot <- function(codon.data, phy, Q_codon, root.p=NULL, return.all=FALSE) {
     return(sum(sapply(seq(from=1, to=dim(codon.data)[2]-1, by=1), GetLikelihoodSAC_CodonForSingleCharGivenOptimum, codon.data=codon.data, phy=phy, Q_codon=Q_codon, root.p=root.p, return.all=return.all)))
+}
+
+
+GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, parallel.type="by.gene", n.cores){
+    
+    nsites <- dim(codon.data$unique.site.patterns)[2]-1
+    final.likelihood.vector <- rep(NA, nsites)
+    #unique.aa <- GetMatrixAANames(numcode)
+    
+    #We rescale the codon matrix only:
+    diag(codon_mutation_matrix) = 0
+    diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
+    scale.factor <- -sum(diag(codon_mutation_matrix) * (codon.freq.by.aa/sum(codon.freq.by.aa)), na.rm=TRUE)
+    codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
+    #Finish the Q_array codon mutation matrix multiplication here:
+    if(diploid == TRUE){
+        Q_codon_array = (2 * Ne) * codon_mutation_matrix_scaled * Q_codon_array
+    }else{
+        Q_codon_array = Ne * codon_mutation_matrix_scaled * Q_codon_array
+    }
+    diag(Q_codon_array) = 0
+    diag(Q_codon_array) = -rowSums(Q_codon_array)
+    #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
+    #scale.factor <- -sum(Q_codon_array[DiagArray(dim(Q_codon_array))] * equilibrium.codon.freq, na.rm=TRUE)
+    phy <- reorder(phy, "pruningwise")
+    
+    ## This is obviously not very elegant, but not sure how else to code it to store this stuff in this way -- WORK IN PROGRESS:
+    expQt <- GetExpQt(phy=phy, Q=Q_codon_array, scale.factor=NULL, rates=rates)
+    #Generate matrix of root frequencies for each optimal AA:
+    root.p_array <- codon.freq.by.aa/sum(codon.freq.by.aa)
+    #root.p_array <- t(root.p_array)
+    #root.p_array <- root.p_array / rowSums(root.p_array)
+    #rownames(root.p_array) <- .unique.aa
+    
+    phy.sort <- reorder(phy, "pruningwise")
+    anc.indices <- unique(phy.sort$edge[,1])
+    if(parallel.type == "by.gene"){
+        for (i in sequence(nsites)) {
+            final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+        }
+    }
+    if(parallel.type == "by.site"){
+        MultiCoreLikelihoodBySite <- function(nsite.index){
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+            return(tmp)
+        }
+        final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
+    }
+    print(final.likelihood.vector)
+    return(final.likelihood.vector)
 }
 
 
@@ -1081,6 +1233,128 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
 }
 
 
+GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, parallel.type="by.gene", n.cores=NULL) {
+    
+    if(logspace) {
+        x = exp(x)
+    }
+    
+    rate.for.selective.environment.change = x[length(x)]
+    x = x[-length(x)]
+    if(include.gamma == TRUE){
+        shape = x[length(x)]
+        x = x[-length(x)]
+    }
+    
+    C.Phi.q.Ne <- x[1]
+    C <- 4
+    q <- 4e-7
+    Ne <- 5e6
+    Phi.q.Ne <- C.Phi.q.Ne / C
+    Phi.Ne <- Phi.q.Ne / q
+    Phi <- Phi.Ne / Ne
+    alpha <- x[2]
+    beta <- x[3]
+    gamma <- volume.fixed.value
+    
+    if(k.levels > 0){
+        if(nuc.model == "JC") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            #During the early stages of the optimization process it will try weird values for the base frequencies.
+            if(any(base.freqs < 0)){
+                return(1000000)
+            }
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            poly.params <- x[7:8]
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            #During the early stages of the optimization process it will try weird values for the base frequencies.
+            if(any(base.freqs < 0)){
+                return(1000000)
+            }
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(x)], model=nuc.model, base.freqs=base.freqs)
+            poly.params <- x[7:8]
+        }
+        if(nuc.model == "UNREST") {
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[6:length(x)], model=nuc.model, base.freqs=NULL)
+            poly.params <- x[4:5]
+        }
+    }else{
+        if(nuc.model == "JC") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            #During the early stages of the optimization process it will try weird values for the base frequencies.
+            if(any(base.freqs < 0)){
+                return(1000000)
+            }
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            #During the early stages of the optimization process it will try weird values for the base frequencies.
+            if(any(base.freqs < 0)){
+                return(1000000)
+            }
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "UNREST") {
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
+        }
+    }
+    
+    nuc.mutation.rates.vector <- c(nuc.mutation.rates, rate.for.selective.environment.change)
+    codon_mutation_matrix <- matrix(nuc.mutation.rates.vector[codon.index.matrix], dim(codon.index.matrix))
+    codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
+    nsites <- dim(codon.data$unique.site.patterns)[2]-1
+    
+    if(include.gamma==TRUE){
+        if(gamma.type == "median"){
+            rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+            weights.k <- rep(1/ncats, ncats)
+        }
+        if(gamma.type == "quadrature"){
+            rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
+        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+        for(k.cat in sequence(ncats)){
+            if(k.levels > 0){
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
+            }else{
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+            }
+            Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            final.likelihood.mat[k.cat,] = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+        }
+        likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * codon.data$site.pattern.counts)
+    }else{
+        if(k.levels > 0){
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
+        }else{
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+        }
+        Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+        likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
+    }
+    
+    if(neglnl) {
+        likelihood <- -1 * likelihood
+    }
+    if(verbose) {
+        results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne)
+        names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne")
+        print(results.vector)
+    }
+    if(is.na(likelihood) || is.nan(likelihood)){
+        return(1000000)
+    }else{
+        return(likelihood)
+    }
+}
+
+
 GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, parallel.type="by.gene", n.cores=NULL) {
     if(logspace) {
         x = exp(x)
@@ -1145,6 +1419,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
         }
     }
+
     #codon_mutation_matrix = CreateCodonMutationMatrix(nuc.mutation.rates) #We now make an index matrix first then just place the nucleotide rates into it:
     #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
@@ -2560,6 +2835,11 @@ GetMaxName <- function(x) {
 ######################################################################################################################################
 
 #Step 1: We perform exponentiation as few times as possible; in the case of selac, for example, we do it for each of the possible optimal amino acids and store the matrices.
+code <- "
+Eigen::MatrixXd m = Rcpp::as<Eigen::MatrixXd>(a);
+return(Rcpp::wrap(m.exp()));"
+eigenExpM <- cxxfunction(signature(a="numeric"), code, plugin="RcppEigen")
+
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 
     if(!is.null(scale.factor)){
@@ -2586,9 +2866,47 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
         desRows <- which(phy$edge[,1]==focal)
         desNodes <- phy$edge[desRows,2]
         for (desIndex in sequence(length(desRows))){
-            expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method=c("Ward77"))
+            expQt[[desNodes[desIndex]]] <- eigenExpM(Q.scaled * phy$edge.length[desRows[desIndex]])
         }
     }
+    return(expQt)
+}
+
+
+GetExpQtParallel <- function(phy, Q, scale.factor, rates=NULL, ncores = 1){
+    
+    if(!is.null(scale.factor)){
+        Q.scaled = Q * (1/scale.factor)
+    }else{
+        Q.scaled = Q
+    }
+    
+    if(!is.null(rates)){
+        Q.scaled = Q.scaled * rates
+    }
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    expQt <- as.list(numeric(nb.tip + nb.node))
+    TIPS <- 1:nb.tip
+    comp <- numeric(nb.tip + nb.node)
+    #phy <- reorder(phy, "pruningwise")
+    #Obtain an object of all the unique ancestors
+    anc <- unique(phy$edge[,1])
+    edge.idx <- rep(NA, length(phy$edge[,1]))
+    
+    k <- 1
+    for (i  in seq(from = 1, length.out = nb.node)) {
+        #the ancestral node at row i is called focal
+        focal <- anc[i]
+        #Get descendant information of focal
+        desRows <- which(phy$edge[,1]==focal)
+        desNodes <- phy$edge[desRows,2]
+        for (desIndex in sequence(length(desRows))){
+            edge.idx[k] <- desNodes[desIndex]
+            k <- k + 1
+        }
+    }
+    expQt <- mclapply(X = edge.idx, FUN = function(X){return(eigenExpM(Q.scaled * phy$edge.length[desRows[desIndex]]))}, mc.cores = ncores)
     return(expQt)
 }
 
@@ -2604,7 +2922,6 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
     if(any(root.p < 0) | any(is.na(root.p))){
         return(1000000)
     }
-
     #Obtain an object of all the unique ancestors
     for (i  in seq(from = 1, length.out = nb.node)) {
         #the ancestral node at row i is called focal
@@ -2616,6 +2933,50 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
         for (desIndex in desNodes){
             if(desIndex <= nb.tip){
                 if(sum(liks[desIndex,]) < 2){
+                    v <- v * (Q[[desIndex]] %*% liks[desIndex,])
+                }
+            }else{
+                v <- v * (Q[[desIndex]] %*% liks[desIndex,])
+            }
+        }
+        comp[focal] <- sum(v)
+        liks[focal,] <- v/comp[focal]
+    }
+    #Specifies the root:
+    root <- nb.tip + 1L
+    #If any of the logs have NAs restart search:
+    if(is.nan(sum(log(comp[-TIPS]))) || is.na(sum(log(comp[-TIPS])))){
+        return(1000000)
+    }
+    else{
+        loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+        if(is.infinite(loglik)){return(1000000)}
+    }
+    loglik
+}
+
+
+FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
+    
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    TIPS <- 1:nb.tip
+    comp <- numeric(nb.tip + nb.node)
+    
+    if(any(root.p < 0) | any(is.na(root.p))){
+        return(1000000)
+    }
+    #Obtain an object of all the unique ancestors
+    for (i  in seq(from = 1, length.out = nb.node)) {
+        #the ancestral node at row i is called focal
+        focal <- anc[i]
+        #Get descendant information of focal
+        desRows<-which(phy$edge[,1]==focal)
+        desNodes<-phy$edge[desRows,2]
+        v <- 1
+        for (desIndex in desNodes){
+            if(desIndex <= nb.tip){
+                if(sum(liks[desIndex,]) < 65){
                     v <- v * (Q[[desIndex]] %*% liks[desIndex,])
                 }
             }else{

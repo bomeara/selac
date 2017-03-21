@@ -154,6 +154,30 @@ test_that("selac+GAMMA_likelihood_quad", {
 })
 
 
+test_that("selacHMM", {
+    tree <- read.tree("rokasYeast.tre")
+    phy <- drop.tip(tree, "Calb")
+    yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
+    yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
+    chars <- DNAbinToCodonNumeric(yeast.gene)
+    codon.data <- chars[phy$tip.label,]
+    aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
+    aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
+    aa.optim.full.list <- aa.optim
+    codon.freq.by.aa <- GetCodonFreqsByAA(codon.data[,-1], aa.optim, numcode=1)
+    codon.freq.by.gene <- GetCodonFreqsByGene(codon.data[,-1])
+    aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
+    colnames(aa.optim.frame.to.add) <- colnames(codon.data)
+    codon.data <- rbind(codon.data, aa.optim.frame.to.add)
+    codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
+    aa.optim = codon.data$optimal.aa
+    codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
+    selac.unrest.evolveAA <- GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, rep(1,11), 1)), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
+    comparison <- identical(round(selac_gamma, 3), -11100.25)
+    expect_true(comparison)
+})
+
+
 test_that("dealing_with_missing_data", {
     set.seed(4)
     phy <- rcoal(20)
