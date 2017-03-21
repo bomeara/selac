@@ -390,6 +390,7 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
     }
     diag(codon.mutation.rates) <- 0
     diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
+    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
     return(codon.mutation.rates)
 }
 
@@ -1527,7 +1528,7 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
         }
         codon.eq.freq <- codon.eq.freq[1:64]/sum(codon.eq.freq[1:64])
     }
-    
+
     Q_codon = CreateCodonMutationMatrixMutSel(omega.par=x[1], fitness.pars=fitness.pars.ordered, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
     final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.eq.freq, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
@@ -1558,7 +1559,7 @@ GetLikelihoodGY94_CodonForManyCharGivenAllParams <- function(x, codon.data, phy,
         }
         codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
     }
-    
+
     aa.distances <- CreateAADistanceMatrix()
     Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
     final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freqs, Q_codon=Q_codon, numcode=numcode, parallel.type=parallel.type, n.cores=n.cores)
@@ -4140,7 +4141,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 np <- max(index.matrix) + sum(nsites.vector)
             }
         }
-        
+
         #Counting parameters: Do we count the nsites too? Yup.
         obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, data.type=data.type, codon.model=codon.model, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, max.tol=max.tol, max.evals=max.evals, selac.starting.vals=selac.starting.vals)
         class(obj) = "selac"
@@ -4218,7 +4219,7 @@ GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamm
             aa.distances <- c(aa.distances, (1+gp[site.index]*distance))
         }else{
             aa.distances <- c(aa.distances, 0)
-            gene.length <- gene.length - 1 
+            gene.length <- gene.length - 1
         }
     }
     functionality = 1/((1/gene.length) * sum(aa.distances))
@@ -4480,7 +4481,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
         shape = x[length(x)]
         x = x[-length(x)]
     }
-    
+
     C.Phi.q.Ne <- x[1]
     C <- 4
     q <- 4e-7
@@ -4491,7 +4492,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
     alpha <- x[2]
     beta <- x[3]
     gamma <- volume.fixed.value
-    
+
     if(k.levels > 0){
         if(nuc.model == "JC") {
             base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -4520,7 +4521,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
         }
     }
-    
+
     if(!is.null(codon.data$unique.site.patterns)){
         codon.data.list <- codon.data
         nsites <- dim(codon.data$unique.site.patterns)[2]-1
@@ -4530,16 +4531,16 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
         codon.data.list$unique.site.patterns <- codon.data
         codon.data.list$site.pattern.counts <- rep(1, nsites)
     }
-    
-    
+
+
     #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
     codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-    
+
     optimal.vector.by.site <- rep(NA, nsites)
     #unique.aa <- GetMatrixAANames(numcode)
     optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
-    
+
     for(i in 1:length(.unique.aa)){
         if(.unique.aa[i]=="*"){
             optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites)
@@ -4594,7 +4595,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
         shape = x[length(x)]
         x = x[-length(x)]
     }
-    
+
     C.Phi.q.Ne <- x[1]
     C <- 4
     q <- 4e-7
@@ -4605,7 +4606,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
     alpha <- x[2]
     beta <- x[3]
     gamma <- volume.fixed.value
-    
+
     if(k.levels > 0){
         if(nuc.model == "JC") {
             base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -4655,7 +4656,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
     codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
     nsites <- dim(codon.data$unique.site.patterns)[2]-1
-    
+
     if(include.gamma==TRUE){
         if(gamma.type == "median"){
             rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -4687,7 +4688,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
         final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
         #likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
     }
-    
+
     return(final.likelihood)
 }
 
@@ -4712,9 +4713,9 @@ GetGeneSiteInfo <- function(selac.obj, partition.number=1){
     volume.fixed.value=0.0003990333
     pars.to.do <- result$mle.pars[partition.number,]
     selac.all.sites.amino.acid <- GetAALikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE)
-    
+
     selac.all.sites.phi <- GetPhiLikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE)
-    
+
     obj <- NULL
     quadl <- LaguerreQuad(result$mle.pars[1,length(result$mle.pars[1,])],4)
     obj$phi <- result$mle.pars[partition.number,1] * quadl[1:4]
