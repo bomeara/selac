@@ -99,7 +99,7 @@ test_that("selac_likelihood_unrest", {
     aa.optim = codon.data$optimal.aa
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     selac.unrest <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, rep(1,11))), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
-    comparison <- identical(round(selac.unrest, 3), -7066.494)
+    comparison <- identical(round(selac.unrest, 3), -7066.494))
     expect_true(comparison)
 })
 
@@ -165,15 +165,15 @@ test_that("selacHMM", {
     aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
     aa.optim.full.list <- aa.optim
     codon.freq.by.aa <- GetCodonFreqsByAA(codon.data[,-1], aa.optim, numcode=1)
-    codon.freq.by.gene <- GetCodonFreqsByGene(codon.data[,-1])
+    codon.freq.by.gene <- GetCodonFreqsByGeneHMM(codon.data[,-1])
     aa.optim.frame.to.add <- matrix(c("optimal", aa.optim), 1, dim(codon.data)[2])
     colnames(aa.optim.frame.to.add) <- colnames(codon.data)
     codon.data <- rbind(codon.data, aa.optim.frame.to.add)
     codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
     aa.optim = codon.data$optimal.aa
     codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
-    selac.unrest.evolveAA <- GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, rep(1,11), 1)), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL)
-    comparison <- identical(round(selac_gamma, 3), -11100.25)
+    system.time(selac.unrest.evolveAA <- GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, rep(1,11), 0.01)), codon.data, phy, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, parallel.type="by.gene", n.cores=NULL))
+    comparison <- identical(round(selac.unrest.evolveAA, 3), -8724.251)
     expect_true(comparison)
 })
 

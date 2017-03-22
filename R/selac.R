@@ -20,6 +20,8 @@ library(parallel)
 library(Rcpp)
 library(RcppArmadillo)
 library(inline)
+library(deSolve)
+dyn.load("../src/selacHMM.so")
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -984,7 +986,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 }
 
 
-GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
+GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1, codon.data, phy, Q_codon_array_vectored, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     
@@ -1008,8 +1010,51 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
     }
     ## Now HMM this matrix by pasting these together:
     liks.HMM <- c()
+    liks.stop.codon <- matrix(0, 13, nl)
     for(amino.acid.index in 1:21){
-        liks.HMM <- cbind(liks.HMM, liks)
+        if(amino.acid.index == 17){
+            liks.HMM <- cbind(liks.HMM, liks.stop.codon)
+        }else{
+            liks.HMM <- cbind(liks.HMM, liks)
+        }
+    }
+    #The result here is just the likelihood:
+    result <- -TreeTraversalODE(phy=phy, Q_codon_array_vectored=Q_codon_array_vectored, liks.HMM=liks.HMM, bad.likelihood=-100000, root.p=root.p)
+    ifelse(return.all, stop("return all not currently implemented"), return(result))
+}
+
+
+GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoringOLD <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    
+    nl <- 64
+    #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
+    liks <- matrix(0, nb.tip + nb.node, nl)
+    #Now loop through the tips.
+    for(i in 1:nb.tip){
+        #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
+        #Note: We add charnum+1, because the first column in the data is the species labels:
+        if(codon.data[i,charnum+1] < 65){
+            liks[i,codon.data[i,charnum+1]] <- 1
+        }else{
+            #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
+            liks[i,] <- 1
+            #This is to deal with stop codons, which are effectively removed from the model at this point. Someday they might be allowed back in. If so, the following line needs to be dealt with.
+            if(nl > 4){
+                liks[i,c(49, 51, 57)] <- 0
+            }
+        }
+    }
+    ## Now HMM this matrix by pasting these together:
+    liks.HMM <- c()
+    liks.stop.codon <- matrix(0, 13, nl)
+    for(amino.acid.index in 1:21){
+        if(amino.acid.index == 17){
+            liks.HMM <- cbind(liks.HMM, liks.stop.codon)
+        }else{
+            liks.HMM <- cbind(liks.HMM, liks)
+        }
     }
     #The result here is just the likelihood:
     result <- -FinishLikelihoodCalculationHMM(phy=phy, liks=liks.HMM, Q=Q_codon, root.p=root.p, anc=anc.indices)
@@ -1070,10 +1115,9 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
     diag(Q_codon_array) = -rowSums(Q_codon_array)
     #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
     #scale.factor <- -sum(Q_codon_array[DiagArray(dim(Q_codon_array))] * equilibrium.codon.freq, na.rm=TRUE)
-    phy <- reorder(phy, "pruningwise")
     
     ## This is obviously not very elegant, but not sure how else to code it to store this stuff in this way -- WORK IN PROGRESS:
-    expQt <- GetExpQt(phy=phy, Q=Q_codon_array, scale.factor=NULL, rates=rates)
+    #expQt <- GetExpQt(phy=phy, Q=Q_codon_array, scale.factor=NULL, rates=rates)
     #Generate matrix of root frequencies for each optimal AA:
     root.p_array <- codon.freq.by.gene
     #root.p_array <- t(root.p_array)
@@ -1081,15 +1125,17 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
     #rownames(root.p_array) <- .unique.aa
     
     phy.sort <- reorder(phy, "pruningwise")
+    Q_codon_array_vectored <- c(t(Q_codon_array)) # has to be transposed
+    Q_codon_array_vectored <- Q_codon_array_vectored[-which(Q_codon_array_vectored == 0)]
     anc.indices <- unique(phy.sort$edge[,1])
     if(parallel.type == "by.gene"){
         for (i in sequence(nsites)) {
-            final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+            final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon_array_vectored=Q_codon_array_vectored, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
         }
     }
     if(parallel.type == "by.site"){
         MultiCoreLikelihoodBySite <- function(nsite.index){
-            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+            tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=Q_codon_array, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
             return(tmp)
         }
         final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores))
@@ -3208,6 +3254,59 @@ FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
 #}
 
 
+######################################################################################################################################
+######################################################################################################################################
+### Likelihood calculator -- ODE solver
+######################################################################################################################################
+
+TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likelihood=-100000, root.p) {
+    
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    
+    anc <- unique(phy$edge[,1])
+    TIPS <- 1:nb.tip
+    
+    comp <- numeric(nb.tip + nb.node)
+    #Start the postorder traversal indexing lists by node number:
+    for (i in seq(from = 1, length.out = nb.node)) {
+        focal <- anc[i]
+        desRows <- which(phy$edge[,1]==focal)
+        desNodes <- phy$edge[desRows,2]
+        v = rep(1, dim(liks.HMM)[2])
+        
+        for (desIndex in sequence(length(desRows))){
+            yini <- liks.HMM[desNodes[desIndex],]
+            times=c(0, phy$edge.length[desRows[desIndex]])
+            
+            prob.subtree.cal.full <- lsoda(yini, times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM")
+            
+            ######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
+            if(attributes(prob.subtree.cal.full)$istate[1] < 0){
+                return(bad.likelihood)
+            }else{
+                prob.subtree.cal <- prob.subtree.cal.full[-1,-1]
+            }
+            ##############################################################################
+            
+            if(prob.subtree.cal[1]<0){
+                return(bad.likelihood)
+            }
+            v <- v * prob.subtree.cal
+        }
+        comp[focal] <- sum(v)
+        liks.HMM[focal,] <- v/comp[focal]
+    }
+    root.node <- nb.tip + 1L
+    if (is.na(sum(log(liks.HMM[root.node,])))){
+        return(bad.likelihood)
+    }else{
+        loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
+    }
+    return(loglik)
+}
+
+
 
 #' @title Efficient optimization of the SELAC model
 #'
@@ -4672,7 +4771,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
         mle.pars.mat.red <- index.matrix.red
         mle.pars.mat.red[] <- c(exp(results.final$solution), 0)[index.matrix.red]
         print(mle.pars.mat.red)
-        optim.alpha.beta.gtr.all.genes <- nloptr(x0=log(alpha.beta.gtr), eval_f = OptimizeAlphaBetaGtrOnly, ub=upper.bounds.shared, lb=lower.bounds.shared, opts=opts, fixed.pars=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix.red, phy=phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE)
+        optim.alpha.beta.gtr.all.genes <- nloptr(x0=log(alpha.beta.gtr), eval_f = OptimizeAlphaBetaGtrOnly, ub=upper.bounds.shared, lb=lower.bounds.shared, opts=opts, fixed.pars=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix.red, phy=phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores=n.cores, neglnl=TRUE, HMM=TRUE)
         results.final$objective <- optim.alpha.beta.gtr.all.genes$objective
         alpha.beta.gtr <- exp(optim.alpha.beta.gtr.all.genes$solution)
         #if(include.gamma == TRUE){
