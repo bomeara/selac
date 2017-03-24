@@ -5,7 +5,7 @@
 \title{Calculate functionality}
 \usage{
 GetFunctionality(gene.length, aa.data, optimal.aa, alpha, beta, gamma,
-  aa.properties = NULL)
+  gp = NULL, aa.properties = NULL)
 }
 \arguments{
 \item{gene.length}{Indicates the length of the gene used to calculate functionality.}
@@ -18,7 +18,9 @@ GetFunctionality(gene.length, aa.data, optimal.aa, alpha, beta, gamma,
 
 \item{beta}{The inferred Grantham polarity parameter}
 
-\item{gamma}{the inferred Grantham molecular volume parameter}
+\item{gamma}{The inferred Grantham molecular volume parameter}
+
+\item{gp}{A vector of gamma rates for calculating among site hetergeneity in functionality.}
 
 \item{aa.properties}{User-supplied amino acid distance properties. By default we assume Grantham (1974) properties.}
 }

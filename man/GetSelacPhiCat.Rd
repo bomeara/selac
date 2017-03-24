@@ -2,7 +2,7 @@
 % Please edit documentation in R/selac.R
 \name{GetSelacPhiCat}
 \alias{GetSelacPhiCat}
-\title{Best phi rate category under SELAC+gamma}
+\title{Phi rate category information under SELAC+gamma}
 \usage{
 GetSelacPhiCat(selac.obj, codon.data.path, aa.optim.input = NULL,
   fasta.rows.to.keep = NULL)
@@ -17,7 +17,7 @@ GetSelacPhiCat(selac.obj, codon.data.path, aa.optim.input = NULL,
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 }
 \description{
-Determines the best phi rate category across sites and across genes under SELAC+gamma
+Provides likelihood information and best rates across sites and across genes under SELAC+gamma
 }
 \details{
 The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
