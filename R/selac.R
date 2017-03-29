@@ -798,9 +798,12 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
 }
 
 
-FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites, C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE, numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999) {
+FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites,
+C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE,
+numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999,
+importance = 1) { #Cedric: Added the importance parameter
     codon.fixation.probs <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
-    opt.aa.transition.rate <- FastCreateOptAATransitionMatrices(aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid, numcode=numcode)
+    opt.aa.transition.rate <- FastCreateOptAATransitionMatrices(aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid, numcode=numcode, importance) #Cedric: passing importance through
     
     n.codons <- dim(.codon.sets)[1]
     mat.dim <- 21*n.codons
@@ -1223,14 +1226,16 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
         x = exp(x)
     }
     
-    rate.for.selective.environment.change = x[length(x)]
-    x = x[-length(x)]
+    importance.of.aa.dist.in.selective.environment.change = x[length(x)] # Cedric: note, I assume that this importance parameter is now the last one
+    rate.for.selective.environment.change = x[length(x)-1]
+    x = x[-( (length(x) - 1):length(x) )]
+    
     
     if(include.gamma == TRUE){
         shape = x[length(x)]
         x = x[-length(x)]
     }
-
+    
     C.Phi.q.Ne <- x[1]
     C <- 4
     q <- 4e-7
@@ -1309,7 +1314,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
-            Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999, importance.of.aa.dist.in.selective.environment.change) #Cedric: added importance
             final.likelihood.mat[k.cat,] = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
         }
         likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * codon.data$site.pattern.counts)
@@ -1319,7 +1324,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
         }else{
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
         }
-        Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999, importance.of.aa.dist.in.selective.environment.change) #Cedric: added importance
         final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
         likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
     }
