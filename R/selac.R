@@ -771,9 +771,13 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 }
 
 
-FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1) {
-    aa.dist.names <- colnames(aa.distances)
+FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) { #Cedric: added importance
     
+    if(diploid == TRUE) {
+        Ne <- 2*Ne
+    } #Cedric: pay attention to diploid flag
+    
+    aa.dist.names <- colnames(aa.distances)
     aa.distances <- cbind(aa.distances, 0)
     aa.distances <- rbind(aa.distances, 0)
     colnames(aa.distances) <- c(aa.dist.names, "*")
@@ -782,14 +786,14 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
     numcode.idx <- .numcode.translation.idx[numcode]
     aa.names <- .aa.translation[[numcode.idx]]
     
-    aa.trans.mat <- aa.distances[.unique.aa, .unique.aa]
+    aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa]/Ne))^importance #Cedric: adjusting for imporatance parameter and using 1/d instead of d
     
     aa.trans.matrices <- vector("list", 21)
     for(j in 1:21) {
         trans.matrix <- matrix(0, ncol=1344, nrow=64)
         for(i in 1:21) {
             index.vec.diag <- (1+(i-1)*64):(64+(i-1)*64)
-            trans.matrix[, index.vec.diag] <- diag(aa.trans.mat[.unique.aa[j], .unique.aa[i]]/Ne, ncol=64, nrow=64)
+            trans.matrix[, index.vec.diag] <- diag(aa.trans.mat[.unique.aa[j], .unique.aa[i]], ncol=64, nrow=64)
         }
         aa.trans.matrices[[j]] <- trans.matrix
     }
@@ -798,10 +802,8 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
 }
 
 
-FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites,
-C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE,
-numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999,
-importance = 1) { #Cedric: Added the importance parameter
+
+FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites, C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE, numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999, importance = 1) { #Cedric: Added the importance parameter
     codon.fixation.probs <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
     opt.aa.transition.rate <- FastCreateOptAATransitionMatrices(aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid, numcode=numcode, importance) #Cedric: passing importance through
     
