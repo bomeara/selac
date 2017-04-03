@@ -771,7 +771,7 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 }
 
 
-FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) { #Cedric: added importance
+FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) {
     
     if(diploid == TRUE) {
         Ne <- 2*Ne
@@ -786,7 +786,10 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
     numcode.idx <- .numcode.translation.idx[numcode]
     aa.names <- .aa.translation[[numcode.idx]]
     
-    aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa]/Ne))^importance #Cedric: adjusting for imporatance parameter and using 1/d instead of d
+    aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
+    diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here -- Indeed.
+    aa.trans.mat[,colnames(aa.trans.mat) == "*"] <- 0 # find better solution
+    aa.trans.mat[colnames(aa.trans.mat) == "*",] <- 0
     
     aa.trans.matrices <- vector("list", 21)
     for(j in 1:21) {
@@ -800,7 +803,6 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
     names(aa.trans.matrices) <- .unique.aa
     return(aa.trans.matrices)
 }
-
 
 
 FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites, C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE, numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999, importance = 1) { #Cedric: Added the importance parameter

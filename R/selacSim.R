@@ -33,6 +33,40 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
 }
 
 
+SingleSiteUpPassHMM <- function(phy, Q_codon, root.p){
+    
+    Q_codon_array_vectored <- c(t(Q_codon)) # has to be transposed
+    Q_codon_array_vectored <- Q_codon_array_vectored[-which(Q_codon_array_vectored == 0)]
+    
+    #Randomly choose starting state at root using the root.values as the probability:
+    root.value <- sample.int(dim(Q_codon)[2], 1, FALSE, prob=root.p)
+    #Reorder the phy:
+    phy <- reorder(phy, "postorder")
+    ntips <- length(phy$tip.label)
+    N <- dim(phy$edge)[1]
+    ROOT <- ntips + 1 #perhaps use an accessor to get the root node id
+    #Generate vector that contains the simulated states:
+    yinit <- vector("list", ntips + phy$Nnode)
+    yinit[[ROOT]] <- root.p
+    
+    sim.codon.data.site <- integer(ntips + phy$Nnode)
+    sim.codon.data.site[ROOT] <- as.integer(root.value)
+    anc <- phy$edge[,1]
+    des <- phy$edge[,2]
+    edge.length <- phy$edge.length
+    for (i in N:1) {
+        times <- c(0, edge.length[i])
+        #browser()
+        p <- lsoda(yinit[[anc[i]]], times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM")[-1,-1]
+        #p <- expm(Q_codon * edge.length[i], method="Ward77")[sim.codon.data.site[anc[i]], ]
+        yinit[[des[i]]] <- p
+        sim.codon.data.site[des[i]] <- sample.int(dim(Q_codon)[2], size = 1, FALSE, prob = p)
+    }
+    sim.codon.data.site <- sim.codon.data.site[1:ntips]
+    return(sim.codon.data.site)
+}
+
+
 SingleSiteUpPassEvolvingRates <- function(phy, root.value, aa.distances, codon_mutation_matrix, aa.optim, nsites, C, Phi, q, Ne, numcode, diploid, pars.to.evolve="phi"){
     #Randomly choose starting state at root using the root.values as the probability:
     root.value = sample.int(dim(codon_mutation_matrix)[2], 1, FALSE, prob=root.value)
@@ -520,6 +554,177 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
     nucleotide.data <- c()
     for(codon.sequence in seq(1, nsites, by=1)){
         nucleotide.data <- cbind(nucleotide.data, t(matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), 3,length(phy$tip.label))))
+    }
+    rownames(nucleotide.data) <- phy$tip.label
+    
+    #Done.
+    return(nucleotide.data)
+}
+
+
+
+SelacHMMSimulator <- function(phy, pars, nsites, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
+    
+    importance.of.aa.dist.in.selective.environment.change <- pars[length(pars)]
+    rate.for.selective.environment.change <- pars[length(pars)-1]
+    pars <- pars[-( (length(pars) - 1):length(pars) )]
+    
+    #Start organizing the user input parameters:
+    C.q.phi.Ne <- pars[1]
+    C=4
+    q=4e-7
+    Ne <- 5e6
+    Phi.q.Ne <- C.q.phi.Ne / C
+    Phi.Ne <- Phi.q.Ne / q
+    Phi <- Phi.Ne / Ne
+    alpha <- pars[2]
+    beta <- pars[3]
+    gamma <- GetAADistanceStartingParameters(aa.properties)[3]
+    
+    
+    if(include.gamma == TRUE){
+        shape <- pars[length(pars)]
+        pars <- pars[-length(pars)]
+    }
+    
+    if(k.levels > 0){
+        if(nuc.model == "JC") {
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[7:8]
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[9:length(pars)], model=nuc.model, base.freqs=base.freqs)
+            poly.params <- pars[7:8]
+        }
+        if(nuc.model == "UNREST") {
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[6:length(pars)], model=nuc.model, base.freqs=NULL)
+            poly.params <- pars[4:5]
+        }
+    }else{
+        if(nuc.model == "JC") {
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "UNREST") {
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[4:length(pars)], model=nuc.model, base.freqs=NULL)
+        }
+    }
+    
+    #Generate our codon matrix:
+    nuc.mutation.rates.vector <- c(nuc.mutation.rates, rate.for.selective.environment.change)
+    codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
+    codon_mutation_matrix <- matrix(nuc.mutation.rates.vector[codon.index.matrix], dim(codon.index.matrix))
+    codon_mutation_matrix[is.na(codon_mutation_matrix)] <- 0
+    #Generate our fixation probability array:
+    unique.aa <- GetMatrixAANames(numcode)
+    
+    #We rescale the codon matrix only -- this is the issue!
+    diag(codon_mutation_matrix) = 0
+    diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
+    scale.factor <- -sum(diag(codon_mutation_matrix) * codon.freq.by.gene, na.rm=TRUE)
+    codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
+    
+    if(include.gamma == TRUE){
+        if(gamma.type == "median"){
+            rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+            weights.k <- rep(1/ncats, ncats)
+        }
+        if(gamma.type == "quadrature"){
+            rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
+        rate.Q_codon.list <- as.list(ncats)
+        for(cat.index in 1:ncats){
+            if(k.levels > 0){
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma,
+                aa.properties=aa.properties, normalize=FALSE,
+                poly.params=poly.params, k=k.levels)
+            }else{
+                aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma,
+                aa.properties=aa.properties, normalize=FALSE,
+                poly.params=NULL, k=k.levels)
+            }
+            rate.Q_codon.list[[cat.index]] <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances,
+            nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne,
+            include.stop.codon=TRUE, numcode=numcode, diploid=diploid,
+            flee.stop.codon.rate=0.9999999,
+            importance = importance.of.aa.dist.in.selective.environment.change)
+        }
+        for(cat.index in 1:ncats){
+            if(diploid == TRUE){
+                Q_codon <- 2 * Ne * (codon_mutation_matrix_scaled * Q_codon)
+            }else{
+                Q_codon <- Ne * (codon_mutation_matrix_scaled * Q_codon)
+            }
+            diag(Q_codon) <- 0
+            diag(Q_codon) <- -rowSums(Q_codon)
+            rate.Q_codon.list[[cat.index]] <- Q_codon
+        }
+    }else{
+        if(k.levels > 0){
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma,
+            aa.properties=aa.properties, normalize=FALSE,
+            poly.params=poly.params, k=k.levels)
+        }else{
+            aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma,
+            aa.properties=aa.properties, normalize=FALSE,
+            poly.params=NULL, k=k.levels)
+        }
+        Q_codon <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances,
+        nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne,
+        include.stop.codon=TRUE, numcode=numcode, diploid=diploid,
+        flee.stop.codon.rate=0.9999999,
+        importance = importance.of.aa.dist.in.selective.environment.change)
+        if(diploid == TRUE){
+            Q_codon = 2 * Ne * (codon_mutation_matrix_scaled * Q_codon)
+        }else{
+            Q_codon = Ne * (codon_mutation_matrix_scaled * Q_codon)
+        }
+        diag(Q_codon) = 0
+        diag(Q_codon) = -rowSums(Q_codon)
+    }
+    
+    if(is.null(codon.freq.by.aa)) {
+        codon.freq.by.aa <- rep(1/1344, by=64*21)
+    }
+    
+    #Generate matrix of root frequencies from stationary distribution of substitution matrix
+    Q_codon_array_vectored <- c(t(Q_codon)) # has to be transposed
+    Q_codon_array_vectored <- Q_codon_array_vectored[-which(Q_codon_array_vectored == 0)]
+    
+    root.p <- lsoda(codon.freq.by.aa, c(0,1000), func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM")[-1,-1]
+    root.p <- root.p/sum(root.p)
+    #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user-input vector of optimal AA:
+    sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
+    
+    if(include.gamma == TRUE){
+        for(site in 1:nsites){
+            if(is.null(site.cats.vector)){
+                site.rate <- sample(1:4, 1, prob=weights.k)
+            }else{
+                site.rate <- site.cats.vector[site]
+            }
+            Q_codon <- rate.Q_codon.list[[site.rate]]
+            sim.codon.data[,site] <- SingleSiteUpPassHMM(phy, Q_codon=Q_codon, root.p=root.p)
+        }
+    }else{
+        for(site in 1:nsites){
+            sim.codon.data[,site] <- SingleSiteUpPassHMM(phy, Q_codon=Q_codon, root.p=root.p)
+        }
+    }
+    codon.names <- rownames(Q_codon)
+    #Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
+    nucleotide.data <- c()
+    #browser()
+    for(codon.sequence in seq(1, nsites, by=1)){
+        nucleotide.data <- cbind(nucleotide.data, t(matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), 4,length(phy$tip.label)))[,-4])
     }
     rownames(nucleotide.data) <- phy$tip.label
     
