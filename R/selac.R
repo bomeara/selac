@@ -771,37 +771,26 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 }
 
 
-<<<<<<< HEAD
-FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) {
-    
-=======
 FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) { #Cedric: added importance
-
->>>>>>> de2d6c6becb645396bc62fa517ba83f96c1374d3
+    
     if(diploid == TRUE) {
         Ne <- 2*Ne
     } #Cedric: pay attention to diploid flag
-
+    
     aa.dist.names <- colnames(aa.distances)
     aa.distances <- cbind(aa.distances, 0)
     aa.distances <- rbind(aa.distances, 0)
     colnames(aa.distances) <- c(aa.dist.names, "*")
     rownames(aa.distances) <- c(aa.dist.names, "*")
-
+    
     numcode.idx <- .numcode.translation.idx[numcode]
     aa.names <- .aa.translation[[numcode.idx]]
-<<<<<<< HEAD
     
     aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
-    diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here -- Indeed.
+    diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here
     aa.trans.mat[,colnames(aa.trans.mat) == "*"] <- 0 # find better solution
     aa.trans.mat[colnames(aa.trans.mat) == "*",] <- 0
     
-=======
-
-    aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa]/Ne))^importance #Cedric: adjusting for imporatance parameter and using 1/d instead of d
-
->>>>>>> de2d6c6becb645396bc62fa517ba83f96c1374d3
     aa.trans.matrices <- vector("list", 21)
     for(j in 1:21) {
         trans.matrix <- matrix(0, ncol=1344, nrow=64)
@@ -1235,16 +1224,18 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
 }
 
 
-GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.data, phy, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
+GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.data, phy, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1, estimate.importance=FALSE) {
 
     if(logspace) {
         x = exp(x)
     }
 
-    importance.of.aa.dist.in.selective.environment.change = x[length(x)] # Cedric: note, I assume that this importance parameter is now the last one
+    if(estimate.importance == TRUE){
+        importance.of.aa.dist.in.selective.environment.change = x[length(x)] #Cedric: note, I assume that this importance parameter is now the last one
+    }
+    
     rate.for.selective.environment.change = x[length(x)-1]
-    x = x[-( (length(x) - 1):length(x) )]
-
+    x = x[-((length(x) - 1):length(x))]
 
     if(include.gamma == TRUE){
         shape = x[length(x)]
@@ -1948,31 +1939,17 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
 
     if(is.null(aa.optim_array)){
         if(HMM == TRUE) {
-            if(nuc.model == "JC"){
-                max.par = 6 + 1
-            }
-            if(nuc.model == "GTR"){
-                max.par = 6 + 5 + 1
-            }
-            if(nuc.model == "UNREST"){
-                max.par = 3 + 11 + 1
-            }
-            if(include.gamma == TRUE){
-                max.par = max.par + 1
-            }
-            if(k.levels > 0){
-                max.par = max.par + 2
-            }
+            max.par <- dim(par.mat)[2]
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
                 codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
                 likelihood.tmp = GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
                 return(likelihood.tmp)
-                #This orders the nsites per partition in decreasing order (to increase efficiency):
-                partition.order <- 1:n.partitions
-                likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
             }
+            #This orders the nsites per partition in decreasing order (to increase efficiency):
+            partition.order <- 1:n.partitions
+            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }else{
             if(data.type == "nucleotide"){
                 if(nuc.model == "JC"){
@@ -4264,7 +4241,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #'
 #' @details
 #' A hidden Markov model which no longers optimizes the optimal amino acids, but instead allows for the optimal sequence to vary along branches, clades, taxa, etc. Like the original function, we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.vals=NULL, tol.step=1) {
+SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.vals=NULL, tol.step=1) {
 
     if(!data.type == "codon"){
         stop("Check that your data type input is correct. Options currently are codon only", call.=FALSE)
@@ -4281,9 +4258,6 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     if(!gamma.type == "quadrature" & !gamma.type == "median"){
         stop("Check that you have a supported gamma type. Options are quadrature after Felsenstein 2001 or median after Yang 1994.", call.=FALSE)
     }
-    if(is.null(n.cores)){
-        stop("This optimization routine requires that multiple cores are specified.", call.=FALSE)
-    }
 
     cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
 
@@ -4291,6 +4265,8 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
 
     partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
 
+    estimate.importance <- estimate.aa.importance
+    
     if(is.null(n.partitions)){
         n.partitions <- length(partitions)
     }else{
@@ -4358,47 +4334,95 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
         #Gamma variation is turned ON:
         if(nuc.model == "JC"){
             if(k.levels == 0){
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "shape.gamma", "sel.reg")
-                upper = c(log(50),  21, 21, 0, 0, 0, 5, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 0 + 1 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "shape.gamma", "sel.reg", "importance")
+                    upper = c(log(50),  21, 21, 0, 0, 0, 5, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 1 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "shape.gamma", "sel.reg")
+                    upper = c(log(50),  21, 21, 0, 0, 0, 5, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 1 + 1
+                }
             }else{
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 5, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 0 + 2 + 1 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 5, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 2 + 1 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 5, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 2 + 1 + 1
+                }
             }
         }
         if(nuc.model == "GTR") {
             if(k.levels == 0){
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 5, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 5 + 1 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 5, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 1 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 5, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 1 + 1
+                }
             }else{
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 5, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 5 + 2	+ 1 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 5, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 2	+ 1 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 5, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 2	+ 1 + 1
+                }
             }
         }
         if(nuc.model == "UNREST") {
             if(k.levels == 0){
-                ip = c(selac.starting.vals[1,1:3], nuc.ip, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma", "sel.reg")
-                upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 5, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 3 + 11 + 1 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], nuc.ip, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 5, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 1 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], nuc.ip, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma", "sel.reg")
+                    upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 5, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 1 + 1
+                }
             }else{
-                ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma", "sel.reg")
-                upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 5, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 3 + 11 + 2 + 1 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 5, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 2 + 1 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma", "sel.reg")
+                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 5, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 2 + 1 + 1
+                }
             }
         }
         index.matrix = matrix(0, n.partitions, max.par.model.count)
@@ -4408,34 +4432,49 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
             # Gamma variation is turned ON:
             for(partition.index in 2:n.partitions){
                 if(nuc.model == "JC"){
-                    #ip.vector = c(ip.vector, ip[1], ip[8])
-                    ip.vector = c(ip.vector, ip[1], ip[2])
+                    if(estimate.importance == TRUE){
+                        ip.vector = c(ip.vector, ip[1], ip[8], ip[9])
+                    }else{
+                        ip.vector = c(ip.vector, ip[1], ip[8])
+                    }
                 }else{
                     if(nuc.model == "GTR"){
                         index.matrix.tmp = numeric(max.par.model.count)
                         if(k.levels == 0){
-                            #index.matrix.tmp[c(2:11)] = c(2:11)
-                            #ip.vector = c(ip.vector, ip[1], ip[12])
-                            index.matrix.tmp[c(2:13)] = c(2:13)
-                            ip.vector = c(ip.vector, ip[1])
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:12)] = c(2:12)
+                                ip.vector = c(ip.vector, ip[1], ip[13], ip[14])
+                            }else{
+                                index.matrix.tmp[c(2:12)] = c(2:12)
+                                ip.vector = c(ip.vector, ip[1], ip[13])
+                            }
                         }else{
-                            #index.matrix.tmp[c(2:13)] = c(2:13)
-                            #ip.vector = c(ip.vector, ip[1], ip[14])
-                            index.matrix.tmp[c(2:15)] = c(2:15)
-                            ip.vector = c(ip.vector, ip[1])
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:14)] = c(2:14)
+                                ip.vector = c(ip.vector, ip[1], ip[15], ip[16])
+                            }else{
+                                index.matrix.tmp[c(2:14)] = c(2:14)
+                                ip.vector = c(ip.vector, ip[1], ip[15])
+                            }
                         }
                     }else{
                         index.matrix.tmp = numeric(max.par.model.count)
                         if(k.levels == 0){
-                            #index.matrix.tmp[c(2:14)] = c(2:14)
-                            #ip.vector = c(ip.vector, ip[1], ip[15])
-                            index.matrix.tmp[c(2:16)] = c(2:16)
-                            ip.vector = c(ip.vector, ip[1])
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:15)] = c(2:15)
+                                ip.vector = c(ip.vector, ip[1], ip[16], ip[17])
+                            }else{
+                                index.matrix.tmp[c(2:15)] = c(2:15)
+                                ip.vector = c(ip.vector, ip[1], ip[16])
+                            }
                         }else{
-                            #index.matrix.tmp[c(2:16)] = c(2:16)
-                            #ip.vector = c(ip.vector, ip[1], ip[17])
-                            index.matrix.tmp[c(2:18)] = c(2:18)
-                            ip.vector = c(ip.vector, ip[1])
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:17)] = c(2:17)
+                                ip.vector = c(ip.vector, ip[1], ip[18], ip[19])
+                            }else{
+                                index.matrix.tmp[c(2:17)] = c(2:17)
+                                ip.vector = c(ip.vector, ip[1], ip[18])
+                            }
                         }
                     }
                 }
@@ -4443,51 +4482,100 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
                 index.matrix[partition.index,] <- index.matrix.tmp
             }
         }
+        print(index.matrix)
     }else{
         # Gamma variation is turned OFF:
         if(nuc.model == "JC"){
             if(k.levels == 0){
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne",  "alpha", "beta", "freqA", "freqC", "freqG", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 0 + 0 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 0 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 0 + 1
+                }
             }else{
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 0 + 0 + 2 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 0 + 2 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 0 + 0 + 2 + 1
+                }
             }
         }
         if(nuc.model == "GTR") {
             if(k.levels == 0){
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 5 + 0 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 0 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 0 + 1
+                }
             }else{
-                ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "sel.reg")
-                upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 6 + 5 + 0 + 2 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 0 + 2 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "sel.reg")
+                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 6 + 5 + 0 + 2 + 1
+                }
             }
         }
         if(nuc.model == "UNREST") {
             if(k.levels == 0){
-                ip = c(selac.starting.vals[1,1:3], nuc.ip, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg")
-                upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 3 + 11 + 0 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], nuc.ip, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 0 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], nuc.ip, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg")
+                    upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 0 + 1
+                }
             }else{
-                ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 0.01)
-                parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg")
-                upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 21)
-                lower = rep(-21, length(ip))
-                max.par.model.count = 3 + 11 + 0 + 2 + 1
+                if(estimate.importance == TRUE){
+                    ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 0.01, 1)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg", "importance")
+                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 21, 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 0 + 2 + 1 + 1
+                }else{
+                    ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 0.01)
+                    parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg")
+                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 21)
+                    lower = rep(-21, length(ip))
+                    max.par.model.count = 3 + 11 + 0 + 2 + 1
+                }
             }
         }
         index.matrix = matrix(0, n.partitions, max.par.model.count)
@@ -4496,23 +4584,49 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
         if(n.partitions > 1){
             for(partition.index in 2:n.partitions){
                 if(nuc.model == "JC"){
-                    ip.vector = c(ip.vector, ip[1])
+                    if(estimate.importance == TRUE){
+                        ip.vector = c(ip.vector, ip[1], ip[7], ip[8])
+                    }else{
+                        ip.vector = c(ip.vector, ip[1], ip[7])
+                    }
                 }else{
                     if(nuc.model == "GTR"){
-                        ip.vector = c(ip.vector, ip[1])
                         index.matrix.tmp = numeric(max.par.model.count)
                         if(k.levels == 0){
-                            index.matrix.tmp[c(2:12)] = c(2:12)
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:11)] = c(2:11)
+                                ip.vector = c(ip.vector, ip[1], ip[12], ip[13])
+                            }else{
+                                index.matrix.tmp[c(2:11)] = c(2:11)
+                                ip.vector = c(ip.vector, ip[1], ip[12])
+                            }
                         }else{
-                            index.matrix.tmp[c(2:14)] = c(2:14)
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:13)] = c(2:13)
+                                ip.vector = c(ip.vector, ip[1], ip[14], ip[15])
+                            }else{
+                                index.matrix.tmp[c(2:13)] = c(2:13)
+                                ip.vector = c(ip.vector, ip[1], ip[14])
+                            }
                         }
                     }else{
-                        ip.vector = c(ip.vector, ip[1])
                         index.matrix.tmp = numeric(max.par.model.count)
                         if(k.levels == 0){
-                            index.matrix.tmp[c(2:15)] = c(2:15)
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:14)] = c(2:14)
+                                ip.vector = c(ip.vector, ip[1], ip[15], ip[16])
+                            }else{
+                                index.matrix.tmp[c(2:14)] = c(2:14)
+                                ip.vector = c(ip.vector, ip[1], ip[15])
+                            }
                         }else{
-                            index.matrix.tmp[c(2:17)] = c(2:17)
+                            if(estimate.importance == TRUE){
+                                index.matrix.tmp[c(2:16)] = c(2:16)
+                                ip.vector = c(ip.vector, ip[1], ip[17], ip[18])
+                            }else{
+                                index.matrix.tmp[c(2:16)] = c(2:16)
+                                ip.vector = c(ip.vector, ip[1], ip[17])
+                            }
                         }
                     }
                 }
@@ -4521,6 +4635,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
             }
         }
     }
+    print(index.matrix)
 
     #THIS IS FOR THERE IS A SEPARATE GAMMA PER GENE:
     #if(include.gamma == TRUE){
@@ -4546,7 +4661,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
             opts.edge <- opts
             upper.edge <- rep(log(50), length(phy$edge.length))
             lower.edge <- rep(log(1e-8), length(phy$edge.length))
-            results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, parallel.type=parallel.type, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE, HMM=TRUE)
+            results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE, HMM=TRUE)
             print(results.edge.final$objective)
             print(exp(results.edge.final$solution))
             phy$edge.length <- exp(results.edge.final$solution)
