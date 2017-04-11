@@ -957,10 +957,11 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
 #' @param taxon.to.drop Specifies the tip based on the number in the phy object to be removed and simulated.
 #' @param partition.number Specifies the partition number to conduct the model adequacy test.
 #' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
+#' @param for.gtr.only A selac object that can be used as the reference optimal AA for when the adequacy of a GTR+G model is tested only.
 #'
 #' @details
 #' Performs a single model adequacy simulation. The test prunes out a user-specified taxon from the tree, performs site data reconstruction for all nodes in the tree under a user-specified model, then simulates the expected data of the pruned taxon according to a user-specified model along uniformly sampled points along the branch. The functionality of the reconstructed sequence is also calculated along the way to see how functionality changes as the simulation reaches the end of the known branch length. The output is a vector with elements containing the functionality of the simulated points along equally spaced sampling points along the known branch length (i.e., edge.length * seq(0, 1, by=0.05))
-GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under, selac.obj.to.reconstruct, selac.obj.to.simulate, gp=NULL, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1, for.gtr.only=NULL){
+GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under, selac.obj.to.reconstruct, selac.obj.to.simulate, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=4, partition.number=55, numcode=1, for.gtr.only=NULL){
     prop.intervals <- seq(0,1, by=0.05)
     
     if(model.to.reconstruct.under == "gtr" & model.to.simulate.under == "selac"){
@@ -1041,6 +1042,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
 #' @param taxon.to.drop Specifies the tip based on the number in the phy object to be removed and simulated.
 #' @param partition.number Specifies the partition number to conduct the model adequacy test.
 #' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
+#' @param for.gtr.only A selac object that can be used as the reference optimal AA for when the adequacy of a GTR+G model is tested only.
 #'
 #' @details
 #' Performs a parallelized analysis of the model adequacy test. The test prunes out a user-specified taxon from the tree, performs site data reconstruction for all nodes in the tree under a user-specified model, then simulates the expected data of the pruned taxon according to a user-specified model along uniformly sampled points along the branch. The functionality of the reconstructed sequence is also calculated along the way to see how functionality changes as the simulation reaches the end of the known branch length. The output is a list with elements equally the number of repititions. Each element contains the functionality of the simulated points along equally spaced sampling points along the known branch length (i.e., edge.length * seq(0, 1, by=0.05))

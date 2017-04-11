@@ -9,19 +9,19 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-library(ape)
-library(expm)
-library(nnet)
-library(nloptr)
-library(seqinr)
-library(phangorn)
-library(MASS)
-library(parallel)
-library(Rcpp)
-library(RcppArmadillo)
-library(inline)
-library(deSolve)
-dyn.load("../src/selacHMM.so")
+#library(ape)
+#library(expm)
+#library(nnet)
+#library(nloptr)
+#library(seqinr)
+#library(phangorn)
+#library(MASS)
+#library(parallel)
+#library(Rcpp)
+#library(RcppArmadillo)
+#library(inline)
+#library(deSolve)
+#dyn.load("../src/selacHMM.so")
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -212,7 +212,6 @@ GetAADistanceStartingParameters <- function(aa.properties){
 }
 
 
-#pg. 24 "Eq. 3.2.7: m2k_1 = bk,0 + bk,1x + bk,2x^2 + bk,3x^3 + ... + ak,2kx^2k+1, where bk,0=xi, bk,j=ak,(j-1)/j, j = 1,2, ... , 2k+1."
 PolynomialTransform <- function(x, xi, poly.params, k){
     if(k == 0){
         mk2_1 <- xi + x
@@ -220,7 +219,8 @@ PolynomialTransform <- function(x, xi, poly.params, k){
     if(k == 1){
         mk2_1 <- xi + x + poly.params[1]*(x^2) + poly.params[2]*(x^3)
     }
-
+    print(x)
+    print(mk2_1)
     ##Not necessary yet:
     #if(k == 2){
     #	mk2_1 <- xi + (coef.vec[2-1,]/2)*x + (coef.vec[3-1,]/3)*(x^2) + (coef.vec[4-1]/4)*(x^3) + (coef.vec[5-1]/5)*(x^4) + (coef.vec[6-1]/6)*(x^5)
@@ -1936,7 +1936,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
 
 
 ##Redundant to code above. This is a work in progress. Will likely change quite a bit in the future to speed things up.
-OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=1, estimate.importance=FALSE, neglnl=FALSE, HMM=FALSE) {
+OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, n.cores.by.gene, n.cores.by.gene.by.site=1, estimate.importance=FALSE, neglnl=FALSE, HMM=FALSE) {
 
     if(logspace) {
         x <- exp(x)
@@ -2810,10 +2810,10 @@ GetMaxName <- function(x) {
 ######################################################################################################################################
 
 #Step 1: We perform exponentiation as few times as possible; in the case of selac, for example, we do it for each of the possible optimal amino acids and store the matrices.
-code <- "
-Eigen::MatrixXd m = Rcpp::as<Eigen::MatrixXd>(a);
-return(Rcpp::wrap(m.exp()));"
-eigenExpM <- cxxfunction(signature(a="numeric"), code, plugin="RcppEigen")
+#code <- "
+#Eigen::MatrixXd m = Rcpp::as<Eigen::MatrixXd>(a);
+#return(Rcpp::wrap(m.exp()));"
+#eigenExpM <- cxxfunction(signature(a="numeric"), code, plugin="RcppEigen")
 
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 
@@ -2847,42 +2847,42 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 }
 
 
-GetExpQtParallel <- function(phy, Q, scale.factor, rates=NULL, ncores = 1){
+#GetExpQtParallel <- function(phy, Q, scale.factor, rates=NULL, ncores = 1){
+#
+#    if(!is.null(scale.factor)){
+#        Q.scaled = Q * (1/scale.factor)
+#    }else{
+#        Q.scaled = Q
+#    }
 
-    if(!is.null(scale.factor)){
-        Q.scaled = Q * (1/scale.factor)
-    }else{
-        Q.scaled = Q
-    }
-
-    if(!is.null(rates)){
-        Q.scaled = Q.scaled * rates
-    }
-    nb.tip <- length(phy$tip.label)
-    nb.node <- phy$Nnode
-    expQt <- as.list(numeric(nb.tip + nb.node))
-    TIPS <- 1:nb.tip
-    comp <- numeric(nb.tip + nb.node)
+#    if(!is.null(rates)){
+#        Q.scaled = Q.scaled * rates
+#    }
+#    nb.tip <- length(phy$tip.label)
+#   nb.node <- phy$Nnode
+#    expQt <- as.list(numeric(nb.tip + nb.node))
+#    TIPS <- 1:nb.tip
+#    comp <- numeric(nb.tip + nb.node)
     #phy <- reorder(phy, "pruningwise")
     #Obtain an object of all the unique ancestors
-    anc <- unique(phy$edge[,1])
-    edge.idx <- rep(NA, length(phy$edge[,1]))
+#    anc <- unique(phy$edge[,1])
+#    edge.idx <- rep(NA, length(phy$edge[,1]))
 
-    k <- 1
-    for (i  in seq(from = 1, length.out = nb.node)) {
+#    k <- 1
+#    for (i  in seq(from = 1, length.out = nb.node)) {
         #the ancestral node at row i is called focal
-        focal <- anc[i]
+#        focal <- anc[i]
         #Get descendant information of focal
-        desRows <- which(phy$edge[,1]==focal)
-        desNodes <- phy$edge[desRows,2]
-        for (desIndex in sequence(length(desRows))){
-            edge.idx[k] <- desNodes[desIndex]
-            k <- k + 1
-        }
-    }
-    expQt <- mclapply(X = edge.idx, FUN = function(X){return(eigenExpM(Q.scaled * phy$edge.length[desRows[desIndex]]))}, mc.cores = ncores)
-    return(expQt)
-}
+#        desRows <- which(phy$edge[,1]==focal)
+#        desNodes <- phy$edge[desRows,2]
+#        for (desIndex in sequence(length(desRows))){
+#            edge.idx[k] <- desNodes[desIndex]
+#            k <- k + 1
+#        }
+#    }
+#    expQt <- mclapply(X = edge.idx, FUN = function(X){return(eigenExpM(Q.scaled * phy$edge.length[desRows[desIndex]]))}, mc.cores = ncores)
+#    return(expQt)
+#}
 
 
 #Step 2: Finish likelihood by taking our already exponentiated Q down the tree and simply re-traverse the tree and multiply by the observed likelihood.
@@ -3047,7 +3047,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             yini <- liks.HMM[desNodes[desIndex],]
             times=c(0, phy$edge.length[desRows[desIndex]])
 
-            prob.subtree.cal.full <- lsoda(yini, times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM")
+            prob.subtree.cal.full <- lsoda(yini, times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selac")
 
             ######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
             if(attributes(prob.subtree.cal.full)$istate[1] < 0){
@@ -4188,6 +4188,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param estimate.aa.importance Indicates whether gene specific importance of distance parameter is to be estimate.
 #' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
 #' @param gamma.type Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.
 #' @param ncats The number of discrete categories.
@@ -4452,7 +4453,6 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
                 index.matrix[partition.index,] <- index.matrix.tmp
             }
         }
-        print(index.matrix)
     }else{
         # Gamma variation is turned OFF:
         if(nuc.model == "JC"){
@@ -4605,7 +4605,6 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
             }
         }
     }
-    print(index.matrix)
 
     #THIS IS FOR THERE IS A SEPARATE GAMMA PER GENE:
     if(estimate.importance == TRUE){
@@ -4705,7 +4704,6 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
                 cat("              Optimizing edge lengths", "\n")
                 opts.edge <- opts
                 opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
-
                 results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=estimate.importance, neglnl=TRUE, HMM=TRUE)
                 print(results.edge.final$objective)
                 print(exp(results.edge.final$solution))
@@ -4799,17 +4797,9 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     colnames(mle.pars.mat) <- parameter.column.names
 
     if(edge.length == "optimize"){
-        if(optimal.aa == "user"){
-            np <- max(index.matrix) + length(phy$edge.length)
-        }else{
-            np <- max(index.matrix) + length(phy$edge.length) + sum(nsites.vector)
-        }
+        np <- max(index.matrix) + length(phy$edge.length)
     }else{
-        if(optimal.aa == "user"){
-            np <- max(index.matrix)
-        }else{
-            np <- max(index.matrix) + sum(nsites.vector)
-        }
+        np <- max(index.matrix)
     }
 
     #Counting parameters: Do we count the nsites too? Yup.
@@ -4922,10 +4912,10 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     gamma <- selac.obj$volume.fixed.value
     nuc.model <- selac.obj$nuc.model
     k.levels <- selac.obj$k.levels
-    parallel.type <- "by.gene"
     n.cores <- NULL
     obj.final <- as.list(1:length(partitions))
-
+    n.cores.by.gene.by.site <- selac.obj$n.cores.by.gene.by.site
+    
     for(partition.index in 1:length(partitions)){
         x <- c(selac.obj$mle.pars[partition.index,])
         gene.tmp <- read.dna(partitions[partition.index], format='fasta')
@@ -5010,7 +5000,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
                     aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
                 }
                 Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-                final.likelihood.mat[k,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+                final.likelihood.mat[k,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
             }
             likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * codon.data$site.pattern.counts)
         }else{
@@ -5020,7 +5010,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
             Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-            final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+            final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
             likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
         }
         obj.gene <- NULL
@@ -5058,8 +5048,8 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
     gamma <- selac.obj$volume.fixed.value
     nuc.model <- selac.obj$nuc.model
     k.levels <- selac.obj$k.levels
+    n.cores.by.gene.by.site <- selac.obj$n.cores.by.gene.by.site
     volume.fixed.value <- selac.obj$volume.fixed.value
-    parallel.type <- "by.gene"
     n.cores <- NULL
     obj.final <- as.list(1:length(partitions))
 
@@ -5098,7 +5088,7 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
         if(is.null(aa.optim.input)){
             aa.optim_array <- selac.obj$aa.optim[[partition.index]]
         }
-        phi.likelihoods.per.site <- GetPhiLikelihoodPerSite(x, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=FALSE, verbose=FALSE, neglnl=FALSE, parallel.type=parallel.type, n.cores=ncores)
+        phi.likelihoods.per.site <- GetPhiLikelihoodPerSite(x, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=FALSE, verbose=FALSE, neglnl=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
         C.Phi.q.Ne <- x[1]
         C <- 4
         q <- 4e-7
@@ -5142,7 +5132,7 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
 
 
 
-GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site) {
     if(logspace) {
         x = exp(x)
     }
@@ -5234,7 +5224,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
                         aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
                     }
                     Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
-                    tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid)
+                    tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
                     tmp[is.na(tmp)] = -1000000
                     gene_site_array[,,k.cat] = tmp
                 }
@@ -5246,7 +5236,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
                     aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
                 }
                 Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
-                tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid)
+                tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
                 tmp[is.na(tmp)] = -1000000
                 gene_site_array = tmp
             }
@@ -5256,7 +5246,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
 }
 
 
-GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, parallel.type="by.gene", n.cores=NULL) {
+GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site) {
     if(logspace) {
         x = exp(x)
     }
@@ -5344,7 +5334,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
             Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-            final.likelihood[k.cat,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+            final.likelihood[k.cat,] = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
         }
         #likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * codon.data$site.pattern.counts)
     }else{
@@ -5354,7 +5344,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
         }
         Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
-        final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, parallel.type=parallel.type, n.cores=n.cores)
+        final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
         #likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
     }
 
@@ -5369,7 +5359,7 @@ GetGeneSiteInfo <- function(selac.obj, partition.number=1){
     chars <- DNAbinToCodonNumeric(yeast.gene)
     codon.data <- chars[phy$tip.label,]
     aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=1)
-    aa.optim <- result$aa.optim[[1]] #starting values for all, final values for majrule
+    aa.optim <- selac.obj$aa.optim[[1]] #starting values for all, final values for majrule
     aa.optim.full.list <- aa.optim
     codon.freq.by.aa <- GetCodonFreqsByAA(codon.data[,-1], aa.optim, numcode=1)
     codon.freq.by.gene <- GetCodonFreqsByGene(codon.data[,-1])
@@ -5378,16 +5368,17 @@ GetGeneSiteInfo <- function(selac.obj, partition.number=1){
     codon.data <- rbind(codon.data, aa.optim.frame.to.add)
     codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
     aa.optim <- codon.data$optimal.aa
-    codon.index.matrix <- selac:::CreateCodonMutationMatrixIndex()
-    volume.fixed.value=0.0003990333
-    pars.to.do <- result$mle.pars[partition.number,]
-    selac.all.sites.amino.acid <- GetAALikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE)
+    codon.index.matrix <- CreateCodonMutationMatrixIndex()
+    volume.fixed.value <- 0.0003990333
+    n.cores.by.gene.by.site <- selac.obj$n.cores.by.gene.by.site
+    pars.to.do <- selac.obj$mle.pars[partition.number,]
+    selac.all.sites.amino.acid <- GetAALikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
 
-    selac.all.sites.phi <- GetPhiLikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE)
+    selac.all.sites.phi <- GetPhiLikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
 
     obj <- NULL
-    quadl <- LaguerreQuad(result$mle.pars[1,length(result$mle.pars[1,])],4)
-    obj$phi <- result$mle.pars[partition.number,1] * quadl[1:4]
+    quadl <- LaguerreQuad(selac.obj$mle.pars[1,length(selac.obj$mle.pars[1,])],4)
+    obj$phi <- selac.obj$mle.pars[partition.number,1] * quadl[1:4]
     obj$phi.weights <- quadl[5:8]
     obj$site.aa.information <- selac.all.sites.amino.acid
     obj$site.phi.information <- selac.all.sites.phi

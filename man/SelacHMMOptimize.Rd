@@ -6,10 +6,10 @@
 \usage{
 SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
   data.type = "codon", codon.model = "selac", edge.length = "optimize",
-  edge.linked = TRUE, nuc.model = "GTR", include.gamma = FALSE,
-  gamma.type = "quadrature", ncats = 4, numcode = 1, diploid = TRUE,
-  k.levels = 0, aa.properties = NULL, verbose = FALSE,
-  n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
+  edge.linked = TRUE, nuc.model = "GTR", estimate.aa.importance = FALSE,
+  include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
+  numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
+  verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
   max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 3,
   user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
@@ -32,6 +32,8 @@ SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
+
+\item{estimate.aa.importance}{Indicates whether gene specific importance of distance parameter is to be estimate.}
 
 \item{include.gamma}{A logical indicating whether or not to include a discrete gamma model.}
 

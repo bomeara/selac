@@ -5,9 +5,9 @@
 \title{Model adequacy simulation}
 \usage{
 GetAdequateSelac(model.to.reconstruct.under, model.to.simulate.under,
-  selac.obj.to.reconstruct, selac.obj.to.simulate, gp = NULL,
-  aa.optim.input = NULL, fasta.rows.to.keep = NULL, taxon.to.drop = 4,
-  partition.number = 55, numcode = 1, for.gtr.only = NULL)
+  selac.obj.to.reconstruct, selac.obj.to.simulate, aa.optim.input = NULL,
+  fasta.rows.to.keep = NULL, taxon.to.drop = 4, partition.number = 55,
+  numcode = 1, for.gtr.only = NULL)
 }
 \arguments{
 \item{model.to.reconstruct.under}{Specifies the model that the internal nodes are to be reconstructed under assuming a single tip is pruned from the tree.}
@@ -27,6 +27,8 @@ GetAdequateSelac(model.to.reconstruct.under, model.to.simulate.under,
 \item{partition.number}{Specifies the partition number to conduct the model adequacy test.}
 
 \item{numcode}{The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
+
+\item{for.gtr.only}{A selac object that can be used as the reference optimal AA for when the adequacy of a GTR+G model is tested only.}
 }
 \description{
 Performs a single model adequacy simulation

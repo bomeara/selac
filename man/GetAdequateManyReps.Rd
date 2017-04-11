@@ -32,6 +32,8 @@ GetAdequateManyReps(nreps, n.cores, model.to.reconstruct.under = "selac",
 \item{partition.number}{Specifies the partition number to conduct the model adequacy test.}
 
 \item{numcode}{The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.}
+
+\item{for.gtr.only}{A selac object that can be used as the reference optimal AA for when the adequacy of a GTR+G model is tested only.}
 }
 \description{
 Performs model adequacy test using multiple cores

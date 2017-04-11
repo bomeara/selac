@@ -99,7 +99,7 @@ test_that("selac_likelihood_unrest", {
     aa.optim = codon.data$optimal.aa
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     selac.unrest <- GetLikelihoodSAC_CodonForManyCharGivenAllParams(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, rep(1,11))), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, n.cores.by.gene.by.site=1)
-    comparison <- identical(round(selac.unrest, 3), -7066.494))
+    comparison <- identical(round(selac.unrest, 3), -7066.494)
     expect_true(comparison)
 })
 
@@ -230,7 +230,7 @@ test_that("dealing_with_missing_data", {
     phy.sort <- reorder(phy, "pruningwise")
     anc.indices <- unique(phy.sort$edge[,1])
     indicator.ll <- FinishLikelihoodCalculation(phy=phy, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
-    comparison <- identical(round(pruned.ll,4), round(indicator.ll,4)
+    comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
     expect_true(comparison)
 })
 

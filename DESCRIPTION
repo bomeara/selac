@@ -15,6 +15,7 @@ Suggests:
     igraph
 Depends:
     ape,
+    deSolve,
     nloptr,
     nnet
 Imports:

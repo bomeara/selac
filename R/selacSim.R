@@ -57,7 +57,7 @@ SingleSiteUpPassHMM <- function(phy, Q_codon, root.p){
     for (i in N:1) {
         times <- c(0, edge.length[i])
         #browser()
-        p <- lsoda(yinit[[anc[i]]], times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM")[-1,-1]
+        p <- lsoda(yinit[[anc[i]]], times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selac")[-1,-1]
         #p <- expm(Q_codon * edge.length[i], method="Ward77")[sim.codon.data.site[anc[i]], ]
         yinit[[des[i]]] <- p
         sim.codon.data.site[des[i]] <- sample.int(dim(Q_codon)[2], size = 1, FALSE, prob = p)
