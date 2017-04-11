@@ -1,4 +1,4 @@
-useDynLib(selac)
+useDynLib(selac, .registration = TRUE)
 
 export(SelacOptimize, SelonOptimize, SelonLargeOptimize, SelacSimulator, SelonSimulator, NucSimulator, SelacSimulatorEvolvingRates, GetFunctionality, GetSelacSiteLikelihoods, GetPartitionOrder, GetMarginalAllGenes, GetAdequateSelac, GetAdequateManyReps)
 import(ape, deSolve, nloptr, nnet)
