@@ -219,8 +219,6 @@ PolynomialTransform <- function(x, xi, poly.params, k){
     if(k == 1){
         mk2_1 <- xi + x + poly.params[1]*(x^2) + poly.params[2]*(x^3)
     }
-    print(x)
-    print(mk2_1)
     ##Not necessary yet:
     #if(k == 2){
     #	mk2_1 <- xi + (coef.vec[2-1,]/2)*x + (coef.vec[3-1,]/3)*(x^2) + (coef.vec[4-1]/4)*(x^3) + (coef.vec[5-1]/5)*(x^4) + (coef.vec[6-1]/6)*(x^5)
@@ -1305,9 +1303,6 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
     codon_mutation_matrix <- matrix(nuc.mutation.rates.vector[codon.index.matrix], dim(codon.index.matrix))
     codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
     nsites <- dim(codon.data$unique.site.patterns)[2]-1
-    print(nuc.mutation.rates.vector)
-    print(rate.for.selective.environment.change)
-    print(importance.of.aa.dist.in.selective.environment.change)
 
     if(include.gamma==TRUE){
         if(gamma.type == "median"){
@@ -1941,7 +1936,6 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
     if(logspace) {
         x <- exp(x)
     }
-    print(x)
     phy$edge.length = x
 
     if(is.null(aa.optim_array)){
@@ -2153,7 +2147,6 @@ OptimizeModelParsAlphaBetaGtrFixed <- function(x, alpha.beta.gtr, codon.site.dat
             max.par <- length(c(x[1], alpha.beta.gtr, x[2]))
             par.mat <- matrix(c(x[1], alpha.beta.gtr, x[2]), 1, max.par)
         }
-        print(par.mat)
         codon.data = NULL
         codon.data$unique.site.patterns = codon.site.data
         codon.data$site.pattern.counts = codon.site.counts
@@ -2213,8 +2206,6 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
             }
         }
         max.par <- dim(par.mat)[2]
-        print("here!!")
-        print(par.mat)
         MultiCoreLikelihood <- function(partition.index){
             codon.data = NULL
             codon.data$unique.site.patterns = codon.site.data[[partition.index]]

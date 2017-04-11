@@ -173,7 +173,7 @@ test_that("selacHMM", {
     aa.optim = codon.data$optimal.aa
     codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
     selac.unrest.evolveAA <- GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(log(c(4*4e-7*.5*5e6, 1.829272, 0.101799, rep(1,11), 0.01)), codon.data, phy, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=FALSE, ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, n.cores.by.gene.by.site=1)
-    comparison <- identical(round(selac.unrest.evolveAA, 3), -8724.251)
+    comparison <- identical(round(selac.unrest.evolveAA, 3), -8677.442)
     expect_true(comparison)
 })
 
