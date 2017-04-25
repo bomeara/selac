@@ -2192,7 +2192,6 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
     if(logspace) {
         x <- exp(x)
     }
-
     if(HMM == TRUE) {
         if(estimate.importance == TRUE){
             par.mat <- c()
@@ -3579,7 +3578,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma")
-                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, 5)
+                    upper = c(log(50), 21, 21, 0, 0, 0, 10, 10, 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 2 + 1
                 }
@@ -3594,7 +3593,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
-                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)), 5)
+                    upper = c(log(50), 21, 21, 0, 0, 0, 10, 10, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 5 + 2	+ 1
                 }
@@ -3609,7 +3608,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
-                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)), 5)
+                    upper = c(log(50), 21, 21, 10, 10, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 3 + 11 + 2 + 1
                 }
@@ -3668,7 +3667,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1")
-                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21)
+                    upper = c(log(50), 21, 21, 0, 0, 0, 10, 10)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 0 + 2
                 }
@@ -3683,7 +3682,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C")
-                    upper = c(log(50), 21, 21, 0, 0, 0, 21, 21, rep(21, length(nuc.ip)))
+                    upper = c(log(50), 21, 21, 0, 0, 0, 10, 10, rep(21, length(nuc.ip)))
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 5 + 0 + 2
                 }
@@ -3698,7 +3697,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }else{
                     ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip)
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-                    upper = c(log(50), 21, 21, 21, 21, rep(21, length(nuc.ip)))
+                    upper = c(log(50), 21, 21, 10, 10, rep(21, length(nuc.ip)))
                     lower = rep(-21, length(ip))
                     max.par.model.count = 3 + 11 + 0 + 2
                 }
