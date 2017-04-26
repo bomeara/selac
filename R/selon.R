@@ -560,8 +560,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             for(row.index in 1:dim(mle.pars.mat.red)[1]){
                 mle.pars.mat <- rbind(mle.pars.mat, c(mle.pars.mat.red[row.index,1:3], substitution.pars))
             }
-            print(results.final$objective)
-            print(mle.pars.mat)
         }else{
             cat("              Optimizing model parameters", "\n")
             # Optimize it all!
@@ -590,9 +588,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         iteration.number <- 1
         while(lik.diff != 0 & iteration.number<7){
             cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
-            cat("              Optimizing nucleotide", "\n")
             
             if(optimal.nuc == "optimize"){
+                cat("              Optimizing nucleotide", "\n")
                 nuc.optim.list <- as.list(numeric(n.partitions))
                 for(partition.index in sequence(n.partitions)) {
                     gene.tmp <- read.dna(partitions[partition.index], format='fasta')
