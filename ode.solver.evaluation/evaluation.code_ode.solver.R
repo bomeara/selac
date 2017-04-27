@@ -12,6 +12,9 @@ library(Rcpp)
 library(RcppArmadillo)
 library(inline)
 ##need to load deSolve before dyn.load(*.so)
+## or else you get errors like
+## Error in checkDLL(func, jacfunc, dllname, initfunc, verbose, nout, outnames) : 
+##  'initfunc' not loaded  initmod_selacHMM
 library(deSolve)
 
 ## don't need to load selac package
@@ -22,11 +25,11 @@ library(deSolve)
 ## only need to do this once
 ## We're doing this because we're not
 ## loading the selac package
-dyn.load("../../src/selacHMM.so") 
+dyn.load("../src/selacHMM.so") 
 
 
 ##sourcing selac.R
-source("../../R/selac.R")
+source("../R/selac.R")
 
 
 
@@ -52,13 +55,14 @@ codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
 
 
 ##source my modified files
-source("../treeTraversalODETests.R")
+source("./treeTraversalODETests.R")
 
+
+runDiagnostics=TRUE; ## for ode solver output
 
 ###Calc likelihood using standard set up
 
-runDiagnostics=TRUE; ## for ode solver output
-## from ode help page
+## methods from ode help page
 if(FALSE){
     odeMethodVec = c("lsoda", "lsode", "lsodes", "lsodar", "vode", "daspk",
                 "euler", "rk4", "ode23", "ode45", "radau", 

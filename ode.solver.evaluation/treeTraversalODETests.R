@@ -25,7 +25,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             ## Note to access all of the rk functions you can use
             ##         method = rkMethod("rk45dp7", densetype = NULL, nknots = 5)
             ##
-            prob.subtree.cal.full <- ode(y=yini, times=times, func = "selacHMM", parms=Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selac", method=odeMethod, hini=0)
+            prob.subtree.cal.full <- ode(y=yini, times=times, func = "selacHMM", parms=Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM", method=odeMethod)
             ## options for runge-kutta rk()
             ##rk(y, times, func, parms, rtol = 1e-6, atol = 1e-6,
             ##verbose = FALSE, tcrit = NULL, hmin = 0, hmax = NULL,
