@@ -54,5 +54,27 @@ files provided were "Q_codon_vec.Rda" and "ode_runtime_test.R"
 [1] "CPU time: 497.68, Method: lsoda, Settings:tbd, LLik: -9017.141, deviation:339.699000000001"
       \end{verbatim}
     \end{itemize}
+  \item Playing with hini I can get a 20 fold speed up with ode45 over lsoda
+\begin{verbatim}
+> source("evaluation.code_ode.solver.R")
+[1] "evaluating method:  ode45"
+[1] "CPU time: 1.52799999999979, Method: ode45, tree.used: branch, branch.type: long, hini: 0.01, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.56800000000021, Method: ode45, tree.used: branch, branch.type: long, hini: 0.1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.58399999999983, Method: ode45, tree.used: branch, branch.type: long, hini: 1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.48400000000038, Method: ode45, tree.used: branch, branch.type: long, hini: 0.12, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.51199999999972, Method: ode45, tree.used: branch, branch.type: long, hini: 1.2, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.61999999999989, Method: ode45, tree.used: branch, branch.type: long, hini: 6, LLik: -2343.024, deviation:0"
+> source("evaluation.code_ode.solver.R")
+[1] "evaluating method:  lsoda"
+[1] "CPU time: 34.1799999999998, Method: lsoda, tree.used: branch, branch.type: long, hini: 0.01, LLik: -2343.024, deviation:0"
+[1] "CPU time: 35.5360000000001, Method: lsoda, tree.used: branch, branch.type: long, hini: 0.1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 38.924, Method: lsoda, tree.used: branch, branch.type: long, hini: 1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 38.9720000000002, Method: lsoda, tree.used: branch, branch.type: long, hini: 0.12, LLik: -2343.024, deviation:0"
+[1] "CPU time: 38.6080000000002, Method: lsoda, tree.used: branch, branch.type: long, hini: 1.2, LLik: -2343.024, deviation:0"
+[1] "CPU time: 35.8400000000001, Method: lsoda, tree.used: branch, branch.type: long, hini: 6, LLik: -2343.024, deviation:0"
+\end{verbatim}
+  \item Unfortunately when I try and use these settings for the whole tree, I get errors on other branches.
+    They seem to be coming from 0 Likelihood values.
   \end{itemize}
+
 \end{document}

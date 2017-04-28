@@ -20,6 +20,8 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             if(runDiagnostics) print(paste("descendent: ", desIndex, " out of ", length(desRows), "\n")) 
             yini <- liks.HMM[desNodes[desIndex],]
             times=c(0, phy$edge.length[desRows[desIndex]])
+            ##my.hini <- max(times[[length(times)]]/100, 0.1)
+            ##print(my.hini)
 	    ##Change ODE solver here
             ## swapped lsoda() for ode() so we can define solver as an argument to function.
             ## Note to access all of the rk functions you can use
@@ -54,6 +56,12 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             } 
             ######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
             if(attributes(prob.subtree.cal.full)$istate[1] < 0){
+                print(paste("Integration of desIndex", desIndex, " was not successful"));
+                if(!runDiagnostics){ ##Run diagnostics if you haven't already
+                    print("Running diagnostics\n")
+                    diagnostics(prob.subtree.cal.full)
+                }
+
                 return(bad.likelihood)
             }else{
                 prob.subtree.cal <- prob.subtree.cal.full[-1,-1]
@@ -70,6 +78,13 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     }
     root.node <- nb.tip + 1L
     if (is.na(sum(log(liks.HMM[root.node,])))){
+        
+        print(paste("Encountered 0 values in liks.HMM[root.node,] at positions ", liks.HMM[root.node,]))
+        if(!runDiagnostics){ ##Run diagnostics if you haven't already
+            print("Running diagnostics\n")
+            diagnostics(prob.subtree.cal.full)
+        }
+        
         return(bad.likelihood)
     }else{
         loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))

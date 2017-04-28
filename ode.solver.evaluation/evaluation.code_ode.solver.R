@@ -39,11 +39,13 @@ if(FALSE){
 
 
 ##testing settings
-tree.used <- "branch" #branch with 1 species or full tree with 6 species
+tree.used <- "full" #branch with 1 species or full tree with 6 species
 branch.type="long"
-hini.vec <- c(0, 0.01, .1, 1, first.branch.length/100, first.branch.length/10, first.branch.length/2) 
-my.hini <-  hini.vec[2];
-runDiagnostics=TRUE; ## for ode solver output
+## hini.vec is defined below as
+## hini.vec <- c(0, 0.01, .1, 1, first.branch.length/100, first.branch.length/10, first.branch.length/2) 
+## and uses hini.index to determine which one to use
+hini.index <- 5
+runDiagnostics=FALSE; ## for ode solver output
 
 ## methods from ode help page
 if(FALSE){
@@ -51,7 +53,7 @@ if(FALSE){
                 "euler", "rk4", "ode23", "ode45", "radau", 
                 "bdf", "bdf_d", "adams", "impAdams", "impAdams_d", "iteration")
     }else{
-        odeMethodVec = c("lsoda")
+        odeMethodVec = c("ode45")
     }
 
 
@@ -77,6 +79,11 @@ switch(tree.used,
 ##modified version of short.phy for testing long branch length calculations.
 long.phy <- short.phy
 long.phy$edge.length[1]=12
+phy.list <- list(short=short.phy, long=long.phy)
+first.branch.length <- phy.list[[branch.type]]$edge.length[1]
+hini.vec <- c(0, 0.01, .1, 1, first.branch.length/100, first.branch.length/10, first.branch.length/2) 
+
+
 yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
 chars <- DNAbinToCodonNumeric(yeast.gene)
@@ -93,8 +100,6 @@ codon.data <- SitePattern(codon.data, includes.optimal.aa=TRUE)
 aa.optim = codon.data$optimal.aa
 codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
 
-phy.list <- list(short=short.phy, long=long.phy)
-
 
 
 
@@ -105,7 +110,7 @@ phy.list <- list(short=short.phy, long=long.phy)
 source("./treeTraversalODETests.R")
 
 
-first.branch.length <- phy.list[[branch.type]]$edge.length[1]
+
 
 ##model parameters
 cPhiqNe <- 4*4e-7*.5*5e6
@@ -117,8 +122,10 @@ rate.of.selective.change <- 0.01
 params <- c(cPhiqNe, grantham.alpha, grantham.beta , unrest.mutation.rates, rate.of.selective.change)
 
 for(odeMethod in odeMethodVec){
-
     print(paste("evaluating method: ", odeMethod))
+    
+    for(hini.index in 2:2){#length(hini.vec)){
+        my.hini <-  hini.vec[hini.index];
 
     ##GetLikelihoodSAC_... ultimately calls TreeTraversalODE which we are tweaking here
     ## It is defined in treeTraversalODETests.R
@@ -131,6 +138,6 @@ for(odeMethod in odeMethodVec){
     comparison <- identical(round(selac.unrest.evolveAA, 3), -8677.442) ##Correct LLik value seen using lsoda and matrix exponentiation
     }
 
-
+}
  
 
