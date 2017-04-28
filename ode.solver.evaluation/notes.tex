@@ -1,0 +1,29 @@
+\documentclass{article}
+
+\begin{document}
+
+\section*{ode45}
+\begin{itemize}
+\item Variable time RK method: 
+\item hini setting for ODE solver in treeTraversalODETests.R ode() call
+  \begin{itemize}
+  \item deviations from expected LLik in the third decimal place
+  \item  hini=0 slows the calculations on the basic tree down so much that I haven't had the patience to wait for it to stop.  
+  \item hini not defined: run time 11s
+  \item hini=times[2]/100: run time 15s
+  \item hini=times[2]/2: run time 11s
+  \end{itemize}
+
+\end{itemize}
+
+\section*{lsoda}
+\begin{itemize}
+\item basic tree with 6 nodes takes only 14s to run.
+\item hini setting for ODE solver in treeTraversalODETests.R ode() call
+  \begin{itemize}
+  \item hini=0: run time 15s with deviation of 0
+  \item hini=times[2]/2: run time 16s with deviation at third decimal place of LLik
+  \end{itemize}
+\item deviation 
+\end{itemize}
+\end{document}
