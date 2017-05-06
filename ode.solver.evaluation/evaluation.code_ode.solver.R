@@ -30,6 +30,9 @@ if(FALSE){
     ## only need to do this once
     ## We're doing this because we're not
     ## loading the selac package
+    ## If you get deSolve errors like "unlock_solver"
+    ## it means you accidently loaded selacHMM.so before
+    ## deSolve
     dyn.load("../src/selacHMM.so") 
 
 
@@ -46,6 +49,8 @@ branch.type="long"
 ## and uses hini.index to determine which one to use
 hini.index <- 5
 runDiagnostics=FALSE; ## for ode solver output
+max.solver.attempts=5;
+
 
 ## methods from ode help page
 if(FALSE){
@@ -123,7 +128,7 @@ params <- c(cPhiqNe, grantham.alpha, grantham.beta , unrest.mutation.rates, rate
 
 for(odeMethod in odeMethodVec){
     print(paste("evaluating method: ", odeMethod))
-    
+
     for(hini.index in 2:2){#length(hini.vec)){
         my.hini <-  hini.vec[hini.index];
 

@@ -20,55 +20,69 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             if(runDiagnostics) print(paste("descendent: ", desIndex, " out of ", length(desRows), "\n")) 
             yini <- liks.HMM[desNodes[desIndex],]
             times=c(0, phy$edge.length[desRows[desIndex]])
-            ##my.hini <- max(times[[length(times)]]/100, 0.1)
-            ##print(my.hini)
-	    ##Change ODE solver here
-            ## swapped lsoda() for ode() so we can define solver as an argument to function.
-            ## Note to access all of the rk functions you can use
-            ##         method = rkMethod("rk45dp7", densetype = NULL, nknots = 5)
-            ##
-            prob.subtree.cal.full <- ode(y=yini, times=times, func = "selacHMM", parms=Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM", method=odeMethod, hini=my.hini)
-            ## options for runge-kutta rk()
-            ##rk(y, times, func, parms, rtol = 1e-6, atol = 1e-6,
-            ##verbose = FALSE, tcrit = NULL, hmin = 0, hmax = NULL,
-            ##hini = hmax, ynames = TRUE, method = rkMethod("rk45dp7", ... ),
-            ##maxsteps = 5000, dllname = NULL, initfunc = dllname,
-            ##initpar = parms, rpar = NULL, ipar = NULL,
-            ##nout = 0, outnames = NULL, forcings = NULL,
-            ##initforc = NULL, fcontrol = NULL, events = NULL, ...)
-            ##
-            ## method : the integrator to use. This can either be a string constant
-            ##naming one of the pre-defined methods or a call to function
-            ##‘rkMethod’ specifying a user-defined method.  The most common
-            ##methods are the fixed-step methods ‘"euler"’, second and
-            ##fourth-order Runge Kutta (‘"rk2"’, ‘"rk4"’), or the variable
-            ##step methods Bogacki-Shampine ‘"rk23bs"’,
-            ##Runge-Kutta-Fehlberg ‘"rk34f"’, the fifth-order Cash-Karp
-            ##method ‘"rk45ck"’ or the fifth-order Dormand-Prince method
-            ##with seven stages ‘"rk45dp7"’.  As a suggestion, one may use
-            ##‘"rk23bs"’ (alias ‘"ode23"’) for simple problems and
-            ##‘"rk45dp7"’ (alias ‘"ode45"’) for rough problems.
 
-            if(runDiagnostics){
-                print("Running diagnostics\n")
-                diagnostics(prob.subtree.cal.full)
-                
-            } 
-            ######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
-            if(attributes(prob.subtree.cal.full)$istate[1] < 0){
-                print(paste("Integration of desIndex", desIndex, " was not successful"));
-                if(!runDiagnostics){ ##Run diagnostics if you haven't already
+            equation.solved=FALSE
+            solver.attempt=0
+            local.hini <- my.hini
+            while(solver.attempt < max.solver.attempts && equation.solved !=TRUE){
+
+                ##my.hini <- max(times[[length(times)]]/100, 0.1)
+                ##print(my.hini)
+                ##Change ODE solver here
+                ## swapped lsoda() for ode() so we can define solver as an argument to function.
+                ## Note to access all of the rk functions you can use
+                ##         method = rkMethod("rk45dp7", densetype = NULL, nknots = 5)
+                ##
+                prob.subtree.cal.full <- ode(y=yini, times=times, func = "selacHMM", parms=Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM", method=odeMethod) #, hini=local.hini)
+                ## options for runge-kutta rk()
+                ##rk(y, times, func, parms, rtol = 1e-6, atol = 1e-6,
+                ##verbose = FALSE, tcrit = NULL, hmin = 0, hmax = NULL,
+                ##hini = hmax, ynames = TRUE, method = rkMethod("rk45dp7", ... ),
+                ##maxsteps = 5000, dllname = NULL, initfunc = dllname,
+                ##initpar = parms, rpar = NULL, ipar = NULL,
+                ##nout = 0, outnames = NULL, forcings = NULL,
+                ##initforc = NULL, fcontrol = NULL, events = NULL, ...)
+                ##
+                ## method : the integrator to use. This can either be a string constant
+                ##naming one of the pre-defined methods or a call to function
+                ##‘rkMethod’ specifying a user-defined method.  The most common
+                ##methods are the fixed-step methods ‘"euler"’, second and
+                ##fourth-order Runge Kutta (‘"rk2"’, ‘"rk4"’), or the variable
+                ##step methods Bogacki-Shampine ‘"rk23bs"’,
+                ##Runge-Kutta-Fehlberg ‘"rk34f"’, the fifth-order Cash-Karp
+                ##method ‘"rk45ck"’ or the fifth-order Dormand-Prince method
+                ##with seven stages ‘"rk45dp7"’.  As a suggestion, one may use
+                ##‘"rk23bs"’ (alias ‘"ode23"’) for simple problems and
+                ##‘"rk45dp7"’ (alias ‘"ode45"’) for rough problems.
+
+                if(runDiagnostics){
                     print("Running diagnostics\n")
                     diagnostics(prob.subtree.cal.full)
+                    
+                } 
+######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
+                if(attributes(prob.subtree.cal.full)$istate[1] < 0){
+                    print(paste("Integration of desIndex", desIndex, " was not successful on attempt ", solver.attempt, " with my.init ", my.init));
+                    if(!runDiagnostics&&FALSE){ ##Run diagnostics if you haven't already
+                        print("Running diagnostics\n")
+                        diagnostics(prob.subtree.cal.full)
+                    }
+                    solver.attempt=solver.attempt+1;
+                    local.hini=local.hini/5;
+                }else{
+                    equation.solved=TRUE
                 }
-
-                return(bad.likelihood)
+            }  #end while() for successfully solving 
+            if(equation.solved){
+                prob.subtree.cal <- prob.subtree.cal.full[-1,-1]                
             }else{
-                prob.subtree.cal <- prob.subtree.cal.full[-1,-1]
+                print(paste("Integration of desIndex", desIndex, " failed after ", solver.attempt ," attempts. Returning bad.likelihood."));
+                return(bad.likelihood)
             }
             ##############################################################################
 
             if(prob.subtree.cal[1]<0){
+                print("prob.subtree.cal[1]<0 invoking bad.likelihood()")
                 return(bad.likelihood)
             }
             v <- v * prob.subtree.cal
@@ -77,17 +91,19 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
         liks.HMM[focal,] <- v/comp[focal]
     }
     root.node <- nb.tip + 1L
-    if (is.na(sum(log(liks.HMM[root.node,])))){
-        
-        print(paste("Encountered 0 values in liks.HMM[root.node,] at positions ", liks.HMM[root.node,]))
-        if(!runDiagnostics){ ##Run diagnostics if you haven't already
+    ##Is this sum a relevant test? Shouldn't it be log(sum(liks.HMM...
+    ##if(is.na(sum(log(liks.HMM[root.node,])))){
+    zero.nodes <- which(liks.HMM[root.node,]==0)
+    if(length(zero.nodes)>0){
+        print(paste("Encountered 0 values in liks.HMM[root.node,] at ", length(zero.nodes), " positions: ")) #, cat(zero.nodes)))
+        if(!runDiagnostics&&FALSE){ ##Run diagnostics if you haven't already
             print("Running diagnostics\n")
             diagnostics(prob.subtree.cal.full)
         }
-        
-        return(bad.likelihood)
-    }else{
-        loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
     }
+#        return(bad.likelihood)
+#    }else{
+        loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
+#    }
     return(loglik)
 }
