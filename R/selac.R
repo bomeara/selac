@@ -3026,6 +3026,9 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     TIPS <- 1:nb.tip
 
     comp <- numeric(nb.tip + nb.node)
+
+    ## mikeg: can this for loop be vectorized or done in a matrix format?
+    ## This approach seems very inefficient.
     #Start the postorder traversal indexing lists by node number:
     for (i in seq(from = 1, length.out = nb.node)) {
         focal <- anc[i]
@@ -3037,17 +3040,30 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             yini <- liks.HMM[desNodes[desIndex],]
             times=c(0, phy$edge.length[desRows[desIndex]])
 
-            prob.subtree.cal.full <- lsoda(yini, times, func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selac")
-
+            prob.subtree.cal.full <- ode(
+                y=yini, times=times, func = "selacHMM",
+                parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
+                dllname = "selacHMM", method="ode45"
+            )
+            
             ######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
             if(attributes(prob.subtree.cal.full)$istate[1] < 0){
+                ##ideally more information would be provided about system when this happens
+                warning(print(paste("selac.R: Integration of desIndex", desIndex, " was not successful"));
+                print("returning bad.likelihood")
+
                 return(bad.likelihood)
             }else{
                 prob.subtree.cal <- prob.subtree.cal.full[-1,-1]
             }
             ##############################################################################
 
+            
+
             if(prob.subtree.cal[1]<0){
+                ##ideally more information would be provided about system when this happens
+                print("prob.subtree.cal[1]<0")
+                print("returning bad.likelihood")
                 return(bad.likelihood)
             }
             v <- v * prob.subtree.cal
@@ -3056,11 +3072,24 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
         liks.HMM[focal,] <- v/comp[focal]
     }
     root.node <- nb.tip + 1L
-    if (is.na(sum(log(liks.HMM[root.node,])))){
-        return(bad.likelihood)
-    }else{
-        loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
+
+
+    ##Check for negative transition rates
+    ##mikeg:  For now, just issue warning
+    ## In future it would be good to either
+    ##    set them to zero if they are insanely small
+        ## or
+        ##    change ode solver settings to avoid negative numbers.
+        
+        negative.nodes <- which(liks.HMM[root.node,] <0)
+    if(length(negative.nodes)>0){
+        warning(paste("selac.R: encountered " , length(negative.nodes), " negatives values in liks.HMM[", root.node, ", ] for position ", i, " , desIndex ", desIndex, "and cells ", negative.nodes)) 
     }
+    loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
+
+    ##return bad.likelihood if loglik is bad
+    if(!is.finite(loglik)) return(bad.likelihood)
+
     return(loglik)
 }
 

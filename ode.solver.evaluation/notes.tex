@@ -1,0 +1,80 @@
+\documentclass{article}
+
+\begin{document}
+
+\section*{Code}
+Info on some code:
+\begin{verbatim}
+Date: Tue, 25 Apr 2017 10:44:57 -0400
+From: Cedric Landerer <cedric.landerer@gmail.com>
+To: Mike Gilchrist <mikeg@utk.edu>
+Subject: Re: Hours spent on DE solver
+Resent-From: <mikeg@utk.edu>
+Parts/Attachments:
+   1.1   OK     295 lines  Text
+   1.2 Shown    ~20 KB     Text
+   2             44 KB     Application
+   3     OK    ~966 bytes  Text
+----------------------------------------
+
+Here is a script that checks for runtimes, but it does NOT check the correctness of the result.The Q_codon_vec was
+produced from the selac testing routine so you have realisic values.
+\end{verbatim}
+files provided were "Q_codon_vec.Rda" and "ode_runtime_test.R"
+\section*{ode45}
+\begin{itemize}
+\item Variable time RK method: 
+\item hini setting for ODE solver in treeTraversalODETests.R ode() call
+  \begin{itemize}
+  \item deviations from expected LLik in the third decimal place
+  \item  hini=0 slows the calculations on the basic tree down so much that I haven't had the patience to wait for it to stop.  
+  \item hini not defined: run time 11s
+  \item hini=times[2]/100: run time 15s
+  \item hini=times[2]/2: run time 11s
+  \end{itemize}
+
+\end{itemize}
+
+\section*{lsoda}
+\begin{itemize}
+\item basic tree with 6 nodes takes only 14s to run.
+\item hini setting for ODE solver in treeTraversalODETests.R ode() call
+  \begin{itemize}
+  \item ref.phy
+    \begin{itemize}
+    \item hini=0: run time 15s with deviation of 0
+    \item hini=times[2]/2: run time 16s with deviation at third decimal place of LLik
+    \end{itemize}
+  \item long.phy (same as ref.phy, but first branch length set to 12)
+    \begin{itemize}
+    \item Note according to what Cedric told me, this method gives the same result as the matrix exponentiation., thus the LLik should be used as the reference.
+      \begin{verbatim}
+> source("evaluation.code_ode.solver.R")
+[1] "evaluating method:  lsoda"
+[1] "CPU time: 497.68, Method: lsoda, Settings:tbd, LLik: -9017.141, deviation:339.699000000001"
+      \end{verbatim}
+    \end{itemize}
+  \item Playing with hini I can get a 20 fold speed up with ode45 over lsoda
+\begin{verbatim}
+> source("evaluation.code_ode.solver.R")
+[1] "evaluating method:  ode45"
+[1] "CPU time: 1.52799999999979, Method: ode45, tree.used: branch, branch.type: long, hini: 0.01, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.56800000000021, Method: ode45, tree.used: branch, branch.type: long, hini: 0.1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.58399999999983, Method: ode45, tree.used: branch, branch.type: long, hini: 1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.48400000000038, Method: ode45, tree.used: branch, branch.type: long, hini: 0.12, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.51199999999972, Method: ode45, tree.used: branch, branch.type: long, hini: 1.2, LLik: -2343.024, deviation:0"
+[1] "CPU time: 1.61999999999989, Method: ode45, tree.used: branch, branch.type: long, hini: 6, LLik: -2343.024, deviation:0"
+> source("evaluation.code_ode.solver.R")
+[1] "evaluating method:  lsoda"
+[1] "CPU time: 34.1799999999998, Method: lsoda, tree.used: branch, branch.type: long, hini: 0.01, LLik: -2343.024, deviation:0"
+[1] "CPU time: 35.5360000000001, Method: lsoda, tree.used: branch, branch.type: long, hini: 0.1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 38.924, Method: lsoda, tree.used: branch, branch.type: long, hini: 1, LLik: -2343.024, deviation:0"
+[1] "CPU time: 38.9720000000002, Method: lsoda, tree.used: branch, branch.type: long, hini: 0.12, LLik: -2343.024, deviation:0"
+[1] "CPU time: 38.6080000000002, Method: lsoda, tree.used: branch, branch.type: long, hini: 1.2, LLik: -2343.024, deviation:0"
+[1] "CPU time: 35.8400000000001, Method: lsoda, tree.used: branch, branch.type: long, hini: 6, LLik: -2343.024, deviation:0"
+\end{verbatim}
+  \item Unfortunately when I try and use these settings for the whole tree, I get errors on other branches.
+    They seem to be coming from 0 Likelihood values.
+  \end{itemize}
+
+\end{document}
