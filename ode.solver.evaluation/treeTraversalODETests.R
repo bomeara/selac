@@ -15,15 +15,15 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
         desRows <- which(phy$edge[,1]==focal)
         desNodes <- phy$edge[desRows,2]
         v = rep(1, dim(liks.HMM)[2])
-        if(runDiagnostics) print(paste("Node: ", i, " out of ", nb.node, "\n")) 
+        if(runDiagnostics||TRUE) print(paste("Node: ", i, " out of ", nb.node, "\n")) 
         for (desIndex in sequence(length(desRows))){
-            if(runDiagnostics) print(paste("descendent: ", desIndex, " out of ", length(desRows), "\n")) 
+            if(runDiagnostics||TRUE) print(paste("descendent: ", desIndex, " out of ", length(desRows), "\n")) 
             yini <- liks.HMM[desNodes[desIndex],]
             times=c(0, phy$edge.length[desRows[desIndex]])
 
             equation.solved=FALSE
             solver.attempt=0
-            local.hini <- my.hini
+            ##local.hini <- my.hini
             while(solver.attempt < max.solver.attempts && equation.solved !=TRUE){
 
                 ##my.hini <- max(times[[length(times)]]/100, 0.1)
@@ -68,7 +68,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                         diagnostics(prob.subtree.cal.full)
                     }
                     solver.attempt=solver.attempt+1;
-                    local.hini=local.hini/5;
+                    ##local.hini=local.hini/5;
                 }else{
                     equation.solved=TRUE
                 }
@@ -92,7 +92,14 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     }
     root.node <- nb.tip + 1L
     ##Is this sum a relevant test? Shouldn't it be log(sum(liks.HMM...
-    ##if(is.na(sum(log(liks.HMM[root.node,])))){
+    if(is.na(sum(log(liks.HMM[root.node,])))){
+        print("We got here!")
+        liks.of.interest <- liks.HMM
+        na.list <- which(is.na(log(liks.HMM[root.node,]))==TRUE)
+        print(paste("Na list: ", cat(na.list)))
+        print(liks.HMM[root.node, na.list])
+        print("done")
+    }
     zero.nodes <- which(liks.HMM[root.node,]==0)
     if(length(zero.nodes)>0){
         print(paste("Encountered 0 values in liks.HMM[root.node,] at ", length(zero.nodes), " positions: ")) #, cat(zero.nodes)))
@@ -101,9 +108,20 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             diagnostics(prob.subtree.cal.full)
         }
     }
-#        return(bad.likelihood)
-#    }else{
+
+
+     negative.nodes <- which(liks.HMM[root.node,] <0)
+    if(length(negative.nodes)>0){
+        print(paste("Encountered negatives values in liks.HMM[root.node,] at ", length(negative.nodes), " positions: ")) #, cat(negative.nodes)))
+        if(!runDiagnostics&&FALSE){ ##Run diagnostics if you haven't already
+            print("Running diagnostics\n")
+            diagnostics(prob.subtree.cal.full)
+        }
+    }
+###        return(bad.likelihood)
+####    }else{
+    if(!is.finite(loglik)) return(bad.likelihood)
         loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
-#    }
+####    }
     return(loglik)
 }

@@ -112,10 +112,14 @@ codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
 
 
 ##source my modified files
-source("./treeTraversalODETests.R")
+if(1==0){
+    source("./treeTraversalODETests.R")
+}else{
+    source("../R/selac.R")
+}
 
 
-
+liks.of.interest <- NA;
 
 ##model parameters
 cPhiqNe <- 4*4e-7*.5*5e6
@@ -125,6 +129,8 @@ unrest.mutation.rates <- rep(1,11)
 rate.of.selective.change <- 0.01
 
 params <- c(cPhiqNe, grantham.alpha, grantham.beta , unrest.mutation.rates, rate.of.selective.change)
+
+print(phy.list[[branch.type]])
 
 for(odeMethod in odeMethodVec){
     print(paste("evaluating method: ", odeMethod))
