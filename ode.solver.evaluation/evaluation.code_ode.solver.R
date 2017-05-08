@@ -40,6 +40,14 @@ if(FALSE){
     source("../R/selac.R")
 }
 
+##source my modified files
+if(1==0){
+    source("./treeTraversalODETests.R")
+}else{
+    source("../R/selac.R")
+}
+
+
 
 ##testing settings
 tree.used <- "full" #branch with 1 species or full tree with 6 species
@@ -111,13 +119,6 @@ codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
 ###Calc likelihood using standard set up
 
 
-##source my modified files
-if(1==0){
-    source("./treeTraversalODETests.R")
-}else{
-    source("../R/selac.R")
-}
-
 
 liks.of.interest <- NA;
 
@@ -150,5 +151,3 @@ for(odeMethod in odeMethodVec){
     }
 
 }
- 
-

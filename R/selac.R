@@ -3027,9 +3027,6 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 
     comp <- numeric(nb.tip + nb.node)
 
-    ## mikeg: can this for loop be vectorized or done in a matrix format?
-    ## This approach seems very inefficient.
-    #Start the postorder traversal indexing lists by node number:
     for (i in seq(from = 1, length.out = nb.node)) {
         focal <- anc[i]
         desRows <- which(phy$edge[,1]==focal)
@@ -3046,26 +3043,42 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 dllname = "selacHMM", method="ode45"
             )
             
-            ######## THIS CHECKS TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
-            if(attributes(prob.subtree.cal.full)$istate[1] < 0){
-                ##ideally more information would be provided about system when this happens
-                warning(print(paste("selac.R: Integration of desIndex", desIndex, " was not successful"));
-                print("returning bad.likelihood")
-
+            ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
+            ## $istate should be = 0 [documentation in doc/deSolve.Rnw indicates
+            ## it should be 2, but that seems to be a typo]
+            ## Values < 0 indicate problems
+            istate <- attributes(prob.subtree.cal.full)$istate[1]
+            
+            if(istate <0){
+                ## For \code{lsoda, lsodar, lsode, lsodes, vode, rk, rk4, euler} these are
+                error.text <- switch(as.character(istate),
+                                     "-1"="excess work done",
+                                     "-2"="excess accuracy requested",
+                                     "-3"="illegal input detected",
+                                     "-4"="repeated error test failures",
+                                     "-5"="repeated convergence failures",
+                                     "-6"="error weight became zero",
+                                     "unknown ode istate error"
+                                     )
+                warning(print(paste("selac.R: Integration of desIndex", desIndex, " ode solver returned istate[1] = ",  istate, " : ", error.text, " returning bad.likelihood")))
                 return(bad.likelihood)
             }else{
+                ##no integration issues, extract ?
                 prob.subtree.cal <- prob.subtree.cal.full[-1,-1]
             }
-            ##############################################################################
+##############################################################################
 
             
-
+            ##why are we only checking one value and why the first?
+            ## Suspect we should be checking all values for negative values here
             if(prob.subtree.cal[1]<0){
                 ##ideally more information would be provided about system when this happens
                 print("prob.subtree.cal[1]<0")
                 print("returning bad.likelihood")
                 return(bad.likelihood)
             }
+
+            ## v is a vector of probabilities of what?
             v <- v * prob.subtree.cal
         }
         comp[focal] <- sum(v)
@@ -3073,18 +3086,24 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     }
     root.node <- nb.tip + 1L
 
-
     ##Check for negative transition rates
     ##mikeg:  For now, just issue warning
+    ## I think this should be implemented earlier in the loop as noted above
+    ##
     ## In future it would be good to either
     ##    set them to zero if they are insanely small
-        ## or
-        ##    change ode solver settings to avoid negative numbers.
-        
-        negative.nodes <- which(liks.HMM[root.node,] <0)
+    ## or
+    ##    change ode solver settings to avoid negative numbers.
+    ## or
+    ##    re-estimate value using different ode solver such as lsoda
+    
+    negative.nodes <- which(liks.HMM[root.node,] <0)
     if(length(negative.nodes)>0){
-        warning(paste("selac.R: encountered " , length(negative.nodes), " negatives values in liks.HMM[", root.node, ", ] for position ", i, " , desIndex ", desIndex, "and cells ", negative.nodes)) 
+        warning(paste("selac.R: encountered " , length(negative.nodes), " negatives values in liks.HMM[", root.node, ", ", negative.nodes, " ] =  ",  liks.HMM[root.node, negative.nodes], " at position ", i, " , desIndex ", desIndex))
     }
+    
+
+
     loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
 
     ##return bad.likelihood if loglik is bad
