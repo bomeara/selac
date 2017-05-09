@@ -9,19 +9,28 @@
 #written by Jeremy M. Beaulieu and Brian O
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
-#library(ape)
-#library(expm)
-#library(nnet)
-#library(nloptr)
-#library(seqinr)
-#library(phangorn)
-#library(MASS)
-#library(parallel)
-#library(Rcpp)
-#library(RcppArmadillo)
-#library(inline)
-#library(deSolve)
-#dyn.load("../src/selacHMM.so")
+## only set to TRUE when testing. Set to FALSE when committing changes
+if(FALSE){
+    library(ape)
+    library(expm)
+    library(nnet)
+    library(nloptr)
+    library(seqinr)
+    library(phangorn)
+    library(MASS)
+    library(parallel)
+    library(Rcpp)
+    library(RcppArmadillo)
+    library(inline)
+    library(deSolve)
+    ##load compiled library independent of working directory
+    wd <- getwd();
+    ##get last part of wd that ends in 'selac'
+    selac.dir <- regmatches(wd, regexpr(".*/selac", wd)) 
+    so.locale <- paste(selac.dir, "/src/selacHMM.so",sep="")
+    dyn.load(so.locale)
+    rm(selac.dir, so.locale)
+}
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -3019,6 +3028,13 @@ FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
 
 TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likelihood=-100000, root.p) {
 
+    ##start with first method and move to next if problems encountered
+    ## when solving ode, such as negative pr values < neg.pr.threshold
+    ode.method.vec <- c("ode45", "lsoda")
+    num.ode.method <- length(ode.method.vec)
+    
+    neg.pr.threshold <- 1*-10^(-5) ##order of magnitude greater than accuracy goal
+    
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
 
@@ -3029,60 +3045,100 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 
     for (i in seq(from = 1, length.out = nb.node)) {
         focal <- anc[i]
-        desRows <- which(phy$edge[,1]==focal)
+        desRows <- which(phy$edge[,1]==focal) ##des = descendant
         desNodes <- phy$edge[desRows,2]
-        v = rep(1, dim(liks.HMM)[2])
+        state.pr.vector = rep(1, dim(liks.HMM)[2]) ##
 
         for (desIndex in sequence(length(desRows))){
             yini <- liks.HMM[desNodes[desIndex],]
             times=c(0, phy$edge.length[desRows[desIndex]])
 
-            prob.subtree.cal.full <- ode(
-                y=yini, times=times, func = "selacHMM",
-                parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
-                dllname = "selacHMM", method="ode45"
-            )
+            ode.not.solved <- TRUE
+            ode.solver.attempt <- 0
             
-            ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
-            ## $istate should be = 0 [documentation in doc/deSolve.Rnw indicates
-            ## it should be 2, but that seems to be a typo]
-            ## Values < 0 indicate problems
-            istate <- attributes(prob.subtree.cal.full)$istate[1]
-            
-            if(istate <0){
-                ## For \code{lsoda, lsodar, lsode, lsodes, vode, rk, rk4, euler} these are
-                error.text <- switch(as.character(istate),
-                                     "-1"="excess work done",
-                                     "-2"="excess accuracy requested",
-                                     "-3"="illegal input detected",
-                                     "-4"="repeated error test failures",
-                                     "-5"="repeated convergence failures",
-                                     "-6"="error weight became zero",
-                                     "unknown ode istate error"
-                                     )
-                warning(print(paste("selac.R: Integration of desIndex", desIndex, " ode solver returned istate[1] = ",  istate, " : ", error.text, " returning bad.likelihood")))
-                return(bad.likelihood)
-            }else{
-                ##no integration issues, extract ?
-                prob.subtree.cal <- prob.subtree.cal.full[-1,-1]
-            }
-##############################################################################
+            while(ode.not.solved && ode.solver.attempt < num.ode.method){
+                ode.solver.attempt <- ode.solver.attempt+1
+                ode.method <-  ode.method.vec[ode.solver.attempt]
+                
+                subtree.pr.ode.obj <- ode(
+                    y=yini, times=times, func = "selacHMM",
+                    parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
+                    dllname = "selacHMM", method=ode.method
+                )
+                
+                ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
+                ## $istate should be = 0 [documentation in doc/deSolve.Rnw indicates
+                ## it should be 2]
+                ## Values < 0 indicate problems
+                ## TODO: take advantage of while() around ode solving created
+                ## for when we hit negative values
+                istate <- attributes(subtree.pr.ode.obj)$istate[1]
+                
+                if(istate < 0){
+                    ## For \code{lsoda, lsodar, lsode, lsodes, vode, rk, rk4, euler} these are
+                    error.text <- switch(as.character(istate),
+                                         "-1"="excess work done",
+                                         "-2"="excess accuracy requested",
+                                         "-3"="illegal input detected",
+                                         "-4"="repeated error test failures",
+                                         "-5"="repeated convergence failures",
+                                         "-6"="error weight became zero",
+                                         paste("unknown error. ode() istate value: ", as.character(istate)) 
+                                         )
+                    
+                    warning(print(paste("selac.R: Integration of desIndex", desIndex, " ode solver returned istate[1] = ",  istate, " : ", error.text, " returning bad.likelihood")))
+                    return(bad.likelihood)
+                }else{
+                    ##no integration issues,
+                    ## extract matrix of state variables, but not time, during ode solving
+                    subtree.pr.vs.time.matrix <- subtree.pr.ode.obj[-1,-1]
+                }
 
-            
-            ##why are we only checking one value and why the first?
-            ## Suspect we should be checking all values for negative values here
-            if(prob.subtree.cal[1]<0){
-                ##ideally more information would be provided about system when this happens
-                print("prob.subtree.cal[1]<0")
-                print("returning bad.likelihood")
-                return(bad.likelihood)
-            }
+                ## test for negative entries
+                ## if encountered and less than neg.pr.threshold
+                ## replace the negative values to 0
+                ## if there are values less than neg.pr.threshold, then
+                ## resolve equations using more robust method on the list
 
-            ## v is a vector of probabilities of what?
-            v <- v * prob.subtree.cal
+                neg.matrix.pos <- which(subtree.pr.vs.time.matrix < 0)
+                num.neg.matrix.pos <- length(neg.matrix.pos)
+                
+                if(num.neg.matrix.pos > 0){
+                    min.matrix.val <- min(subtree.pr.vs.time.matrix[neg.matrix.pos])
+
+                    warning.message <- paste("WARNING: subtree.pr.vs.time.matrix solved with ode method ", ode.method, " contains ", num.neg.matrix.pos, " negative values")
+                    
+
+                    if(min.matrix.val > neg.pr.threshold){
+                        warning.message <- paste(warning.message, "\nselac.R: minimum value ", min.matrix.val, " >  ", neg.pr.threshold, " the neg.pr.threshold. Setting all negative values to 0.")
+                        warning(warning.message)                            
+                        subtree.pr.vs.time.matrix[neg.matrix.pos] <- 0
+                        
+                    }else{
+                        warning.message <- paste(warning.message, "selac.R: minimum value ", min.matrix.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
+
+                        if(ode.solver.attempt < num.ode.method){
+                            warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
+                            warning(warning.message)
+                            
+                        }else{
+                            warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
+                            warning(warning.message)
+                            return(bad.likelihood)
+                        }
+                    }
+                }else{ 
+                    ## no negative values in pr.vs.time.matrix
+                    ode.not.solved <- FALSE
+                }
+
+            } ##end while() for ode solver
+            
+            ## state.pr.vector is a vector of probabilities of what?
+            state.pr.vector <- state.pr.vector * subtree.pr.vs.time.matrix
         }
-        comp[focal] <- sum(v)
-        liks.HMM[focal,] <- v/comp[focal]
+        comp[focal] <- sum(state.pr.vector)
+        liks.HMM[focal,] <- state.pr.vector/comp[focal]
     }
     root.node <- nb.tip + 1L
 
@@ -3097,9 +3153,9 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     ## or
     ##    re-estimate value using different ode solver such as lsoda
     
-    negative.nodes <- which(liks.HMM[root.node,] <0)
-    if(length(negative.nodes)>0){
-        warning(paste("selac.R: encountered " , length(negative.nodes), " negatives values in liks.HMM[", root.node, ", ", negative.nodes, " ] =  ",  liks.HMM[root.node, negative.nodes], " at position ", i, " , desIndex ", desIndex))
+    neg.nodes <- which(liks.HMM[root.node,] <0)
+    if(length(neg.nodes)>0){
+        warning(paste("selac.R: encountered " , length(neg.nodes), " negatives values in liks.HMM[", root.node, ", ", neg.nodes, " ] =  ",  liks.HMM[root.node, neg.nodes], " at position ", i, " , desIndex ", desIndex))
     }
     
 
