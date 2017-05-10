@@ -27,6 +27,7 @@ if(FALSE){
     wd <- getwd();
     ##get last part of wd that ends in 'selac'
     selac.dir <- regmatches(wd, regexpr(".*/selac", wd)) 
+    if(length(selac.dir) == 0) selac.dir <- "./selac"
     so.locale <- paste(selac.dir, "/src/selacHMM.so",sep="")
     dyn.load(so.locale)
     rm(selac.dir, so.locale)
@@ -3090,8 +3091,9 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                     return(bad.likelihood)
                 }else{
                     ##no integration issues,
-                    ## extract matrix of state variables, but not time, during ode solving
-                    subtree.pr.vs.time.matrix <- subtree.pr.ode.obj[-1,-1]
+                    ## object consists of pr values at start and end time
+                    ## extract final state variable, dropping time entry
+                    subtree.pr.at.node.vector <- subtree.pr.ode.obj[dim(subtree.pr.ode.obj)[[1]],-1]
                 }
 
                 ## test for negative entries
@@ -3099,20 +3101,25 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 ## replace the negative values to 0
                 ## if there are values less than neg.pr.threshold, then
                 ## resolve equations using more robust method on the list
-
-                neg.matrix.pos <- which(subtree.pr.vs.time.matrix < 0)
+                ## or alternatively use 'event' option in deSolve as described at
+                ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
+                neg.matrix.pos <- which(subtree.pr.at.node.vector < 0, arr.ind=TRUE)
                 num.neg.matrix.pos <- length(neg.matrix.pos)
                 
                 if(num.neg.matrix.pos > 0){
-                    min.matrix.val <- min(subtree.pr.vs.time.matrix[neg.matrix.pos])
+                    browser()
+                    min.matrix.val <- min(subtree.pr.at.node.vector[neg.matrix.pos])
 
-                    warning.message <- paste("WARNING: subtree.pr.vs.time.matrix solved with ode method ", ode.method, " contains ", num.neg.matrix.pos, " negative values")
+                    neg.matrix.pos.as.string <- paste("[", apply(neg.matrix.pos, 1, paste, collapse=", "))
+                    matrix.dims.as.string <- paste("[", paste(dim(subtree.pr.at.node.vector), collapse=", "), "]", sep="")
+                    
+                    warning.message <- paste("WARNING: subtree.pr.at.node.vector solved with ode method ", ode.method, " contains ", num.neg.matrix.pos, " negative values at positions ", neg.matrix.pos.as.string ,  "of a ", matrix.dims.as.string, " matrix." )
                     
 
                     if(min.matrix.val > neg.pr.threshold){
                         warning.message <- paste(warning.message, "\nselac.R: minimum value ", min.matrix.val, " >  ", neg.pr.threshold, " the neg.pr.threshold. Setting all negative values to 0.")
                         warning(warning.message)                            
-                        subtree.pr.vs.time.matrix[neg.matrix.pos] <- 0
+                        subtree.pr.at.node.vector[neg.matrix.pos] <- 0
                         
                     }else{
                         warning.message <- paste(warning.message, "selac.R: minimum value ", min.matrix.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
@@ -3135,7 +3142,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
             } ##end while() for ode solver
             
             ## state.pr.vector is a vector of probabilities of what?
-            state.pr.vector <- state.pr.vector * subtree.pr.vs.time.matrix
+            state.pr.vector <- state.pr.vector * subtree.pr.at.node.vector
         }
         comp[focal] <- sum(state.pr.vector)
         liks.HMM[focal,] <- state.pr.vector/comp[focal]
