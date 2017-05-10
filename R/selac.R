@@ -3034,8 +3034,12 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     ode.method.vec <- c("ode45", "lsoda")
     num.ode.method <- length(ode.method.vec)
     
-    neg.pr.threshold <- 1*-10^(-5) ##order of magnitude greater than accuracy goal
-    
+    rtol = 1e-7 #default 1e-6 returns a negative value under long branch testing conditions
+    atol = 1e-6 #default 1e-6
+
+    neg.pr.threshold <- -10*atol
+
+
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
 
@@ -3064,7 +3068,8 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 subtree.pr.ode.obj <- ode(
                     y=yini, times=times, func = "selacHMM",
                     parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
-                    dllname = "selacHMM", method=ode.method
+                    dllname = "selacHMM",
+                    method=ode.method, rtol=rtol, atol=atol
                 )
                 
                 ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
@@ -3093,7 +3098,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                     ##no integration issues,
                     ## object consists of pr values at start and end time
                     ## extract final state variable, dropping time entry
-                    subtree.pr.at.node.vector <- subtree.pr.ode.obj[dim(subtree.pr.ode.obj)[[1]],-1]
+                    subtree.pr.vector <- subtree.pr.ode.obj[dim(subtree.pr.ode.obj)[[1]],-1]
                 }
 
                 ## test for negative entries
@@ -3101,28 +3106,25 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 ## replace the negative values to 0
                 ## if there are values less than neg.pr.threshold, then
                 ## resolve equations using more robust method on the list
-                ## or alternatively use 'event' option in deSolve as described at
+                ## Alternative: use 'event' option in deSolve as described at
                 ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
-                neg.matrix.pos <- which(subtree.pr.at.node.vector < 0, arr.ind=TRUE)
-                num.neg.matrix.pos <- length(neg.matrix.pos)
+                neg.vector.pos <- which(subtree.pr.vector < 0, arr.ind=TRUE)
+                num.neg.vector.pos <- length(neg.vector.pos)
                 
-                if(num.neg.matrix.pos > 0){
-                    browser()
-                    min.matrix.val <- min(subtree.pr.at.node.vector[neg.matrix.pos])
-
-                    neg.matrix.pos.as.string <- paste("[", apply(neg.matrix.pos, 1, paste, collapse=", "))
-                    matrix.dims.as.string <- paste("[", paste(dim(subtree.pr.at.node.vector), collapse=", "), "]", sep="")
+                if(num.neg.vector.pos > 0){
+                    min.vector.val <- min(subtree.pr.vector[neg.vector.pos])
+                    neg.vector.pos.as.string <- toString(neg.vector.pos)
                     
-                    warning.message <- paste("WARNING: subtree.pr.at.node.vector solved with ode method ", ode.method, " contains ", num.neg.matrix.pos, " negative values at positions ", neg.matrix.pos.as.string ,  "of a ", matrix.dims.as.string, " matrix." )
+                    warning.message <- paste("WARNING: subtree.pr.vector solved with ode method ", ode.method, " contains ", num.neg.vector.pos, " negative values at positions ", neg.vector.pos.as.string ,  "of a ", length(subtree.pr.vector), " vector." )
                     
 
-                    if(min.matrix.val > neg.pr.threshold){
-                        warning.message <- paste(warning.message, "\nselac.R: minimum value ", min.matrix.val, " >  ", neg.pr.threshold, " the neg.pr.threshold. Setting all negative values to 0.")
+                    if(min.vector.val > neg.pr.threshold){
+                        warning.message <- paste(warning.message, "\nMinimum value ", min.vector.val, " >  ", neg.pr.threshold, " the neg.pr.threshold.\nSetting all negative values to 0.")
                         warning(warning.message)                            
-                        subtree.pr.at.node.vector[neg.matrix.pos] <- 0
+                        subtree.pr.vector[neg.vector.pos] <- 0
                         
                     }else{
-                        warning.message <- paste(warning.message, "selac.R: minimum value ", min.matrix.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
+                        warning.message <- paste(warning.message, "selac.R: minimum value ", min.vector.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
 
                         if(ode.solver.attempt < num.ode.method){
                             warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
@@ -3141,8 +3143,8 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 
             } ##end while() for ode solver
             
-            ## state.pr.vector is a vector of probabilities of what?
-            state.pr.vector <- state.pr.vector * subtree.pr.at.node.vector
+            
+            state.pr.vector <- state.pr.vector * subtree.pr.vector
         }
         comp[focal] <- sum(state.pr.vector)
         liks.HMM[focal,] <- state.pr.vector/comp[focal]
@@ -3151,14 +3153,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 
     ##Check for negative transition rates
     ##mikeg:  For now, just issue warning
-    ## I think this should be implemented earlier in the loop as noted above
-    ##
-    ## In future it would be good to either
-    ##    set them to zero if they are insanely small
-    ## or
-    ##    change ode solver settings to avoid negative numbers.
-    ## or
-    ##    re-estimate value using different ode solver such as lsoda
+
     
     neg.nodes <- which(liks.HMM[root.node,] <0)
     if(length(neg.nodes)>0){
