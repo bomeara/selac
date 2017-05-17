@@ -22,4 +22,3 @@ Provides likelihood information and best rates across sites and across genes und
 \details{
 The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
 }
-
