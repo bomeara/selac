@@ -3068,7 +3068,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 subtree.pr.ode.obj <- ode(
                     y=yini, times=times, func = "selacHMM",
                     parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
-                    dllname = "selacHMM",
+                    dllname = "selac",
                     method=ode.method, rtol=rtol, atol=atol
                 )
 
