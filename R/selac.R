@@ -10,28 +10,28 @@
 
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
 ## only set to TRUE when testing. Set to FALSE when committing changes
-if(FALSE){
-    library(ape)
-    library(expm)
-    library(nnet)
-    library(nloptr)
-    library(seqinr)
-    library(phangorn)
-    library(MASS)
-    library(parallel)
-    library(Rcpp)
-    library(RcppArmadillo)
-    library(inline)
-    library(deSolve)
-    ##load compiled library independent of working directory
-    wd <- getwd();
-    ##get last part of wd that ends in 'selac'
-    selac.dir <- regmatches(wd, regexpr(".*/selac", wd)) 
-    if(length(selac.dir) == 0) selac.dir <- "./selac"
-    so.locale <- paste(selac.dir, "/src/selacHMM.so",sep="")
-    dyn.load(so.locale)
-    rm(selac.dir, so.locale)
-}
+# if(FALSE){
+#     library(ape)
+#     library(expm)
+#     library(nnet)
+#     library(nloptr)
+#     library(seqinr)
+#     library(phangorn)
+#     library(MASS)
+#     library(parallel)
+#     library(Rcpp)
+#     library(RcppArmadillo)
+#     library(inline)
+#     library(deSolve)
+#     ##load compiled library independent of working directory
+#     wd <- getwd();
+#     ##get last part of wd that ends in 'selac'
+#     selac.dir <- regmatches(wd, regexpr(".*/selac", wd))
+#     if(length(selac.dir) == 0) selac.dir <- "./selac"
+#     so.locale <- paste(selac.dir, "/src/selacHMM.so",sep="")
+#     dyn.load(so.locale)
+#     rm(selac.dir, so.locale)
+# }
 
 # Use seqinr coding of nucleotides: see ?n2s: 0 -> "a", 1 -> "c", 2 -> "g", 3 -> "t"
 
@@ -780,25 +780,25 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 
 
 FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) { #Cedric: added importance
-    
+
     if(diploid == TRUE) {
         Ne <- 2*Ne
     } #Cedric: pay attention to diploid flag
-    
+
     aa.dist.names <- colnames(aa.distances)
     aa.distances <- cbind(aa.distances, 0)
     aa.distances <- rbind(aa.distances, 0)
     colnames(aa.distances) <- c(aa.dist.names, "*")
     rownames(aa.distances) <- c(aa.dist.names, "*")
-    
+
     numcode.idx <- .numcode.translation.idx[numcode]
     aa.names <- .aa.translation[[numcode.idx]]
-    
+
     aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
     diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here
     aa.trans.mat[,colnames(aa.trans.mat) == "*"] <- 0 # find better solution
     aa.trans.mat[colnames(aa.trans.mat) == "*",] <- 0
-    
+
     aa.trans.matrices <- vector("list", 21)
     for(j in 1:21) {
         trans.matrix <- matrix(0, ncol=1344, nrow=64)
@@ -1244,7 +1244,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
     }else{
         importance.of.aa.dist.in.selective.environment.change = 1
     }
-    
+
     rate.for.selective.environment.change = x[length(x)]
     x = x[-length(x)]
 
@@ -3033,7 +3033,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     ## when solving ode, such as negative pr values < neg.pr.threshold
     ode.method.vec <- c("ode45", "lsoda")
     num.ode.method <- length(ode.method.vec)
-    
+
     rtol = 1e-7 #default 1e-6 returns a negative value under long branch testing conditions
     atol = 1e-6 #default 1e-6
 
@@ -3060,18 +3060,18 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 
             ode.not.solved <- TRUE
             ode.solver.attempt <- 0
-            
+
             while(ode.not.solved && ode.solver.attempt < num.ode.method){
                 ode.solver.attempt <- ode.solver.attempt+1
                 ode.method <-  ode.method.vec[ode.solver.attempt]
-                
+
                 subtree.pr.ode.obj <- ode(
                     y=yini, times=times, func = "selacHMM",
                     parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
-                    dllname = "selacHMM",
+                    dllname = "selac",
                     method=ode.method, rtol=rtol, atol=atol
                 )
-                
+
                 ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
                 ## $istate should be = 0 [documentation in doc/deSolve.Rnw indicates
                 ## it should be 2]
@@ -3079,7 +3079,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 ## TODO: take advantage of while() around ode solving created
                 ## for when we hit negative values
                 istate <- attributes(subtree.pr.ode.obj)$istate[1]
-                
+
                 if(istate < 0){
                     ## For \code{lsoda, lsodar, lsode, lsodes, vode, rk, rk4, euler} these are
                     error.text <- switch(as.character(istate),
@@ -3089,9 +3089,9 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                                          "-4"="repeated error test failures",
                                          "-5"="repeated convergence failures",
                                          "-6"="error weight became zero",
-                                         paste("unknown error. ode() istate value: ", as.character(istate)) 
+                                         paste("unknown error. ode() istate value: ", as.character(istate))
                                          )
-                    
+
                     warning(print(paste("selac.R: Integration of desIndex", desIndex, " ode solver returned istate[1] = ",  istate, " : ", error.text, " returning bad.likelihood")))
                     return(bad.likelihood)
                 }else{
@@ -3110,40 +3110,40 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                 ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
                 neg.vector.pos <- which(subtree.pr.vector < 0, arr.ind=TRUE)
                 num.neg.vector.pos <- length(neg.vector.pos)
-                
+
                 if(num.neg.vector.pos > 0){
                     min.vector.val <- min(subtree.pr.vector[neg.vector.pos])
                     neg.vector.pos.as.string <- toString(neg.vector.pos)
-                    
+
                     warning.message <- paste("WARNING: subtree.pr.vector solved with ode method ", ode.method, " contains ", num.neg.vector.pos, " negative values at positions ", neg.vector.pos.as.string ,  "of a ", length(subtree.pr.vector), " vector." )
-                    
+
 
                     if(min.vector.val > neg.pr.threshold){
                         warning.message <- paste(warning.message, "\nMinimum value ", min.vector.val, " >  ", neg.pr.threshold, " the neg.pr.threshold.\nSetting all negative values to 0.")
-                        warning(warning.message)                            
+                        warning(warning.message)
                         subtree.pr.vector[neg.vector.pos] <- 0
-                        
+
                     }else{
                         warning.message <- paste(warning.message, "selac.R: minimum value ", min.vector.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
 
                         if(ode.solver.attempt < num.ode.method){
                             warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
                             warning(warning.message)
-                            
+
                         }else{
                             warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
                             warning(warning.message)
                             return(bad.likelihood)
                         }
                     }
-                }else{ 
+                }else{
                     ## no negative values in pr.vs.time.matrix
                     ode.not.solved <- FALSE
                 }
 
             } ##end while() for ode solver
-            
-            
+
+
             state.pr.vector <- state.pr.vector * subtree.pr.vector
         }
         comp[focal] <- sum(state.pr.vector)
@@ -3154,12 +3154,12 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
     ##Check for negative transition rates
     ##mikeg:  For now, just issue warning
 
-    
+
     neg.nodes <- which(liks.HMM[root.node,] <0)
     if(length(neg.nodes)>0){
         warning(paste("selac.R: encountered " , length(neg.nodes), " negatives values in liks.HMM[", root.node, ", ", neg.nodes, " ] =  ",  liks.HMM[root.node, neg.nodes], " at position ", i, " , desIndex ", desIndex))
     }
-    
+
 
 
     loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
@@ -4333,7 +4333,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
 
     estimate.importance <- estimate.aa.importance
-    
+
     if(is.null(n.partitions)){
         n.partitions <- length(partitions)
     }else{
@@ -4710,7 +4710,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     }
     #This is so we can break out alpha, beta, GTR, and gamma which are shared among ALL genes:
     #index.matrix.red <- t(matrix(1:n.partitions, 1, n.partitions))
-    
+
     number.of.current.restarts <- 1
     best.lik <- 1000000
     while(number.of.current.restarts < (max.restarts+1)){
@@ -4766,7 +4766,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
             #The number of columns is 2: [1] log-likelihood, [2] C.q.phi.Ne [3] aa transition:
             parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
         }
-        
+
         results.final <- NULL
         results.final$objective <- sum(parallelized.parameters[,1])
         results.final$solution <- c(t(parallelized.parameters[,-1]))
@@ -4829,7 +4829,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
                 #The number of columns is 2: [1] log-likelihood, [2] C.q.phi.Ne [3] aa transition:
                 parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
             }
-            
+
             results.final <- NULL
             results.final$objective <- sum(parallelized.parameters[,1])
             results.final$solution <- c(t(parallelized.parameters[,-1]))
@@ -5011,7 +5011,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     n.cores <- NULL
     obj.final <- as.list(1:length(partitions))
     n.cores.by.gene.by.site <- selac.obj$n.cores.by.gene.by.site
-    
+
     for(partition.index in 1:length(partitions)){
         x <- c(selac.obj$mle.pars[partition.index,])
         gene.tmp <- read.dna(partitions[partition.index], format='fasta')

@@ -64,7 +64,7 @@ GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optima
 }
 
 
-GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, scale.factor, sample.bias=FALSE, sample.bias.factor=0.01, return.all=FALSE) {
+GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, scale.factor, return.all=FALSE) {
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     nl <- nrow(Q_position)
@@ -75,12 +75,7 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
         #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
         #Note: We add charnum+1, because the first column in the data is the species labels:
         if(nuc.data[i,charnum+1] < 65){
-            if(sample.bias == TRUE){
-                liks[i,] <- sample.bias.factor
-                liks[i,nuc.data[i,charnum+1]] <- 1 - (sample.bias.factor*3)
-            }else{
-                liks[i,nuc.data[i,charnum+1]] <- 1
-            }
+            liks[i,nuc.data[i,charnum+1]] <- 1
         }else{
             #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
             liks[i,] <- 1

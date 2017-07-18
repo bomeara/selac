@@ -22,4 +22,3 @@ Calculates the likelihoods across sites and across genes under SELAC
 \details{
 The purpose of this function is to provide the site likelihoods across genes. It is also flexible in that it allows different hypotheses about optimal acids across genes and/or site. The output is a list object, with each list entry designating 1) the tot.likelihood for that gene, and 2) the site likelihoods for that gene.
 }
-
