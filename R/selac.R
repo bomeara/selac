@@ -3235,7 +3235,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             stop("User-supplied optimal amino acids must be input as a list.", call.=FALSE)
         }
     }
-
+    if(n.partitions<n.cores.by.gene) {
+      warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
+    }
     cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
 
     cat("Initializing data and model parameters...", "\n")
