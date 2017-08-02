@@ -3205,13 +3205,12 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
 #' @param output.restart.filename Designates the file name for each random restart.
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
-#' @param user.supplied.starting.branch.lengths Designates user-supplied starting values for the branch lengths
 #' @param tol.step If > 1, makes for coarser tolerance at earlier iterations of the optimizer
 #' @param optimizer.algorithm The optimizer used by nloptr.
 #'
 #' @details
 #' Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, user.supplied.starting.branch.lengths=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
 
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -3237,12 +3236,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             stop("User-supplied optimal amino acids must be input as a list.", call.=FALSE)
         }
     }
-    if(n.partitions<n.cores.by.gene) {
-      warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
-    }
-    cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
-
-    cat("Initializing data and model parameters...", "\n")
 
     partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
 
@@ -3251,6 +3244,14 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     }else{
         n.partitions = n.partitions
     }
+    
+    if(n.partitions<n.cores.by.gene) {
+        warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
+    }
+    cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
+    
+    cat("Initializing data and model parameters...", "\n")
+    
     site.pattern.data.list <- as.list(numeric(n.partitions))
     site.pattern.count.list <- as.list(numeric(n.partitions))
     nsites.vector <- c()
@@ -3390,9 +3391,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                 if(edge.length == "optimize"){
                     cat("       Optimizing edge lengths", "\n")
-                    if(is.null(user.supplied.starting.branch.lengths)){
-                        phy$edge.length <- colMeans(starting.branch.lengths)
-                    }
+                    phy$edge.length <- colMeans(starting.branch.lengths)
                     opts.edge <- opts
                     upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
@@ -3563,9 +3562,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
                 if(edge.length == "optimize"){
                     cat("       Optimizing edge lengths", "\n")
-                    if(is.null(user.supplied.starting.branch.lengths)){
-                        phy$edge.length <- colMeans(starting.branch.lengths)
-                    }
+                    phy$edge.length <- colMeans(starting.branch.lengths)
                     opts.edge <- opts
                     upper.edge <- rep(log(10), length(phy$edge.length))
                     lower.edge <- rep(log(1e-8), length(phy$edge.length))
@@ -3871,9 +3868,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 print(mle.pars.mat)
                 if(edge.length == "optimize"){
                     cat("              Optimizing edge lengths", "\n")
-                    if(is.null(user.supplied.starting.branch.lengths)){
-                        phy$edge.length <- colMeans(starting.branch.lengths)
-                    }
+                    phy$edge.length <- colMeans(starting.branch.lengths)
                     #phy$edge.length <- colMeans(starting.branch.lengths) / (1/selac.starting.vals[number.of.current.restarts, 2])
                     opts.edge <- opts
                     upper.edge <- rep(log(50), length(phy$edge.length))
@@ -4088,9 +4083,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 print(mle.pars.mat)
                 if(edge.length == "optimize"){
                     cat("              Optimizing edge lengths", "\n")
-                    if(is.null(user.supplied.starting.branch.lengths)){
-                        phy$edge.length <- colMeans(starting.branch.lengths)
-                    }
+                    phy$edge.length <- colMeans(starting.branch.lengths)
                     #phy$edge.length <- colMeans(starting.branch.lengths) / (1/selac.starting.vals[number.of.current.restarts, 2])
                     opts.edge <- opts
                     upper.edge <- rep(log(50), length(phy$edge.length))
@@ -4316,13 +4309,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
 #' @param output.restart.filename Designates the file name for each random restart.
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
-#' @param user.supplied.starting.branch.lengths Designates user-supplied starting values for the branch lengths
 #' @param tol.step If > 1, makes for coarser tolerance at earlier iterations of the optimizer
 #' @param optimizer.algorithm The optimizer used by nloptr.
 #'
 #' @details
 #' A hidden Markov model which no longers optimizes the optimal amino acids, but instead allows for the optimal sequence to vary along branches, clades, taxa, etc. Like the original function, we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
+SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
 
     if(!data.type == "codon"){
         stop("Check that your data type input is correct. Options currently are codon only", call.=FALSE)
@@ -4408,7 +4400,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
             selac.starting.vals <- rbind(selac.starting.vals, c(2, 1.8292716544, 0.1017990371))
         }else{
             selac.starting.vals <- matrix(c(user.supplied.starting.param.vals[1], user.supplied.starting.param.vals[2], user.supplied.starting.param.vals[3]), 1, 3)
-            selac.starting.vals <- rbind(selac.starting.vals, c(user.supplied.starting.param.vals[1], user.supplied.starting.vals[2], user.supplied.starting.param.vals[3]))
+            selac.starting.vals <- rbind(selac.starting.vals, c(user.supplied.starting.param.vals[1], user.supplied.starting.param.vals[2], user.supplied.starting.param.vals[3]))
         }
     }
     if(include.gamma == TRUE){
@@ -4735,9 +4727,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
         print(mle.pars.mat)
         if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
-            if(is.null(user.supplied.starting.branch.lengths)){
-                phy$edge.length <- colMeans(starting.branch.lengths)
-            }
+            phy$edge.length <- colMeans(starting.branch.lengths)
             #phy$edge.length <- colMeans(starting.branch.lengths) / (1/selac.starting.vals[number.of.current.restarts, 2])
             opts.edge <- opts
             upper.edge <- rep(log(.5), length(phy$edge.length))

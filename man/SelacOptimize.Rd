@@ -14,7 +14,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
-  user.supplied.starting.vals = NULL, tol.step = 1,
+  user.supplied.starting.param.vals = NULL, tol.step = 1,
   optimizer.algorithm = "NLOPT_LN_SBPLX")
 }
 \arguments{
@@ -72,7 +72,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{output.restart.filename}{Designates the file name for each random restart.}
 
-\item{user.supplied.starting.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
+\item{user.supplied.starting.param.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
 
 \item{tol.step}{If > 1, makes for coarser tolerance at earlier iterations of the optimizer}
 
@@ -84,3 +84,4 @@ Efficient optimization of model parameters under the SELAC model
 \details{
 Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
 }
+

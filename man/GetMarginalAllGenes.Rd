@@ -24,3 +24,4 @@ Calculates the marginal probability of each codon at all sites across all genes
 \details{
 Provides marginal probabilities for all nodes across all genes. The function is fairly simple to use as it only requires as input the selac output object and the working directory that the original analysis took place.
 }
+

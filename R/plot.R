@@ -87,13 +87,13 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 }
 
 
-#' Computes the distribution of fitness differences between new and original mutations as well as the frequency with which those are attempted
-#' Returns a list; most of the return objects are the same as from ComputeEquilibriumAAFitness() but the new things are
-#' codon.mutation.matrix: instantaneous rate matrix for codon mutations
-#' codon.relative.rate.matrix: the above, but scaled so that each row sums to 1
-#' delta.fitness.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are new codon fitness - original codon fitness
-#' frequency.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are frequencies that that mutation is attempted given the optimal aa (column)
-#'
+# Computes the distribution of fitness differences between new and original mutations as well as the frequency with which those are attempted
+# Returns a list; most of the return objects are the same as from ComputeEquilibriumAAFitness() but the new things are
+# codon.mutation.matrix: instantaneous rate matrix for codon mutations
+# codon.relative.rate.matrix: the above, but scaled so that each row sums to 1
+# delta.fitness.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are new codon fitness - original codon fitness
+# frequency.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are frequencies that that mutation is attempted given the optimal aa (column)
+#
 ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
   equilibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
   codon.fitness.matrix <- equilibrium.values$codon.fitnesses
@@ -229,7 +229,8 @@ function(x)
 
 #' Function to plot a distribution of fitnesses based on codon equilibrium freqs
 #'
-#' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
+#' @param codon.fitnesses.matrices A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
+#' @param codon.eq.matrices A 3d array of codon equilibrium frequencies
 #' @param values The vector of labels for each matrix (i.e., different Phi values)
 #' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
 #' @param palette Color palette to use from RColorBrewer
@@ -314,7 +315,7 @@ PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, val
   legend(x="topleft", legend=values, fill=colors)
 }
 
-#' Generates a line for mutation fitness spectra
+# Generates a line for mutation fitness spectra
 LineMutationFitnessSpectra <- function(mutation.fitness.object, optimal.aa=NULL) {
   delta.fitness.array <- mutation.fitness.object$delta.fitness.array
   frequency.array <- mutation.fitness.object$frequency.array

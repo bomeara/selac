@@ -15,3 +15,4 @@ Provides the order of the partitions after the data is read into SELAC.
 \details{
 Provides the order of the partitions when the data is read into SELAC. This function is mainly useful for when users want to supply their own optimal amino acid list into SELAC.
 }
+

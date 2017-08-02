@@ -30,3 +30,4 @@ Calculates the functionality of a single gene
 \details{
 The purpose of this function is to provide the functionality of a gene based on the inferred parameters from SelAC. The functionality is often used to scale phi.
 }
+

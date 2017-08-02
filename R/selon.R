@@ -297,6 +297,11 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 }
 
 
+GetOptimalNucPerSite <- function(x, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
+    #Put stuff here
+    return(1)
+}
+
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -368,6 +373,7 @@ GetMaxNameUCE <- function(x) {
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.nuc Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param global.nucleotide.model assumes nucleotide model is shared among all partitions
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
 #' @param verbose Logical indicating whether each iteration be printed to the screen.
 #' @param n.cores The number of cores to run the analyses over.
@@ -559,7 +565,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             cat("              Optimizing model parameters", "\n")
             # Optimize it all!
             ParallelizedOptimizedByGene <- function(n.partition){
-                optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=fixed.pars, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=FALSE)
+                optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=NULL, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=TRUE)
                 tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
                 return(tmp.pars)
             }
@@ -641,7 +647,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat("              Optimizing model parameters", "\n")
                 # Optimize it all!
                 ParallelizedOptimizedByGene <- function(n.partition){
-                    optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=fixed.pars, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=FALSE)
+                    optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=NULL, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=TRUE)
                     tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
                     return(tmp.pars)
                 }
