@@ -1866,6 +1866,11 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
         likelihood.by.site[j] <- log(mean(exp(optimal.aa.likelihood.mat[which(!.unique.aa=="*"),j])))
     }
     final.likelihood <- sum(likelihood.by.site * codon.data$site.pattern.counts)
+    
+    if(neglnl) {
+        final.likelihood <- -1 * final.likelihood
+    }
+
     return(final.likelihood)
 }
 
