@@ -32,7 +32,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 
-\item{optimal.aa}{Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".}
+\item{optimal.aa}{Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".}
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
 

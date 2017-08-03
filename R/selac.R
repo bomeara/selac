@@ -1750,6 +1750,126 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
 }
 
 
+
+GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
+    if(logspace) {
+        x = exp(x)
+    }
+    if(include.gamma == TRUE){
+        shape = x[length(x)]
+        x = x[-length(x)]
+    }
+    
+    C.Phi.q.Ne <- x[1]
+    C <- 4
+    q <- 4e-7
+    Ne <- 5e6
+    Phi.q.Ne <- C.Phi.q.Ne / C
+    Phi.Ne <- Phi.q.Ne / q
+    Phi <- Phi.Ne / Ne
+    alpha <- x[2]
+    beta <- x[3]
+    gamma <- volume.fixed.value
+    
+    if(k.levels > 0){
+        if(nuc.model == "JC") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            poly.params <- x[7:8]
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[9:length(x)], model=nuc.model, base.freqs=base.freqs)
+            poly.params <- x[7:8]
+        }
+        if(nuc.model == "UNREST") {
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[6:length(x)], model=nuc.model, base.freqs=NULL)
+            poly.params <- x[4:5]
+        }
+    }else{
+        if(nuc.model == "JC") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(x[4:6], 1-sum(x[4:6]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "UNREST") {
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
+        }
+    }
+    
+    if(!is.null(codon.data$unique.site.patterns)){
+        codon.data.list <- codon.data
+        nsites <- dim(codon.data$unique.site.patterns)[2]-1
+    }else{
+        nsites <- dim(codon.data)[2]-1
+        codon.data.list <- NULL
+        codon.data.list$unique.site.patterns <- codon.data
+        codon.data.list$site.pattern.counts <- rep(1, nsites)
+    }
+    
+    #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
+    codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
+    codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
+    
+    likelihood.by.site <- rep(NA, nsites)
+    #unique.aa <- GetMatrixAANames(numcode)
+    optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
+    
+    for(i in 1:length(.unique.aa)){
+        if(.unique.aa[i]=="*"){
+            optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites)
+        }else{
+            aa.optim_array = rep(.unique.aa[i], nsites)
+            if(include.gamma==TRUE){
+                if(gamma.type == "median"){
+                    rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+                    weights.k <- rep(1/ncats, ncats)
+                }
+                if(gamma.type == "quadrature"){
+                    rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+                    rates.k <- rates.and.weights[1:ncats]
+                    weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+                }
+                final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+                for(k.cat in sequence(ncats)){
+                    if(k.levels > 0){
+                        aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
+                    }else{
+                        aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+                    }
+                    Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
+                    tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+                    tmp[is.na(tmp)] = -1000000
+                    final.likelihood.mat[k.cat,] = tmp
+                }
+                optimal.aa.likelihood.mat[i,] <- log(colSums(exp(final.likelihood.mat)*weights.k))
+            }else{
+                if(k.levels > 0){
+                    aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
+                }else{
+                    aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
+                }
+                Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
+                tmp = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data.list, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+                tmp[is.na(tmp)] = -1000000
+                final.likelihood = tmp
+                optimal.aa.likelihood.mat[i,] <- final.likelihood
+            }
+        }
+    }
+    #Take average
+    for(j in 1:nsites){
+        #Exclude stop codons, otherwise aritificially inflates likelihood due to our arbitrary setting to -100000. If stop codons are to be included, the following line would have to be modified.
+        likelihood.by.site[j] <- log(mean(exp(optimal.aa.likelihood.mat[which(!.unique.aa=="*"),j])))
+    }
+    final.likelihood <- sum(likelihood.by.site * codon.data$site.pattern.counts)
+    return(final.likelihood)
+}
+
+
 #OptimizeModelPars <- function(x, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, parallel.type="by.gene", n.cores=NULL, neglnl=FALSE) {
 #    if(logspace) {
 #        x <- exp(x)
@@ -1947,7 +2067,6 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
         x <- exp(x)
     }
     phy$edge.length = x
-
     if(is.null(aa.optim_array)){
         if(HMM == TRUE) {
             max.par <- dim(par.mat)[2]
@@ -1985,6 +2104,7 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
                 #This orders the nsites per partition in decreasing order (to increase efficiency):
                 partition.order <- 1:n.partitions
                 likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
+                #There are four options: "none", "GY94", "FMutSel0", "selac".
             }else{
                 if(codon.model == "GY94"){
                     max.par = 2
@@ -1998,8 +2118,8 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
                     #This orders the nsites per partition in decreasing order (to increase efficiency):
                     partition.order <- 1:n.partitions
                     likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
-
-                }else{
+                }
+                if(codon.model == "FMutSel0"){
                     #To do: figure out way to allow for the crazy 60 fitness par model.
                     if(nuc.model == "JC"){
                         #base.freq + nuc.rates + omega + fitness.pars
@@ -2022,6 +2142,35 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
                     partition.order <- 1:n.partitions
                     likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
                 }
+                if(codon.model == "selac"){
+                    #Triggered the averging of the AA method#
+                    if(nuc.model == "JC"){
+                        max.par = 6
+                    }
+                    if(nuc.model == "GTR"){
+                        max.par = 6 + 5
+                    }
+                    if(nuc.model == "UNREST"){
+                        max.par = 3 + 11
+                    }
+                    if(include.gamma == TRUE){
+                        max.par = max.par + 1
+                    }
+                    if(k.levels > 0){
+                        max.par = max.par + 2
+                    }
+                    MultiCoreLikelihood <- function(partition.index){
+                        codon.data = NULL
+                        codon.data$unique.site.patterns = codon.site.data[[partition.index]]
+                        codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                        likelihood.tmp = GetAveAAPerSite(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], codon.freq.by.aa=codon.freq.by.aa[[partition.index]], codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+                        return(likelihood.tmp)
+                    }
+                    #This orders the nsites per partition in decreasing order (to increase efficiency):
+                    partition.order <- 1:n.partitions
+                    likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
+                }
+                
             }
         }
     }else{
@@ -2163,36 +2312,69 @@ OptimizeModelParsAlphaBetaGtrFixed <- function(x, alpha.beta.gtr, codon.site.dat
         likelihood.vector = sum(GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(x=log(par.mat), codon.data=codon.data, phy=phy, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=estimate.importance))
         likelihood = sum(likelihood.vector)
     }else{
-        if(nuc.model == "JC"){
-            max.par = 6
+        if(is.null(aa.optim_array)){
+            if(nuc.model == "JC"){
+                max.par = 6
+            }
+            if(nuc.model == "GTR"){
+                max.par = 6 + 5
+            }
+            if(nuc.model == "UNREST"){
+                max.par = 3 + 11
+            }
+            if(include.gamma == TRUE){
+                max.par = max.par + 1
+            }
+            if(k.levels > 0){
+                max.par = max.par + 2
+            }
+            
+            #THIS ASSUMES A SEPARATE GAMMA PER GENE
+            #if(include.gamma == TRUE){
+            #    par.mat <- matrix(c(x[1], alpha.beta.gtr, x[2]), 1, max.par)
+            #}else{
+            #    par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
+            #}
+            
+            par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
+            
+            codon.data = NULL
+            codon.data$unique.site.patterns = codon.site.data
+            codon.data$site.pattern.counts = codon.site.counts
+            likelihood.vector = sum(GetAveAAPerSite(x=log(par.mat), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+            likelihood = sum(likelihood.vector)
+        }else{
+            if(nuc.model == "JC"){
+                max.par = 6
+            }
+            if(nuc.model == "GTR"){
+                max.par = 6 + 5
+            }
+            if(nuc.model == "UNREST"){
+                max.par = 3 + 11
+            }
+            if(include.gamma == TRUE){
+                max.par = max.par + 1
+            }
+            if(k.levels > 0){
+                max.par = max.par + 2
+            }
+            
+            #THIS ASSUMES A SEPARATE GAMMA PER GENE
+            #if(include.gamma == TRUE){
+            #    par.mat <- matrix(c(x[1], alpha.beta.gtr, x[2]), 1, max.par)
+            #}else{
+            #    par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
+            #}
+            
+            par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
+            
+            codon.data = NULL
+            codon.data$unique.site.patterns = codon.site.data
+            codon.data$site.pattern.counts = codon.site.counts
+            likelihood.vector = sum(GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+            likelihood = sum(likelihood.vector)
         }
-        if(nuc.model == "GTR"){
-            max.par = 6 + 5
-        }
-        if(nuc.model == "UNREST"){
-            max.par = 3 + 11
-        }
-        if(include.gamma == TRUE){
-            max.par = max.par + 1
-        }
-        if(k.levels > 0){
-            max.par = max.par + 2
-        }
-
-        #THIS ASSUMES A SEPARATE GAMMA PER GENE
-        #if(include.gamma == TRUE){
-        #    par.mat <- matrix(c(x[1], alpha.beta.gtr, x[2]), 1, max.par)
-        #}else{
-        #    par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
-        #}
-
-        par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
-
-        codon.data = NULL
-        codon.data$unique.site.patterns = codon.site.data
-        codon.data$site.pattern.counts = codon.site.counts
-        likelihood.vector = sum(GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-        likelihood = sum(likelihood.vector)
     }
     return(likelihood)
 }
@@ -2228,51 +2410,97 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
         likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
 
     }else{
-        if(nuc.model == "JC"){
-            max.par = 6
+        if(is.null(aa.optim_array)){
+            if(nuc.model == "JC"){
+                max.par = 6
+            }
+            if(nuc.model == "GTR"){
+                max.par = 6 + 5
+            }
+            if(nuc.model == "UNREST"){
+                max.par = 3 + 11
+            }
+            if(include.gamma == TRUE){
+                max.par = max.par + 1
+            }
+            if(k.levels > 0){
+                max.par = max.par + 2
+            }
+            
+            #THIS ASSUMES SEPARATE GAMMA PER GENE:
+            #    if(include.gamma == TRUE){
+            #    par.mat <- c()
+            #    for(row.index in 1:dim(fixed.pars)[1]){
+            #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x, fixed.pars[row.index,2]))
+            #    }
+            #}else{
+            #    par.mat <- c()
+            #    for(row.index in 1:dim(fixed.pars)[1]){
+            #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
+            #    }
+            #}
+            
+            par.mat <- c()
+            for(row.index in 1:dim(fixed.pars)[1]){
+                par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
+            }
+            
+            MultiCoreLikelihood <- function(partition.index){
+                codon.data = NULL
+                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
+                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                likelihood.tmp = GetAveAAPerSite(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], codon.freq.by.aa=codon.freq.by.aa[[partition.index]], codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+                return(likelihood.tmp)
+            }
+            #This orders the nsites per partition in decreasing order (to increase efficiency):
+            partition.order <- 1:n.partitions
+            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
+        }else{
+            if(nuc.model == "JC"){
+                max.par = 6
+            }
+            if(nuc.model == "GTR"){
+                max.par = 6 + 5
+            }
+            if(nuc.model == "UNREST"){
+                max.par = 3 + 11
+            }
+            if(include.gamma == TRUE){
+                max.par = max.par + 1
+            }
+            if(k.levels > 0){
+                max.par = max.par + 2
+            }
+            
+            #THIS ASSUMES SEPARATE GAMMA PER GENE:
+            #    if(include.gamma == TRUE){
+            #    par.mat <- c()
+            #    for(row.index in 1:dim(fixed.pars)[1]){
+            #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x, fixed.pars[row.index,2]))
+            #    }
+            #}else{
+            #    par.mat <- c()
+            #    for(row.index in 1:dim(fixed.pars)[1]){
+            #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
+            #    }
+            #}
+            
+            par.mat <- c()
+            for(row.index in 1:dim(fixed.pars)[1]){
+                par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
+            }
+            
+            MultiCoreLikelihood <- function(partition.index){
+                codon.data = NULL
+                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
+                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                likelihood.tmp = GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], codon.freq.by.aa=codon.freq.by.aa[[partition.index]], codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+                return(likelihood.tmp)
+            }
+            #This orders the nsites per partition in decreasing order (to increase efficiency):
+            partition.order <- 1:n.partitions
+            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
-        if(nuc.model == "GTR"){
-            max.par = 6 + 5
-        }
-        if(nuc.model == "UNREST"){
-            max.par = 3 + 11
-        }
-        if(include.gamma == TRUE){
-            max.par = max.par + 1
-        }
-        if(k.levels > 0){
-            max.par = max.par + 2
-        }
-
-        #THIS ASSUMES SEPARATE GAMMA PER GENE:
-        #    if(include.gamma == TRUE){
-        #    par.mat <- c()
-        #    for(row.index in 1:dim(fixed.pars)[1]){
-        #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x, fixed.pars[row.index,2]))
-        #    }
-        #}else{
-        #    par.mat <- c()
-        #    for(row.index in 1:dim(fixed.pars)[1]){
-        #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
-        #    }
-        #}
-
-        par.mat <- c()
-        for(row.index in 1:dim(fixed.pars)[1]){
-            par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
-        }
-
-        MultiCoreLikelihood <- function(partition.index){
-            codon.data = NULL
-            codon.data$unique.site.patterns = codon.site.data[[partition.index]]
-            codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-            likelihood.tmp = GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], codon.freq.by.aa=codon.freq.by.aa[[partition.index]], codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
-            return(likelihood.tmp)
-        }
-        #This orders the nsites per partition in decreasing order (to increase efficiency):
-        partition.order <- 1:n.partitions
-        likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
-
     }
     return(likelihood)
 }
@@ -3184,7 +3412,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
-#' @param optimal.aa Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".
+#' @param optimal.aa Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
 #' @param gamma.type Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.
@@ -3221,7 +3449,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     if(!edge.length == "optimize" & !edge.length == "fixed"){
         stop("Check that you have a supported edge length option. Options are optimize or fixed.", call.=FALSE)
     }
-    if(!optimal.aa == "optimize" & !optimal.aa == "majrule" & !optimal.aa == "none" & !optimal.aa == "user"){
+    if(!optimal.aa == "optimize" & !optimal.aa == "majrule" & !optimal.aa == "averaged" & !optimal.aa == "none" & !optimal.aa == "user"){
         stop("Check that you have a supported optimal amino acid option. Options are optimize, majrule, none, or user", call.=FALSE)
     }
     if(!nuc.model == "JC" & !nuc.model == "GTR" & !nuc.model == "UNREST"){
@@ -3337,6 +3565,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     }
 
     opts <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol)
+
     results.final <- c()
     if(nuc.model == "JC"){
         nuc.ip = NULL
@@ -3660,7 +3889,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             class(obj) = "selac"
         }
     }
-    if(optimal.aa=="majrule" | optimal.aa=="optimize" | optimal.aa=="user") {
+    if(optimal.aa=="majrule" | optimal.aa=="optimize" | optimal.aa=="averaged" | optimal.aa=="user") {
         codon.index.matrix = CreateCodonMutationMatrixIndex()
         cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
         if(max.restarts > 1){
@@ -4069,6 +4298,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 phy$edge.length <- best.edge.lengths
             }
         }else{
+            if(optimal.aa == "averaged"){
+                aa.optim.list = NULL
+            }
             number.of.current.restarts <- 1
             best.lik <- 1000000
             while(number.of.current.restarts < (max.restarts+1)){
