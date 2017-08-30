@@ -1,5 +1,3 @@
-
-
 ######################################################################################################################################
 ######################################################################################################################################
 ### SELAC -- SELection on Amino acids and/or Codons
@@ -3415,7 +3413,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
 #' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".
-#' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.
+#' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
@@ -3440,10 +3438,13 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param tol.step If > 1, makes for coarser tolerance at earlier iterations of the optimizer
 #' @param optimizer.algorithm The optimizer used by nloptr.
+#' @param start.from.mle If TRUE, will start optimization from the MLE. Default is FALSE.
+#' @param mle.matrix The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.
+#' @param partition.order Allows for a specialized order of the partitions to be gathered from the working directory.
 #'
 #' @details
 #' Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL) {
 
     if(!data.type == "codon" & !data.type == "nucleotide"){
         stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -3469,8 +3470,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             stop("User-supplied optimal amino acids must be input as a list.", call.=FALSE)
         }
     }
-
-    partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
+    
+    if(start.from.mle == TRUE){
+        partitions <- partition.order
+    }else{
+        partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
+    }
 
     if(is.null(n.partitions)){
         n.partitions <- length(partitions)
@@ -3481,6 +3486,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     if(n.partitions<n.cores.by.gene) {
         warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
     }
+    
     cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
     
     cat("Initializing data and model parameters...", "\n")
@@ -3915,13 +3921,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             #Gamma variation is turned ON:
             if(nuc.model == "JC"){
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "shape.gamma")
                     upper = c(log(50),  21, 21, 0, 0, 0, 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 1
                 }else{
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "shape.gamma")
                     upper = c(log(50), 21, 21, 0, 0, 0, 10, 10, 5)
                     lower = rep(-21, length(ip))
@@ -3930,13 +3944,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             if(nuc.model == "GTR") {
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
                     upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 5 + 1
                 }else{
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1, nuc.ip, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1", "C_A", "G_A", "T_A", "G_C", "T_C", "shape.gamma")
                     upper = c(log(50), 21, 21, 0, 0, 0, 10, 10, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
@@ -3945,13 +3967,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             if(nuc.model == "UNREST") {
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], nuc.ip, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], nuc.ip, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
                     upper = c(log(50), 21, 21, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 3 + 11 + 1
                 }else{
-                    ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "shape.gamma")
                     upper = c(log(50), 21, 21, 10, 10, rep(21, length(nuc.ip)), 5)
                     lower = rep(-21, length(ip))
@@ -3960,13 +3990,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             index.matrix = matrix(0, n.partitions, max.par.model.count)
             index.matrix[1,] = 1:ncol(index.matrix)
-            ip.vector = ip
+            if(start.from.mle == TRUE){
+                ip.vector = ip[1,]
+            }else{
+                ip.vector = ip
+            }
             if(n.partitions > 1){
                 # Gamma variation is turned ON:
                 for(partition.index in 2:n.partitions){
                     if(nuc.model == "JC"){
                         #ip.vector = c(ip.vector, ip[1], ip[8])
-                        ip.vector = c(ip.vector, ip[1])
+                        if(start.from.mle == TRUE){
+                            ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                        }else{
+                            ip.vector = c(ip.vector, ip[1])
+                        }
                     }else{
                         if(nuc.model == "GTR"){
                             index.matrix.tmp = numeric(max.par.model.count)
@@ -3974,12 +4012,20 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                                 #index.matrix.tmp[c(2:11)] = c(2:11)
                                 #ip.vector = c(ip.vector, ip[1], ip[12])
                                 index.matrix.tmp[c(2:12)] = c(2:12)
-                                ip.vector = c(ip.vector, ip[1])
+                                if(start.from.mle == TRUE){
+                                    ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                                }else{
+                                    ip.vector = c(ip.vector, ip[1])
+                                }
                             }else{
                                 #index.matrix.tmp[c(2:13)] = c(2:13)
                                 #ip.vector = c(ip.vector, ip[1], ip[14])
                                 index.matrix.tmp[c(2:14)] = c(2:14)
-                                ip.vector = c(ip.vector, ip[1])
+                                if(start.from.mle == TRUE){
+                                    ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                                }else{
+                                    ip.vector = c(ip.vector, ip[1])
+                                }
                             }
                         }else{
                             index.matrix.tmp = numeric(max.par.model.count)
@@ -3987,12 +4033,20 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                                 #index.matrix.tmp[c(2:14)] = c(2:14)
                                 #ip.vector = c(ip.vector, ip[1], ip[15])
                                 index.matrix.tmp[c(2:15)] = c(2:15)
-                                ip.vector = c(ip.vector, ip[1])
+                                if(start.from.mle == TRUE){
+                                    ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                                }else{
+                                    ip.vector = c(ip.vector, ip[1])
+                                }
                             }else{
                                 #index.matrix.tmp[c(2:16)] = c(2:16)
                                 #ip.vector = c(ip.vector, ip[1], ip[17])
                                 index.matrix.tmp[c(2:17)] = c(2:17)
-                                ip.vector = c(ip.vector, ip[1])
+                                if(start.from.mle == TRUE){
+                                    ip.vector = c(ip.vector, ip[partition.index,1])
+                                }else{
+                                    ip.vector = c(ip.vector, ip[1])
+                                }
                             }
                         }
                     }
@@ -4004,13 +4058,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             # Gamma variation is turned OFF:
             if(nuc.model == "JC"){
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne",  "alpha", "beta", "freqA", "freqC", "freqG")
                     upper = c(log(50), 21, 21, 0, 0, 0)
                     lower = rep(-21, length(ip))
                     max.par.model.count = 6 + 0 + 0
                 }else{
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, 1, 1)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "a0", "a1")
                     upper = c(log(50), 21, 21, 0, 0, 0, 10, 10)
                     lower = rep(-21, length(ip))
@@ -4019,7 +4081,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             if(nuc.model == "GTR") {
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 0.25, 0.25, 0.25, nuc.ip)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
                     upper = c(log(50), 21, 21, 0, 0, 0, rep(21, length(nuc.ip)))
                     lower = rep(-21, length(ip))
@@ -4034,13 +4100,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             }
             if(nuc.model == "UNREST") {
                 if(k.levels == 0){
-                    ip = c(selac.starting.vals[1,1:3], nuc.ip)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], nuc.ip)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
                     upper = c(log(50), 21, 21, rep(21, length(nuc.ip)))
                     lower = rep(-21, length(ip))
                     max.par.model.count = 3 + 11 + 0
                 }else{
-                    ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip)
+                    if(start.from.mle == TRUE){
+                        ip = mle.matrix[1,]
+                    }else{
+                        ip = c(selac.starting.vals[1,1:3], 1, 1, nuc.ip)
+                    }
                     parameter.column.names <- c("C.q.phi.Ne", "alpha", "beta", "a0", "a1", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
                     upper = c(log(50), 21, 21, 10, 10, rep(21, length(nuc.ip)))
                     lower = rep(-21, length(ip))
@@ -4053,10 +4127,18 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             if(n.partitions > 1){
                 for(partition.index in 2:n.partitions){
                     if(nuc.model == "JC"){
-                        ip.vector = c(ip.vector, ip[1])
+                        if(start.from.mle == TRUE){
+                            ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                        }else{
+                            ip.vector = c(ip.vector, ip[1])
+                        }
                     }else{
                         if(nuc.model == "GTR"){
-                            ip.vector = c(ip.vector, ip[1])
+                            if(start.from.mle == TRUE){
+                                ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                            }else{
+                                ip.vector = c(ip.vector, ip[1])
+                            }
                             index.matrix.tmp = numeric(max.par.model.count)
                             if(k.levels == 0){
                                 index.matrix.tmp[c(2:11)] = c(2:11)
@@ -4064,7 +4146,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                                 index.matrix.tmp[c(2:13)] = c(2:13)
                             }
                         }else{
-                            ip.vector = c(ip.vector, ip[1])
+                            if(start.from.mle == TRUE){
+                                ip.vector = c(ip.vector, mle.matrix[partition.index,1])
+                            }else{
+                                ip.vector = c(ip.vector, ip[1])
+                            }
                             index.matrix.tmp = numeric(max.par.model.count)
                             if(k.levels == 0){
                                 index.matrix.tmp[c(2:14)] = c(2:14)
@@ -4078,7 +4164,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 }
             }
         }
-
+        
         #THIS IS FOR THERE IS A SEPARATE GAMMA PER GENE:
         #if(include.gamma == TRUE){
         #    index.matrix.red <- t(matrix(1:(n.partitions*2), 2, n.partitions))
