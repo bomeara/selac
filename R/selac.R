@@ -4491,13 +4491,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         colnames(mle.pars.mat) <- parameter.column.names
 
         if(edge.length == "optimize"){
-            if(optimal.aa == "user"){
+            if(optimal.aa == "user" | optimal.aa == "majrule" | optimal.aa == "averaged"){
                 np <- max(index.matrix) + length(phy$edge.length)
             }else{
                 np <- max(index.matrix) + length(phy$edge.length) + sum(nsites.vector)
             }
         }else{
-            if(optimal.aa == "user"){
+            if(optimal.aa == "user" | optimal.aa == "majrule" | optimal.aa == "averaged"){
                 np <- max(index.matrix)
             }else{
                 np <- max(index.matrix) + sum(nsites.vector)
@@ -5373,7 +5373,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
 #'
 #' @details
 #' The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
-GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL) {
+GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL, n.cores.by.gene.by.site=1) {
 
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     phy <- selac.obj$phy
@@ -5427,7 +5427,7 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
         if(is.null(aa.optim.input)){
             aa.optim_array <- selac.obj$aa.optim[[partition.index]]
         }
-        phi.likelihoods.per.site <- GetPhiLikelihoodPerSite(x, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=FALSE, verbose=FALSE, neglnl=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+        phi.likelihoods.per.site <- GetPhiLikelihoodPerSite(x, codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=FALSE, verbose=FALSE, neglnl=FALSE, n.cores.by.gene.by.site=1)
         C.Phi.q.Ne <- x[1]
         C <- 4
         q <- 4e-7
