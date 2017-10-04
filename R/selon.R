@@ -127,14 +127,18 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
         ploidy = 1
     }
     phy <- reorder(phy, "pruningwise")
+    diag(nuc.mutation.rates) = 0
+    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+    scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
+    nuc.mutation.rates_scaled <- nuc.mutation.rates_scaled * (1/scale.factor)
+
     for(site.index in sequence(nsites)) {
         weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
-        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) = 0
         diag(Q_position) <- -rowSums(Q_position)
-        scale.factor <- -sum(diag(Q_position) * root.p_array)
-        phy <- reorder(phy, "pruningwise")
-        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position, root.p=root.p_array, scale.factor=scale.factor, return.all=FALSE)
+        #scale.factor <- -sum(diag(Q_position) * root.p_array)
+        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position, root.p=root.p_array, scale.factor=NULL, return.all=FALSE)
     }
     return(final.likelihood.vector)
 }
@@ -214,8 +218,6 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
 }
 
 
-
-
 OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
     if(logspace) {
         x <- exp(x)
@@ -252,8 +254,6 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
         partition.order <- 1:n.partitions
         likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
     }
-    print(x)
-    print(likelihood)
     return(likelihood)
 }
 
