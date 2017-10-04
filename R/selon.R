@@ -329,8 +329,44 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 
 
 GetOptimalNucPerSite <- function(x, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
+    if(logspace) {
+        x = exp(x)
+    }
     
-    return(1)
+    Ne=5e6
+    x[1] <- x[1]/Ne
+    if(nuc.model == "JC") {
+        base.freqs=c(x[4:6], 1-sum(x[4:6]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+    }
+    if(nuc.model == "GTR") {
+        base.freqs=c(x[4:6], 1-sum(x[4:6]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+    }
+    if(nuc.model == "UNREST") {
+        tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+        base.freqs <- tmp$base.freqs
+        nuc.mutation.rates <- tmp$nuc.mutation.rates
+    }
+    
+    nsites <- dim(nuc.data)[2]-1
+    site.index <- 1:nsites
+    optimal.vector.by.site <- rep(NA, nsites)
+    #unique.aa <- GetMatrixAANames(numcode)
+    optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
+    position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
+    for(i in 1:length(.unique.aa)){
+        nuc.optim_array = rep(.unique.aa[i], nsites)
+        tmp = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
+        tmp[is.na(tmp)] = -1000000
+        final.likelihood = tmp
+        optimal.aa.likelihood.mat[i,] <- final.likelihood
+    }
+    
+    for(j in 1:nsites){
+        optimal.vector.by.site[j] <- .unique.aa[which.is.max(optimal.aa.likelihood.mat[,j])]
+    }
+    return(optimal.vector.by.site)
 }
 
 
