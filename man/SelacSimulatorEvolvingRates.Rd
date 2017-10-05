@@ -42,4 +42,3 @@ Simulates nucleotide data based on parameters under the SELAC model but assumes 
 \details{
 Simulates a nucleotide matrix using parameters under the SELAC model, but allows either Phi or Ne to evolve along the tree. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 }
-

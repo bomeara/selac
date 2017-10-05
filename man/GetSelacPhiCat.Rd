@@ -5,7 +5,7 @@
 \title{Phi rate category information under SELAC+gamma}
 \usage{
 GetSelacPhiCat(selac.obj, codon.data.path, aa.optim.input = NULL,
-  fasta.rows.to.keep = NULL)
+  fasta.rows.to.keep = NULL, n.cores.by.gene.by.site = 1)
 }
 \arguments{
 \item{selac.obj}{An object of class SELAC.}
@@ -22,4 +22,3 @@ Provides likelihood information and best rates across sites and across genes und
 \details{
 The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
 }
-
