@@ -5,12 +5,14 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
+.nucleotide.name <- c("a", "c", "g", "t")
+
 
 CreateNucleotideDistanceMatrix <- function() {
     n.states <- 4
     nucleotide.distances <- matrix(1,nrow=n.states,ncol=n.states)
     diag(nucleotide.distances) <- 0
-    rownames(nucleotide.distances) <- colnames(nucleotide.distances) <- n2s(0:3)
+    rownames(nucleotide.distances) <- colnames(nucleotide.distances) <- .nucleotide.name
     return(nucleotide.distances)
 }
 
@@ -21,8 +23,8 @@ CreateNucleotideMutationMatrixSpecial <- function(rates) {
     index[col(index) != row(index)] <- 1:np
     nuc.mutation.rates <- matrix(0, nrow=4, ncol=4)
     nuc.mutation.rates<-matrix(rates[index], dim(index))
-    rownames(nuc.mutation.rates) <- n2s(0:3)
-    colnames(nuc.mutation.rates) <- n2s(0:3)
+    rownames(nuc.mutation.rates) <- .nucleotide.name
+    colnames(nuc.mutation.rates) <- .nucleotide.name
     nuc.mutation.rates[3,4] = 1
     diag(nuc.mutation.rates) <- 0
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
@@ -75,11 +77,11 @@ GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optima
     nucleotide.set <- 0:3
     nucleotide.distances <- CreateNucleotideDistanceMatrix()
     nucleotide.fitness.ratios <- matrix(data=0,4,4)
-    unique.nucs <- n2s(0:3)
+    unique.nucs <- .nucleotide.name
     for (i in sequence(4)) {
         for (j in sequence(4)) {
-            nuc1 <- n2s(nucleotide.set[i])
-            nuc2 <- n2s(nucleotide.set[j])
+            nuc1 <- .nucleotide.name[i]
+            nuc2 <- .nucleotide.name[j]
             if(!nuc1 == nuc2){
                 d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
                 d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
@@ -109,11 +111,11 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
         }
     }
     #The result here is just the likelihood:
-    #result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
+    result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #print("corHMM way")
     #    print(result)
-    Q_position_vectored <- c(t(Q_position)) # has to be transposed
-    result <- -TreeTraversalSelonODE(phy=phy, Q_codon_array_vectored=Q_position_vectored, liks.HMM=liks, bad.likelihood=-100000, root.p=root.p)
+    #Q_position_vectored <- c(t(Q_position)) # has to be transposed
+    #result <- -TreeTraversalSelonODE(phy=phy, Q_codon_array_vectored=Q_position_vectored, liks.HMM=liks, bad.likelihood=-100000, root.p=root.p)
     #print("ODE way")
     #print(result)
     ifelse(return.all, stop("return all not currently implemented"), return(result))
@@ -193,7 +195,6 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     if(logspace) {
         x = exp(x)
     }
-    
     Ne=5e6
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
@@ -209,7 +210,6 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
         base.freqs <- tmp$base.freqs
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
-    
     nsites <- dim(nuc.data)[2]-1
     site.index <- 1:nsites
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
@@ -350,7 +350,7 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 }
 
 
-GetOptimalNucPerSite <- function(x, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
+GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
     if(logspace) {
         x = exp(x)
     }
@@ -375,18 +375,17 @@ GetOptimalNucPerSite <- function(x, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
     site.index <- 1:nsites
     optimal.vector.by.site <- rep(NA, nsites)
     #unique.aa <- GetMatrixAANames(numcode)
-    optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
+    optimal.nuc.likelihood.mat <- matrix(0, nrow=4, ncol=nsites)
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
-    for(i in 1:length(.unique.aa)){
-        nuc.optim_array = rep(.unique.aa[i], nsites)
+    for(i in 1:4){
+        nuc.optim_array = rep(i, nsites)
         tmp = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
         tmp[is.na(tmp)] = -1000000
         final.likelihood = tmp
-        optimal.aa.likelihood.mat[i,] <- final.likelihood
+        optimal.nuc.likelihood.mat[i,] <- final.likelihood
     }
-    
     for(j in 1:nsites){
-        optimal.vector.by.site[j] <- .unique.aa[which.is.max(optimal.aa.likelihood.mat[,j])]
+        optimal.vector.by.site[j] <- which.is.max(optimal.nuc.likelihood.mat[,j])
     }
     return(optimal.vector.by.site)
 }
@@ -399,8 +398,6 @@ GetOptimalNucPerSite <- function(x, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
 ######################################################################################################################################
 
 GetLikelihood <- function(phy, liks, Q, root.p){
-    #Q.scaled = Q * (1/scale.factor)
-    Q.scaled <- Q
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     TIPS <- 1:nb.tip
@@ -415,7 +412,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         desNodes<-phy$edge[desRows,2]
         v <- 1
         for (desIndex in sequence(length(desRows))){
-            v <- v*expm(Q.scaled * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
+            v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method="Ward77") %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
         liks[focal, ] <- v/comp[focal]
@@ -759,7 +756,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             cat("              Optimizing edge lengths", "\n")
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
-            plot(phy)
             print(phy$edge.length)
             print(mle.pars.mat)
             opts.edge <- opts
@@ -829,17 +825,10 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             if(optimal.nuc == "optimize"){
                 cat("              Optimizing nucleotide", "\n")
                 nuc.optim.list <- as.list(numeric(n.partitions))
-                for(partition.index in sequence(n.partitions)) {
-                    gene.tmp <- read.dna(partitions[partition.index], format='fasta')
-                    if(!is.null(fasta.rows.to.keep)){
-                        gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
-                    }else{
-                        gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
-                    }
-                    nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
-                    nucleotide.data <- nucleotide.data[phy$tip.label,]
-                    nuc.optim.list[[partition.index]] = GetOptimalNucPerSite(x=log(mle.pars.mat[partition.index,]), logspace=TRUE, verbose=verbose, neglnl=TRUE)
+                ParallelizedOptimizeNucByGene <- function(n.partition){
+                    nuc.optim.list[[partition.index]] = GetOptimalNucPerSite(x=log(mle.pars.mat[n.partition,]), nuc.data=site.pattern.data.list[[n.partition]], phy=phy, nuc.model=nuc.model, diploid=diploid, logspace=TRUE, verbose=verbose, neglnl=TRUE)
                 }
+                nuc.optim.list <- mclapply(1:n.partitions, ParallelizedOptimizeNucByGene, mc.cores=n.cores)
             }
             if(edge.length == "optimize"){
                 cat("              Optimizing edge lengths", "\n")
@@ -900,7 +889,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }
-            
         }
         
         if(output.by.restart == TRUE){

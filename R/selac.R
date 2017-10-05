@@ -9,14 +9,14 @@
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
 ## only set to TRUE when testing. Set to FALSE when committing changes
 # if(FALSE){
-#     library(ape)
-#     library(expm)
-#     library(nnet)
-#     library(nloptr)
-#     library(seqinr)
-#     library(phangorn)
-#     library(MASS)
-#     library(parallel)
+     library(ape)
+     library(expm)
+     library(nnet)
+     library(nloptr)
+     library(seqinr)
+     library(phangorn)
+     library(MASS)
+     library(parallel)
 #     library(Rcpp)
 #     library(RcppArmadillo)
 #     library(inline)

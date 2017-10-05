@@ -17,10 +17,10 @@ test_that("GTR+GAMMA_likelihood", {
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
-	chars <- DNAbinToNucleotideNumeric(yeast.gene)
+    chars <- selac:::DNAbinToNucleotideNumeric(yeast.gene)
 	codon.data <- chars[phy$tip.label,]
-	nuc.sites <- SitePattern(codon.data)
-	gtr_gamma <- GetLikelihoodNucleotideForManyCharGivenAllParams(log(c(.5,1,1,1,1,1)), nuc.sites, phy, nuc.model="GTR", include.gamma=TRUE, gamma.type="median", logspace=TRUE, ncats=4, verbose=FALSE, n.cores.by.gene.by.site=1)
+	nuc.sites <- selac:::SitePattern(codon.data)
+	gtr_gamma <- selac:::GetLikelihoodNucleotideForManyCharGivenAllParams(log(c(.5,1,1,1,1,1)), nuc.sites, phy, nuc.model="GTR", include.gamma=TRUE, gamma.type="median", logspace=TRUE, ncats=4, verbose=FALSE, n.cores.by.gene.by.site=1)
 	comparison <- identical(round(gtr_gamma,3), -8205.87)
 	expect_true(comparison)
 })
