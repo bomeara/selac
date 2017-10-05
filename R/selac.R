@@ -5320,6 +5320,7 @@ GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamm
 #' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data.
 #' @param aa.optim.input A list of optimal amino acids with each list element designating a character vector for each gene. The optimal amino acids be the MLE from a selac run (default) or a list of user defined optimal A.A.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+
 #'
 #' @details
 #' The purpose of this function is to provide the site likelihoods across genes. It is also flexible in that it allows different hypotheses about optimal acids across genes and/or site. The output is a list object, with each list entry designating 1) the tot.likelihood for that gene, and 2) the site likelihoods for that gene.
@@ -5456,6 +5457,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
 #' @param codon.data.path Provides the path to the directory containing the gene specific fasta files of coding data.
 #' @param aa.optim.input A list of optimal amino acids with each list element designating a character vector for each gene. The optimal amino acids be the MLE from a selac run (default) or a list of user defined optimal A.A.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#' @param n.cores.by.gene.by.site The number of cores to decidate to parallelize analyses by site WITHIN a gene. Note n.cores.by.gene*n.cores.by.gene.by.site is the total number of cores dedicated to the analysis.
 #'
 #' @details
 #' The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
