@@ -7,7 +7,7 @@
 SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
   edge.length = "optimize", edge.linked = TRUE, optimal.nuc = "majrule",
   nuc.model = "GTR", global.nucleotide.model = TRUE, diploid = TRUE,
-  verbose = FALSE, n.cores = 1, max.tol = .Machine$double.eps^0.5,
+  verbose = FALSE, n.cores = 1, max.tol = .Machine$double.eps^0.25,
   max.evals = 1e+06, max.restarts = 10, output.by.restart = TRUE,
   output.restart.filename = "restartResult", fasta.rows.to.keep = NULL)
 }
@@ -25,6 +25,8 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 \item{optimal.nuc}{Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".}
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
+
+\item{global.nucleotide.model}{assumes nucleotide model is shared among all partitions}
 
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
 

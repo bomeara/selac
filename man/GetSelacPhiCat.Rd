@@ -5,7 +5,7 @@
 \title{Phi rate category information under SELAC+gamma}
 \usage{
 GetSelacPhiCat(selac.obj, codon.data.path, aa.optim.input = NULL,
-  fasta.rows.to.keep = NULL)
+  fasta.rows.to.keep = NULL, n.cores.by.gene.by.site = 1)
 }
 \arguments{
 \item{selac.obj}{An object of class SELAC.}
@@ -15,6 +15,8 @@ GetSelacPhiCat(selac.obj, codon.data.path, aa.optim.input = NULL,
 \item{aa.optim.input}{A list of optimal amino acids with each list element designating a character vector for each gene. The optimal amino acids be the MLE from a selac run (default) or a list of user defined optimal A.A.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
+
+\item{n.cores.by.gene.by.site}{The number of cores to decidate to parallelize analyses by site WITHIN a gene. Note n.cores.by.gene*n.cores.by.gene.by.site is the total number of cores dedicated to the analysis.}
 }
 \description{
 Provides likelihood information and best rates across sites and across genes under SELAC+gamma

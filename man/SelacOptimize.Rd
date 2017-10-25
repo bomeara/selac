@@ -14,7 +14,9 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
-  user.supplied.starting.vals = NULL, tol.step = 1)
+  user.supplied.starting.param.vals = NULL, tol.step = 1,
+  optimizer.algorithm = "NLOPT_LN_SBPLX", start.from.mle = FALSE,
+  mle.matrix = NULL, partition.order = NULL)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -27,11 +29,11 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".}
 
-\item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which user-supplied branch lengths.}
+\item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.}
 
 \item{edge.linked}{A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.}
 
-\item{optimal.aa}{Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".}
+\item{optimal.aa}{Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".}
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
 
@@ -71,9 +73,17 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{output.restart.filename}{Designates the file name for each random restart.}
 
-\item{user.supplied.starting.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
+\item{user.supplied.starting.param.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
 
 \item{tol.step}{If > 1, makes for coarser tolerance at earlier iterations of the optimizer}
+
+\item{optimizer.algorithm}{The optimizer used by nloptr.}
+
+\item{start.from.mle}{If TRUE, will start optimization from the MLE. Default is FALSE.}
+
+\item{mle.matrix}{The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.}
+
+\item{partition.order}{Allows for a specialized order of the partitions to be gathered from the working directory.}
 }
 \description{
 Efficient optimization of model parameters under the SELAC model

@@ -14,7 +14,8 @@ SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
   user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
-  user.supplied.starting.vals = NULL, tol.step = 1)
+  user.supplied.starting.param.vals = NULL, tol.step = 1,
+  optimizer.algorithm = "NLOPT_LN_SBPLX")
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -71,9 +72,11 @@ SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{output.restart.filename}{Designates the file name for each random restart.}
 
-\item{user.supplied.starting.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
+\item{user.supplied.starting.param.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
 
 \item{tol.step}{If > 1, makes for coarser tolerance at earlier iterations of the optimizer}
+
+\item{optimizer.algorithm}{The optimizer used by nloptr.}
 
 \item{optimal.aa}{Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".}
 }

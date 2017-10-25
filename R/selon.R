@@ -5,13 +5,42 @@
 ######################################################################################################################################
 ######################################################################################################################################
 
+.nucleotide.name <- c("a", "c", "g", "t")
+
 
 CreateNucleotideDistanceMatrix <- function() {
     n.states <- 4
     nucleotide.distances <- matrix(1,nrow=n.states,ncol=n.states)
     diag(nucleotide.distances) <- 0
-    rownames(nucleotide.distances) <- colnames(nucleotide.distances) <- n2s(0:3)
+    rownames(nucleotide.distances) <- colnames(nucleotide.distances) <- .nucleotide.name
     return(nucleotide.distances)
+}
+
+
+CreateNucleotideMutationMatrixSpecial <- function(rates) {
+    index <- matrix(NA, 4, 4)
+    np <- 12
+    index[col(index) != row(index)] <- 1:np
+    nuc.mutation.rates <- matrix(0, nrow=4, ncol=4)
+    nuc.mutation.rates<-matrix(rates[index], dim(index))
+    rownames(nuc.mutation.rates) <- .nucleotide.name
+    colnames(nuc.mutation.rates) <- .nucleotide.name
+    nuc.mutation.rates[3,4] = 1
+    diag(nuc.mutation.rates) <- 0
+    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+    #Next we take our rates and find the homogeneous solution to Q*pi=0 to determine the base freqs:
+    base.freqs <- Null(nuc.mutation.rates)
+    #Rescale base.freqs so that they sum to 1:
+    base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+    base.freqs.scaled.matrix <- rbind(base.freqs.scaled, base.freqs.scaled, base.freqs.scaled, base.freqs.scaled)
+    diag(nuc.mutation.rates) <- 0
+    #Rescale Q to account for base.freqs:
+    nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
+    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+    obj <- NULL
+    obj$base.freq <- base.freqs.scaled
+    obj$nuc.mutation.rates <- nuc.mutation.rates
+    return(obj)
 }
 
 
@@ -48,11 +77,11 @@ GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optima
     nucleotide.set <- 0:3
     nucleotide.distances <- CreateNucleotideDistanceMatrix()
     nucleotide.fitness.ratios <- matrix(data=0,4,4)
-    unique.nucs <- n2s(0:3)
+    unique.nucs <- .nucleotide.name
     for (i in sequence(4)) {
         for (j in sequence(4)) {
-            nuc1 <- n2s(nucleotide.set[i])
-            nuc2 <- n2s(nucleotide.set[j])
+            nuc1 <- .nucleotide.name[i]
+            nuc2 <- .nucleotide.name[j]
             if(!nuc1 == nuc2){
                 d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
                 d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
@@ -82,7 +111,10 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
         }
     }
     #The result here is just the likelihood:
-    result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, scale.factor=scale.factor, root.p=root.p)
+    result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
+    #ODE way is commented out
+    #Q_position_vectored <- c(t(Q_position)) # has to be transposed
+    #result <- -TreeTraversalSelonODE(phy=phy, Q_codon_array_vectored=Q_position_vectored, liks.HMM=liks, bad.likelihood=-100000, root.p=root.p)
     ifelse(return.all, stop("return all not currently implemented"), return(result))
 }
 
@@ -100,14 +132,16 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
         ploidy = 1
     }
     phy <- reorder(phy, "pruningwise")
+    diag(nuc.mutation.rates) = 0
+    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+    scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
+    nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
     for(site.index in sequence(nsites)) {
         weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
-        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
-        diag(Q_position) = 0
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
+        diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
-        scale.factor <- -sum(diag(Q_position) * root.p_array)
-        phy <- reorder(phy, "pruningwise")
-        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position, root.p=root.p_array, scale.factor=scale.factor, return.all=FALSE)
+        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position, root.p=root.p_array, scale.factor=NULL, return.all=FALSE)
     }
     return(final.likelihood.vector)
 }
@@ -147,7 +181,6 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     if(logspace) {
         x = exp(x)
     }
-    
     Ne=5e6
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
@@ -159,9 +192,10 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+        tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+        base.freqs <- tmp$base.freqs
+        nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
-    
     nsites <- dim(nuc.data)[2]-1
     site.index <- 1:nsites
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
@@ -185,9 +219,8 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
 }
 
 
-
-
 OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
+    
     if(logspace) {
         x <- exp(x)
     }
@@ -202,8 +235,9 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
         max.par = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
-        max.par = 3 + 3 + 11
+        max.par = 3 + 11
     }
+
     if(is.null(n.cores)){
         likelihood.vector <- c()
         for(partition.index in sequence(n.partitions)){
@@ -227,9 +261,7 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
 }
 
 
-
 OptimizeModelParsUCE <- function(x, fixed.pars, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE, all.pars=FALSE) {
-    
     if(logspace) {
         x <- exp(x)
     }
@@ -242,7 +274,7 @@ OptimizeModelParsUCE <- function(x, fixed.pars, site.pattern.data.list, n.partit
         max.par = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
-        max.par = 3 + 3 + 11
+        max.par = 3 + 11
     }
     
     if(all.pars == TRUE){
@@ -263,7 +295,6 @@ OptimizeModelParsUCE <- function(x, fixed.pars, site.pattern.data.list, n.partit
 }
 
 
-
 OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
     if(logspace) {
         x <- exp(x)
@@ -276,7 +307,7 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
         max.par = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
-        max.par = 3 + 3 + 11
+        max.par = 3 + 11
     }
     
     par.mat <- c()
@@ -297,6 +328,46 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 }
 
 
+GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logspace=TRUE, verbose=FALSE, neglnl=TRUE){
+    if(logspace) {
+        x = exp(x)
+    }
+    
+    Ne=5e6
+    x[1] <- x[1]/Ne
+    if(nuc.model == "JC") {
+        base.freqs=c(x[4:6], 1-sum(x[4:6]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+    }
+    if(nuc.model == "GTR") {
+        base.freqs=c(x[4:6], 1-sum(x[4:6]))
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+    }
+    if(nuc.model == "UNREST") {
+        tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+        base.freqs <- tmp$base.freqs
+        nuc.mutation.rates <- tmp$nuc.mutation.rates
+    }
+    
+    nsites <- dim(nuc.data)[2]-1
+    site.index <- 1:nsites
+    optimal.vector.by.site <- rep(NA, nsites)
+    #unique.aa <- GetMatrixAANames(numcode)
+    optimal.nuc.likelihood.mat <- matrix(0, nrow=4, ncol=nsites)
+    position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
+    for(i in 1:4){
+        nuc.optim_array = rep(i, nsites)
+        tmp = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
+        tmp[is.na(tmp)] = -1000000
+        final.likelihood = tmp
+        optimal.nuc.likelihood.mat[i,] <- final.likelihood
+    }
+    for(j in 1:nsites){
+        optimal.vector.by.site[j] <- which.is.max(optimal.nuc.likelihood.mat[,j])
+    }
+    return(optimal.vector.by.site)
+}
+
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -304,8 +375,7 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 ######################################################################################################################################
 ######################################################################################################################################
 
-GetLikelihood <- function(phy, liks, Q, scale.factor, root.p){
-    Q.scaled = Q * (1/scale.factor)
+GetLikelihood <- function(phy, liks, Q, root.p){
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     TIPS <- 1:nb.tip
@@ -320,7 +390,7 @@ GetLikelihood <- function(phy, liks, Q, scale.factor, root.p){
         desNodes<-phy$edge[desRows,2]
         v <- 1
         for (desIndex in sequence(length(desRows))){
-            v <- v*expm(Q.scaled * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
+            v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method="Ward77") %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
         liks[focal, ] <- v/comp[focal]
@@ -339,6 +409,148 @@ GetLikelihood <- function(phy, liks, Q, scale.factor, root.p){
     }
     loglik
 }
+
+
+
+######################################################################################################################################
+######################################################################################################################################
+### Likelihood calculator -- ODE solver
+######################################################################################################################################
+
+#TreeTraversalSelonODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likelihood=-100000, root.p) {
+    
+    ##start with first method and move to next if problems encountered
+    ## when solving ode, such as negative pr values < neg.pr.threshold
+#    ode.method.vec <- c("lsoda", "ode45")
+#    num.ode.method <- length(ode.method.vec)
+    
+#    rtol = 1e-6 #default 1e-6 returns a negative value under long branch testing conditions
+#    atol = 1e-6 #default 1e-6
+    
+#    neg.pr.threshold <- -10*atol
+    
+#    nb.tip <- length(phy$tip.label)
+#    nb.node <- phy$Nnode
+    
+#    anc <- unique(phy$edge[,1])
+#    TIPS <- 1:nb.tip
+    
+#    comp <- numeric(nb.tip + nb.node)
+    
+#    for (i in seq(from = 1, length.out = nb.node)) {
+#        focal <- anc[i]
+#        desRows <- which(phy$edge[,1]==focal) ##des = descendant
+#        desNodes <- phy$edge[desRows,2]
+#        state.pr.vector = rep(1, dim(liks.HMM)[2]) ##
+        
+#        for (desIndex in sequence(length(desRows))){
+#            yini <- liks.HMM[desNodes[desIndex],]
+#            times=c(0, phy$edge.length[desRows[desIndex]])
+
+#            ode.not.solved <- TRUE
+#            ode.solver.attempt <- 0
+            
+#            while(ode.not.solved && ode.solver.attempt < num.ode.method){
+#                ode.solver.attempt <- ode.solver.attempt+1
+#                ode.method <-  ode.method.vec[ode.solver.attempt]
+                
+#                subtree.pr.ode.obj <- lsoda(
+#                y=yini, times=times, func = "selon_ode",
+#                parms=Q_codon_array_vectored, initfunc="initmod_selon",
+#                dllname = "selonODE",
+#                rtol=rtol, atol=atol
+#                )
+                
+                ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
+                ## $istate should be = 0 [documentation in doc/deSolve.Rnw indicates
+                ## it should be 2]
+                ## Values < 0 indicate problems
+                ## TODO: take advantage of while() around ode solving created
+                ## for when we hit negative values
+#               istate <- attributes(subtree.pr.ode.obj)$istate[1]
+                
+#               if(istate < 0){
+                    ## For \code{lsoda, lsodar, lsode, lsodes, vode, rk, rk4, euler} these are
+#                   error.text <- switch(as.character(istate),
+#                   "-1"="excess work done",
+#                   "-2"="excess accuracy requested",
+#                   "-3"="illegal input detected",
+#                   "-4"="repeated error test failures",
+#                   "-5"="repeated convergence failures",
+#                   "-6"="error weight became zero",
+#                   paste("unknown error. ode() istate value: ", as.character(istate))
+#                   )
+#                   warning(print(paste("selac.R: Integration of desIndex", desIndex, " ode solver returned istate[1] = ",  istate, " : ", error.text, " returning bad.likelihood")))
+#                   return(bad.likelihood)
+#               }else{
+                    ##no integration issues,
+                    ## object consists of pr values at start and end time
+                    ## extract final state variable, dropping time entry
+#                   subtree.pr.vector <- subtree.pr.ode.obj[dim(subtree.pr.ode.obj)[[1]],-1]
+#               }
+                
+                ## test for negative entries
+                ## if encountered and less than neg.pr.threshold
+                ## replace the negative values to 0
+                ## if there are values less than neg.pr.threshold, then
+                ## resolve equations using more robust method on the list
+                ## Alternative: use 'event' option in deSolve as described at
+                ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
+#               neg.vector.pos <- which(subtree.pr.vector < 0, arr.ind=TRUE)
+#               num.neg.vector.pos <- length(neg.vector.pos)
+                
+#               if(num.neg.vector.pos > 0){
+#                   min.vector.val <- min(subtree.pr.vector[neg.vector.pos])
+#                   neg.vector.pos.as.string <- toString(neg.vector.pos)
+                    
+#                   warning.message <- paste("WARNING: subtree.pr.vector solved with ode method ", ode.method, " contains ", num.neg.vector.pos, " negative values at positions ", neg.vector.pos.as.string ,  "of a ", length(subtree.pr.vector), " vector." )
+
+#                   if(min.vector.val > neg.pr.threshold){
+#                       warning.message <- paste(warning.message, "\nMinimum value ", min.vector.val, " >  ", neg.pr.threshold, " the neg.pr.threshold.\nSetting all negative values to 0.")
+#                       warning(warning.message)
+#                       subtree.pr.vector[neg.vector.pos] <- 0
+                        
+#                   }else{
+#                       warning.message <- paste(warning.message, "selon.R: minimum value ", min.vector.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
+#
+#                       if(ode.solver.attempt < num.ode.method){
+#                           warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
+#                           warning(warning.message)
+                            
+#                       }else{
+#                           warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
+#                           warning(warning.message)
+#                           return(bad.likelihood)
+#                       }
+#                   }
+#               }else{
+                    ## no negative values in pr.vs.time.matrix
+#                   ode.not.solved <- FALSE
+#               }
+                
+#           } ##end while() for ode solver
+#           state.pr.vector <- state.pr.vector * subtree.pr.vector
+#       }
+#       comp[focal] <- sum(state.pr.vector)
+#       liks.HMM[focal,] <- state.pr.vector/comp[focal]
+#   }
+#   root.node <- nb.tip + 1L
+    
+    ##Check for negative transition rates
+    ##mikeg:  For now, just issue warning
+    
+#   neg.nodes <- which(liks.HMM[root.node,] <0)
+#   if(length(neg.nodes)>0){
+#       warning(paste("selac.R: encountered " , length(neg.nodes), " negatives values in liks.HMM[", root.node, ", ", neg.nodes, " ] =  ",  liks.HMM[root.node, neg.nodes], " at position ", i, " , desIndex ", desIndex))
+#   }
+    
+#   loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
+    
+    ##return bad.likelihood if loglik is bad
+#   if(!is.finite(loglik)) return(bad.likelihood)
+
+#    return(loglik)
+#}
 
 
 GetMaxNameUCE <- function(x) {
@@ -368,6 +580,7 @@ GetMaxNameUCE <- function(x) {
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.nuc Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
+#' @param global.nucleotide.model assumes nucleotide model is shared among all partitions
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
 #' @param verbose Logical indicating whether each iteration be printed to the screen.
 #' @param n.cores The number of cores to run the analyses over.
@@ -380,7 +593,7 @@ GetMaxNameUCE <- function(x) {
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, max.restarts=10, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -416,7 +629,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     if(max.restarts > 1){
         selon.starting.vals <- matrix(0, max.restarts+1, 2)
-        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-20)*5e6, max = (10^-7)*5e6)
+        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-20)*5e6, max = (10^-12)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
         selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
     }else{
@@ -440,11 +653,11 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
     if(nuc.model == "UNREST"){
         nuc.ip = rep(1, 11)
-        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
-        parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-        upper = c(log(50), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
+        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
+        parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
+        upper = c(log(50), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
-        max.par.model.count = 3 + 3 + 11
+        max.par.model.count = 3 + 11
     }
     index.matrix = matrix(0, n.partitions, max.par.model.count)
     index.matrix[1,] = 1:ncol(index.matrix)
@@ -474,7 +687,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                         index.matrix.tmp = numeric(max.par.model.count)
                         ip[2] = ceiling(nsites.vector[partition.index]/2)
                         upper[2] = log(nsites.vector[partition.index])
-                        index.matrix.tmp[c(4:15)] = c(4:15)
+                        index.matrix.tmp[c(4:14)] = c(4:14)
                         ip.vector = c(ip.vector, ip[1:3])
                         upper.mat = rbind(upper.mat, upper)
                         lower.mat = rbind(lower.mat, lower)
@@ -521,7 +734,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
             opts.edge <- opts
-            upper.edge <- rep(log(5), length(phy$edge.length))
+            upper.edge <- rep(log(50), length(phy$edge.length))
             lower.edge <- rep(log(1e-8), length(phy$edge.length))
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
             phy$edge.length <- exp(results.edge.final$solution)
@@ -559,7 +772,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             cat("              Optimizing model parameters", "\n")
             # Optimize it all!
             ParallelizedOptimizedByGene <- function(n.partition){
-                optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=fixed.pars, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=FALSE)
+                optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=NULL, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=TRUE)
                 tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
                 return(tmp.pars)
             }
@@ -587,17 +800,10 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             if(optimal.nuc == "optimize"){
                 cat("              Optimizing nucleotide", "\n")
                 nuc.optim.list <- as.list(numeric(n.partitions))
-                for(partition.index in sequence(n.partitions)) {
-                    gene.tmp <- read.dna(partitions[partition.index], format='fasta')
-                    if(!is.null(fasta.rows.to.keep)){
-                        gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
-                    }else{
-                        gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
-                    }
-                    nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
-                    nucleotide.data <- nucleotide.data[phy$tip.label,]
-                    nuc.optim.list[[partition.index]] = GetOptimalNucPerSite(x=log(mle.pars.mat[partition.index,]), logspace=TRUE, verbose=verbose, neglnl=TRUE)
+                ParallelizedOptimizeNucByGene <- function(n.partition){
+                    nuc.optim.list[[partition.index]] = GetOptimalNucPerSite(x=log(mle.pars.mat[n.partition,]), nuc.data=site.pattern.data.list[[n.partition]], phy=phy, nuc.model=nuc.model, diploid=diploid, logspace=TRUE, verbose=verbose, neglnl=TRUE)
                 }
+                nuc.optim.list <- mclapply(1:n.partitions, ParallelizedOptimizeNucByGene, mc.cores=n.cores)
             }
             if(edge.length == "optimize"){
                 cat("              Optimizing edge lengths", "\n")
@@ -641,7 +847,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat("              Optimizing model parameters", "\n")
                 # Optimize it all!
                 ParallelizedOptimizedByGene <- function(n.partition){
-                    optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=fixed.pars, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=FALSE)
+                    optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsUCE, ub=upper.vector, lb=lower.vector, opts=opts, fixed.pars=NULL, site.pattern.data.list=site.pattern.data.list[[n.partition]], n.partitions=n.partitions, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, nuc.optim.list=nuc.optim.list[[n.partition]], diploid=diploid, nuc.model=nuc.model, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE, all.pars=TRUE)
                     tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
                     return(tmp.pars)
                 }
@@ -658,7 +864,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }
-            
         }
         
         if(output.by.restart == TRUE){
@@ -675,7 +880,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }
         number.of.current.restarts <- number.of.current.restarts + 1
         ip.vector[c(index.matrix[,1])] <- selon.starting.vals[number.of.current.restarts, 1]
-        ip.vector[2] <- c(selon.starting.vals[number.of.current.restarts, 2])
+        ip.vector[3] <- c(selon.starting.vals[number.of.current.restarts, 2])
         nuc.optim.list <- nuc.optim.original
     }
     selon.starting.vals <- best.ip
@@ -763,7 +968,7 @@ print.selon <- function(x,...){
 #system(paste("mkdir", paste("fastaSet",1, sep="_"), sep=" "))
 #write.dna(tmp, file=paste(paste("fastaSet",1, sep="_"), "/gene",  1, ".fasta", sep=""), format="fasta", colw=1000000)
 
-#pp <- SelonOptimize("fastaSet_1/", n.partitions=NULL, phy=phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE, n.cores=3)
+#pp <- SelonOptimize("", n.partitions=NULL, phy=phy2, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="JC", diploid=TRUE, n.cores=3)
 
 
 
