@@ -8,8 +8,9 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
   edge.length = "optimize", edge.linked = TRUE, optimal.nuc = "majrule",
   nuc.model = "GTR", global.nucleotide.model = TRUE, diploid = TRUE,
   verbose = FALSE, n.cores = 1, max.tol = .Machine$double.eps^0.25,
-  max.evals = 1e+06, max.restarts = 10, output.by.restart = TRUE,
-  output.restart.filename = "restartResult", fasta.rows.to.keep = NULL)
+  max.evals = 1e+06, cycle.stage=7, max.restarts = 10, 
+  output.by.restart = TRUE, output.restart.filename = "restartResult",
+  fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}
@@ -37,6 +38,8 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 \item{max.tol}{Supplies the relative optimization tolerance.}
 
 \item{max.evals}{Supplies the max number of iterations tried during optimization.}
+
+\item{cycle.stage}{Specifies the number of cycles per restart. Default is 7.}
 
 \item{max.restarts}{Supplies the number of random restarts.}
 

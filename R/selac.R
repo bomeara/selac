@@ -9,14 +9,14 @@
 ###LOAD REQUIRED PACKAGES -- eventually move to namespace:
 ## only set to TRUE when testing. Set to FALSE when committing changes
 # if(FALSE){
-     library(ape)
-     library(expm)
-     library(nnet)
-     library(nloptr)
-     library(seqinr)
-     library(phangorn)
-     library(MASS)
-     library(parallel)
+#     library(ape)
+#     library(expm)
+#     library(nnet)
+#     library(nloptr)
+#     library(seqinr)
+#     library(phangorn)
+#     library(MASS)
+#     library(parallel)
 #     library(Rcpp)
 #     library(RcppArmadillo)
 #     library(inline)
@@ -1322,6 +1322,11 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
             rates.k <- rates.and.weights[1:ncats]
             weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
+        if(gamma.type == "lognormal"){
+            rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
         final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
         for(k.cat in sequence(ncats)){
             if(k.levels > 0){
@@ -1438,6 +1443,11 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
         }
         if(gamma.type == "quadrature"){
             rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
+        if(gamma.type == "lognormal"){
+            rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
             rates.k <- rates.and.weights[1:ncats]
             weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
@@ -1607,6 +1617,11 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
             rates.k <- rates.and.weights[1:ncats]
             weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
+        if(gamma.type == "lognormal"){
+            rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
         final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
         for(k in sequence(ncats)){
             final.likelihood.mat[k,] = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=rates.k[k], root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
@@ -1711,6 +1726,11 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
                 }
                 if(gamma.type == "quadrature"){
                     rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+                    rates.k <- rates.and.weights[1:ncats]
+                    weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+                }
+                if(gamma.type == "lognormal"){
+                    rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
                     rates.k <- rates.and.weights[1:ncats]
                     weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
                 }
@@ -1828,6 +1848,11 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
                 }
                 if(gamma.type == "quadrature"){
                     rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+                    rates.k <- rates.and.weights[1:ncats]
+                    weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+                }
+                if(gamma.type == "lognormal"){
+                    rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
                     rates.k <- rates.and.weights[1:ncats]
                     weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
                 }
@@ -2650,6 +2675,15 @@ GetCAI <- function(codon.data, aa.optim, numcode=1, w){
 DiscreteGamma <- function (shape, ncats){
     quantiles <- qgamma((1:(ncats - 1))/ncats, shape = shape, rate = shape)
     return(diff(c(0, pgamma(quantiles * shape, shape + 1, rate=shape), 1)) * ncats)
+}
+
+
+LogNormalQuad <- function(shape, ncats){
+    s = shape
+    m = -(s^2)/2
+    pp <- gauss.quad.prob(ncats, dist="normal", mu=m, sigma=s)
+    sum(pp$nodes/m * pp$weights)
+    return(c(exp(pp$nodes/m, pp$weights)))
 }
 
 
@@ -5418,6 +5452,11 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
                 rates.k <- rates.and.weights[1:ncats]
                 weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
             }
+            if(gamma.type == "lognormal"){
+                rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
             final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
             for(k in sequence(ncats)){
                 if(k.levels > 0){
@@ -5492,6 +5531,11 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
             }
             if(gamma.type == "quadrature"){
                 rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
+            if(gamma.type == "lognormal"){
+                rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
                 rates.k <- rates.and.weights[1:ncats]
                 weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
             }
@@ -5643,6 +5687,11 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
                     rates.k <- rates.and.weights[1:ncats]
                     weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
                 }
+                if(gamma.type == "lognormal"){
+                    rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
+                    rates.k <- rates.and.weights[1:ncats]
+                    weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+                }
                 final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
                 for(k.cat in sequence(ncats)){
                     if(k.levels > 0){
@@ -5750,6 +5799,11 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
         }
         if(gamma.type == "quadrature"){
             rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rates.k <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+        }
+        if(gamma.type == "lognormal"){
+            rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
             rates.k <- rates.and.weights[1:ncats]
             weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
