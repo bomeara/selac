@@ -3452,7 +3452,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param include.gamma A logical indicating whether or not to include a discrete gamma model.
-#' @param gamma.type Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.
+#' @param gamma.type Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994 or "lognormal" after a lognormal quadrature approach.
 #' @param ncats The number of discrete categories.
 #' @param numcode The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
@@ -3495,8 +3495,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     if(!nuc.model == "JC" & !nuc.model == "GTR" & !nuc.model == "UNREST"){
         stop("Check that you have a supported nucleotide substitution model. Options are JC, GTR, or UNREST.", call.=FALSE)
     }
-    if(!gamma.type == "quadrature" & !gamma.type == "median"){
-        stop("Check that you have a supported gamma type. Options are quadrature after Felsenstein 2001 or median after Yang 1994.", call.=FALSE)
+    if(!gamma.type == "quadrature" & !gamma.type == "median" & !gamma.type == "lognormal"){
+        stop("Check that you have a supported gamma type. Options are quadrature after Felsenstein 2001 or median after Yang 1994 or lognormal.", call.=FALSE)
     }
 
     if(!is.null(user.optimal.aa)){
