@@ -426,6 +426,9 @@ GetLikelihoodUCEHMMForSingleCharGivenOptimum <- function(charnum=1, nuc.data, ph
             liks[i,] <- 1
         }
     }
+    print(Q_position)
+    print(liks)
+    print(root.p)
     #The result here is just the likelihood:
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
