@@ -39,7 +39,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{include.gamma}{A logical indicating whether or not to include a discrete gamma model.}
 
-\item{gamma.type}{Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.}
+\item{gamma.type}{Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994 or "lognormal" after a lognormal quadrature approach.}
 
 \item{ncats}{The number of discrete categories.}
 
