@@ -530,7 +530,6 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
     }
     
     phy$edge.length = x
-    
     if(hmm==TRUE){
         #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, 1 for transition rate among hidden nucleotides, and finally, the transition rates.
         if(nuc.model == "JC"){
@@ -542,7 +541,7 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
         if(nuc.model == "UNREST"){
             max.par = 3 + 1 + 11
         }
-        
+        print("here")
         if(is.null(n.cores)){
             likelihood.vector <- c()
             for(partition.index in sequence(n.partitions)){
