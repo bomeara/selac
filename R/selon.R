@@ -1466,6 +1466,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
             for(row.index in 1:dim(mle.pars.mat.red)[1]){
                 mle.pars.mat <- rbind(mle.pars.mat, c(mle.pars.mat.red[row.index,1:3], substitution.pars))
             }
+            print(mle.pars.mat)
         }else{
             cat("              Optimizing model parameters", "\n")
             # Optimize it all!
@@ -1528,6 +1529,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
                 for(row.index in 1:dim(mle.pars.mat.red)[1]){
                     mle.pars.mat <- rbind(mle.pars.mat, c(mle.pars.mat.red[row.index,1:3], substitution.pars))
                 }
+                print(mle.pars.mat)
                 lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
                 current.likelihood <- results.final$objective
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
