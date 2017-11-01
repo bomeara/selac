@@ -2682,8 +2682,7 @@ LogNormalQuad <- function(shape, ncats){
     s = shape
     m = -(s^2)/2
     pp <- gauss.quad.prob(ncats, dist="normal", mu=m, sigma=s)
-    sum(pp$nodes/m * pp$weights)
-    return(c(exp(pp$nodes/m, pp$weights)))
+    return(c(exp(pp$nodes/m), pp$weights))
 }
 
 

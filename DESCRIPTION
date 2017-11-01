@@ -25,6 +25,7 @@ Imports:
     parallel,
     phangorn,
     seqinr,
+    statmod,
     zoo,
     RColorBrewer
 License: GPL

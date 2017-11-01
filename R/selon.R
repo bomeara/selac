@@ -488,7 +488,7 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
     }
     if(nuc.model == "UNREST") {
         opt.nucleotide.transition = x[4]
-        tmp <- CreateHMMNucleotideMutationMatrix(model=model, rates=x[5:length(x)], base.freqs=NULL, opt.nucleotide.transition=opt.nucleotide.transition)
+        tmp <- CreateHMMNucleotideMutationMatrix(model=nuc.model, rates=x[5:length(x)], base.freqs=NULL, opt.nucleotide.transition=opt.nucleotide.transition)
         base.freqs <- tmp$base.freqs
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
@@ -498,7 +498,7 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
     #position.multiplier.vector <- x[1] * PositionSensitivityMultiplierSigmoid(x[2]+(-5), x[3]+(-5), x[4], nsites)
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
-    final.likelihood <- GetLikelihoodUCEHMMForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
+    final.likelihood <- GetLikelihoodHMMUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, root.p_array=base.freqs, diploid=diploid)
     likelihood <- sum(final.likelihood)
     
     if(neglnl) {
