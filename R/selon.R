@@ -403,7 +403,7 @@ GetLikelihoodUCEHMMForSingleCharGivenOptimum <- function(charnum=1, nuc.data, ph
     nb.node <- phy$Nnode
     nl <- nrow(Q_position)
     #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
-    liks <- matrix(0, nb.tip + nb.node, nl*nl)
+    liks <- matrix(0, nb.tip + nb.node, nl)
     #Now loop through the tips.
     for(i in 1:nb.tip){
         #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
