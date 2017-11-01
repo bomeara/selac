@@ -335,8 +335,6 @@ CreateHMMNucleotideMutationMatrix <- function(model="UNREST", rates, base.freqs=
         rownames(evolv.nucleotide.mutation) <- paste(rep(.nucleotide.name, times=4), rep(.nucleotide.name, each=4), sep="")
         colnames(evolv.nucleotide.mutation) <- paste(rep(.nucleotide.name, times=4), rep(.nucleotide.name, each=4), sep="")
         
-        diag(evolv.nucleotide.mutation) <- 0
-        
         return(evolv.nucleotide.mutation)
     }
 }
@@ -430,6 +428,7 @@ GetLikelihoodUCEHMMForSingleCharGivenOptimum <- function(charnum=1, nuc.data, ph
     #print(liks)
     #print(root.p)
     #The result here is just the likelihood:
+    print(Q_position)
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
     #Q_position_vectored <- c(t(Q_position)) # has to be transposed
