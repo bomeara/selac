@@ -426,9 +426,9 @@ GetLikelihoodUCEHMMForSingleCharGivenOptimum <- function(charnum=1, nuc.data, ph
             liks[i,] <- 1
         }
     }
-    print(Q_position)
-    print(liks)
-    print(root.p)
+    #print(Q_position)
+    #print(liks)
+    #print(root.p)
     #The result here is just the likelihood:
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
@@ -544,7 +544,7 @@ OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partiti
         if(nuc.model == "UNREST"){
             max.par = 3 + 1 + 11
         }
-        print("here")
+        #print("here")
         if(is.null(n.cores)){
             likelihood.vector <- c()
             for(partition.index in sequence(n.partitions)){
