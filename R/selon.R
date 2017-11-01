@@ -314,7 +314,7 @@ CreateHMMNucleotideMutationMatrix <- function(model="UNREST", rates, base.freqs=
         obj$base.freq <- base.freqs.scaled
         obj$nuc.mutation.rates <- evolv.nucleotide.mutation
         
-        return(evolv.nucleotide.mutation)
+        return(obj)
     }else{
         individual.matrix <- CreateNucleotideMutationMatrixHMMSpecial(rates=rates, model=model)
         for(i in 1:4) {
