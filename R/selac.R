@@ -3610,7 +3610,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     }
 
     opts <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol)
-    opts.edge <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol.edge)
+    opts.edge <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol.edges)
 
 
     results.final <- c()
