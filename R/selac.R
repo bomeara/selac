@@ -792,8 +792,8 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
   numcode.idx <- .numcode.translation.idx[numcode]
   aa.names <- .aa.translation[[numcode.idx]]
   
-  aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
-  #aa.trans.mat <- (importance*exp(-aa.distances[.unique.aa, .unique.aa]))/Ne
+  #aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
+  aa.trans.mat <- (exp(-importance*aa.distances[.unique.aa, .unique.aa]))/Ne
   diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here
   aa.trans.mat[,colnames(aa.trans.mat) == "*"] <- 0 # find better solution
   aa.trans.mat[colnames(aa.trans.mat) == "*",] <- 0
@@ -1079,8 +1079,8 @@ GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot <- function(codon.
 
 GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, n.cores.by.gene.by.site=1){
   
-  nsites <- dim(codon.data$unique.site.patterns)[2]-1
-  final.likelihood.vector <- rep(NA, nsites)
+  nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
+  final.likelihood.vector <- rep(NA, nsites.unique)
   
   #We rescale the codon matrix only:
   diag(codon_mutation_matrix) = 0
@@ -1105,24 +1105,23 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   #root.p_array <- t(root.p_array)
   #root.p_array <- root.p_array / rowSums(root.p_array)
   #rownames(root.p_array) <- .unique.aa
-  
   phy.sort <- reorder(phy, "pruningwise")
   Q_codon_array_vectored <- c(t(Q_codon_array)) # has to be transposed
-  Q_codon_array_vectored <- Q_codon_array_vectored[-which(Q_codon_array_vectored == 0)]
+  Q_codon_array_vectored <- Q_codon_array_vectored[.non_zero_pos]
   anc.indices <- unique(phy.sort$edge[,1])
   MultiCoreLikelihoodBySite <- function(nsite.index){
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon_array_vectored=Q_codon_array_vectored, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
-  final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
+  final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
   return(final.likelihood.vector)
 }
 
 
 GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, n.cores.by.gene.by.site=1) {
   
-  nsites <- dim(codon.data$unique.site.patterns)[2]-1
-  final.likelihood.vector <- rep(NA, nsites)
+  nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
+  final.likelihood.vector <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
   
   #We rescale the codon matrix only:
@@ -1180,7 +1179,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[i]]], root.p=root.p_array[aa.optim_array[i],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
-  final.likelihood.vector.mc <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
+  final.likelihood.vector.mc <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
   #    final.likelihood.vector <- rep(NA, nsites)
   #for (i in sequence(nsites)) {
   #    final.likelihood.vector[i] <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=i, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt[[aa.optim_array[i]]], root.p=root.p_array[aa.optim_array[i],], scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
@@ -1317,7 +1316,8 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
   nuc.mutation.rates.vector <- c(nuc.mutation.rates, rate.for.selective.environment.change)
   codon_mutation_matrix <- matrix(nuc.mutation.rates.vector[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-  nsites <- dim(codon.data$unique.site.patterns)[2]-1
+  nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
+  nsites <- sum(codon.data$site.pattern.counts)
   
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
@@ -1334,7 +1334,9 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
       rates.k <- rates.and.weights[1:ncats]
       weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
     }
-    final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+    #ttmmpp <- c(nuc.mutation.rates.vector, nsites.unique, nsites, C, Phi, rates.k, q, Ne, shape, importance.of.aa.dist.in.selective.environment.change)
+    #writeLines(text = paste(ttmmpp), con = "~/Desktop/selac_parameter.txt", sep = "\t")
+    final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites.unique)
     for(k.cat in sequence(ncats)){
       if(k.levels > 0){
         aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
@@ -1441,7 +1443,8 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-  nsites <- dim(codon.data$unique.site.patterns)[2]-1
+  nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
+  nsites <- sum(codon.data$site.pattern.counts)
   
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
@@ -1458,7 +1461,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
       rates.k <- rates.and.weights[1:ncats]
       weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
     }
-    final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+    final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites.unique)
     for(k.cat in sequence(ncats)){
       if(k.levels > 0){
         aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
@@ -1705,27 +1708,28 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
   
   if(!is.null(codon.data$unique.site.patterns)){
     codon.data.list <- codon.data
-    nsites <- dim(codon.data$unique.site.patterns)[2]-1
+    nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   }else{
-    nsites <- dim(codon.data)[2]-1
+    nsites.unique <- dim(codon.data)[2]-1
     codon.data.list <- NULL
     codon.data.list$unique.site.patterns <- codon.data
-    codon.data.list$site.pattern.counts <- rep(1, nsites)
+    codon.data.list$site.pattern.counts <- rep(1, nsites.unique)
   }
+  nsites <- sum(codon.data.list$site.pattern.counts)
   
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   
-  optimal.vector.by.site <- rep(NA, nsites)
+  optimal.vector.by.site <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
-  optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
+  optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites.unique)
   
   for(i in 1:length(.unique.aa)){
     if(.unique.aa[i]=="*"){
-      optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites)
+      optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites.unique)
     }else{
-      aa.optim_array = rep(.unique.aa[i], nsites)
+      aa.optim_array = rep(.unique.aa[i], nsites.unique)
       if(include.gamma==TRUE){
         if(gamma.type == "median"){
           rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -1741,7 +1745,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
           rates.k <- rates.and.weights[1:ncats]
           weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
-        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites.unique)
         for(k.cat in sequence(ncats)){
           if(k.levels > 0){
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
@@ -1768,7 +1772,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
       }
     }
   }
-  for(j in 1:nsites){
+  for(j in 1:nsites.unique){
     optimal.vector.by.site[j] <- .unique.aa[which.is.max(optimal.aa.likelihood.mat[,j])]
   }
   return(optimal.vector.by.site)
@@ -1827,27 +1831,28 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
   
   if(!is.null(codon.data$unique.site.patterns)){
     codon.data.list <- codon.data
-    nsites <- dim(codon.data$unique.site.patterns)[2]-1
+    nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   }else{
-    nsites <- dim(codon.data)[2]-1
+    nsites.unique <- dim(codon.data)[2]-1
     codon.data.list <- NULL
     codon.data.list$unique.site.patterns <- codon.data
-    codon.data.list$site.pattern.counts <- rep(1, nsites)
+    codon.data.list$site.pattern.counts <- rep(1, nsites.unique)
   }
+  nsites <- sum(codon.data.list$site.pattern.counts)
   
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   
-  likelihood.by.site <- rep(NA, nsites)
+  likelihood.by.site <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
-  optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
+  optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites.unique)
   
   for(i in 1:length(.unique.aa)){
     if(.unique.aa[i]=="*"){
-      optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites)
+      optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites.unique)
     }else{
-      aa.optim_array = rep(.unique.aa[i], nsites)
+      aa.optim_array = rep(.unique.aa[i], nsites.unique)
       if(include.gamma==TRUE){
         if(gamma.type == "median"){
           rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -1863,9 +1868,7 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
           rates.k <- rates.and.weights[1:ncats]
           weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
-        ttmmpp <- c(nuc.mutation.rates.vector, nsites, C, Phi, rates.k, q, Ne, shape, importance.of.aa.dist.in.selective.environment.change)
-        writeLines(text = paste(ttmmpp), con = "~/Desktop/selac_parameter.txt", sep = "\t")
-        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites.unique)
         for(k.cat in sequence(ncats)){
           if(k.levels > 0){
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
@@ -1893,7 +1896,7 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
     }
   }
   #Take average
-  for(j in 1:nsites){
+  for(j in 1:nsites.unique){
     #Exclude stop codons, otherwise aritificially inflates likelihood due to our arbitrary setting to -100000. If stop codons are to be included, the following line would have to be modified.
     likelihood.by.site[j] <- log(mean(exp(optimal.aa.likelihood.mat[which(!.unique.aa=="*"),j])))
   }
@@ -2412,7 +2415,7 @@ OptimizeModelParsAlphaBetaGtrFixed <- function(x, alpha.beta.gtr, codon.site.dat
       likelihood.vector = sum(GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
       likelihood = sum(likelihood.vector)
     }
-  }
+  } ## end else for HMM == TRUE
   return(likelihood)
 }
 
@@ -3365,55 +3368,64 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                                paste("unknown error. ode() istate value: ", as.character(istate))
           )
           
-          warning(print(paste("selac.R: Integration of desIndex", desIndex, " ode solver returned istate[1] = ",  istate, " : ", error.text, " returning bad.likelihood")))
-          return(bad.likelihood)
+          warning(print(paste("selac.R: Integration of descendent index", desIndex, ": ode solver returned state = ",  istate, " : ", error.text)))
+          
+          if(ode.solver.attempt < num.ode.method){
+            warning.message <- paste("\tTrying ode method ", ode.method.vec[ode.solver.attempt+1])
+            warning(warning.message)
+          }else{
+            warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
+            warning(warning.message)
+            return(bad.likelihood)
+          }
+          #return(bad.likelihood)
         }else{
           ##no integration issues,
           ## object consists of pr values at start and end time
           ## extract final state variable, dropping time entry
           subtree.pr.vector <- subtree.pr.ode.obj[dim(subtree.pr.ode.obj)[[1]],-1]
-        }
-        
-        ## test for negative entries
-        ## if encountered and less than neg.pr.threshold
-        ## replace the negative values to 0
-        ## if there are values less than neg.pr.threshold, then
-        ## resolve equations using more robust method on the list
-        ## Alternative: use 'event' option in deSolve as described at
-        ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
-        neg.vector.pos <- which(subtree.pr.vector < 0, arr.ind=TRUE)
-        num.neg.vector.pos <- length(neg.vector.pos)
-        
-        if(num.neg.vector.pos > 0){
-          min.vector.val <- min(subtree.pr.vector[neg.vector.pos])
-          neg.vector.pos.as.string <- toString(neg.vector.pos)
-          
-          warning.message <- paste("WARNING: subtree.pr.vector solved with ode method ", ode.method, " contains ", num.neg.vector.pos, " negative values at positions ", neg.vector.pos.as.string ,  "of a ", length(subtree.pr.vector), " vector." )
           
           
-          if(min.vector.val > neg.pr.threshold){
-            warning.message <- paste(warning.message, "\nMinimum value ", min.vector.val, " >  ", neg.pr.threshold, " the neg.pr.threshold.\nSetting all negative values to 0.")
-            warning(warning.message)
-            subtree.pr.vector[neg.vector.pos] <- 0
+          ## test for negative entries
+          ## if encountered and less than neg.pr.threshold
+          ## replace the negative values to 0
+          ## if there are values less than neg.pr.threshold, then
+          ## resolve equations using more robust method on the list
+          ## Alternative: use 'event' option in deSolve as described at
+          ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
+          neg.vector.pos <- which(subtree.pr.vector < 0, arr.ind=TRUE)
+          num.neg.vector.pos <- length(neg.vector.pos)
+          
+          if(num.neg.vector.pos > 0){
+            min.vector.val <- min(subtree.pr.vector[neg.vector.pos])
+            neg.vector.pos.as.string <- toString(neg.vector.pos)
             
-          }else{
-            warning.message <- paste(warning.message, "selac.R: minimum value ", min.vector.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
+            warning.message <- paste("WARNING: subtree.pr.vector solved with ode method ", ode.method, " contains ", num.neg.vector.pos, " negative values at positions ", neg.vector.pos.as.string ,  "of a ", length(subtree.pr.vector), " vector." )
             
-            if(ode.solver.attempt < num.ode.method){
-              warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
+            
+            if(min.vector.val > neg.pr.threshold){
+              warning.message <- paste(warning.message, "\nMinimum value ", min.vector.val, " >  ", neg.pr.threshold, " the neg.pr.threshold.\nSetting all negative values to 0.")
               warning(warning.message)
+              subtree.pr.vector[neg.vector.pos] <- 0
               
             }else{
-              warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
-              warning(warning.message)
-              return(bad.likelihood)
+              warning.message <- paste(warning.message, "selac.R: minimum value ", min.vector.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
+              
+              if(ode.solver.attempt < num.ode.method){
+                warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
+                warning(warning.message)
+                
+              }else{
+                warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
+                warning(warning.message)
+                return(bad.likelihood)
+              }
             }
+          }else{
+            ## no negative values in pr.vs.time.matrix
+            ode.not.solved <- FALSE
           }
-        }else{
-          ## no negative values in pr.vs.time.matrix
-          ode.not.solved <- FALSE
-        }
-        
+        } ## end else to istate < 0
       } ##end while() for ode solver
       
       
@@ -4035,11 +4047,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       index.matrix = matrix(0, n.partitions, max.par.model.count)
       index.matrix[1,] = 1:ncol(index.matrix)
-      if(start.from.mle == TRUE){
-        ip.vector = ip[1,]
-      }else{
-        ip.vector = ip
-      }
+      ip.vector = ip
       if(n.partitions > 1){
         # Gamma variation is turned ON:
         for(partition.index in 2:n.partitions){
@@ -5670,30 +5678,30 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
   
   if(!is.null(codon.data$unique.site.patterns)){
     codon.data.list <- codon.data
-    nsites <- dim(codon.data$unique.site.patterns)[2]-1
+    nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   }else{
-    nsites <- dim(codon.data)[2]-1
+    nsites.unique <- dim(codon.data)[2]-1
     codon.data.list <- NULL
     codon.data.list$unique.site.patterns <- codon.data
-    codon.data.list$site.pattern.counts <- rep(1, nsites)
+    codon.data.list$site.pattern.counts <- rep(1, nsites.unique)
   }
-  
+  nsites <- sum(codon.data$site.pattern.counts)
   
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   
-  optimal.vector.by.site <- rep(NA, nsites)
+  optimal.vector.by.site <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
-  optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites)
+  optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites.unique)
   
   for(i in 1:length(.unique.aa)){
     if(.unique.aa[i]=="*"){
-      optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites)
+      optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites.unique)
     }else{
-      aa.optim_array = rep(.unique.aa[i], nsites)
+      aa.optim_array = rep(.unique.aa[i], nsites.unique)
       if(include.gamma==TRUE){
-        gene_site_array <- array(1, dim=c(21, nsites, ncats=ncats))
+        gene_site_array <- array(1, dim=c(21, nsites.unique, ncats=ncats))
         if(gamma.type == "median"){
           rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
           weights.k <- rep(1/ncats, ncats)
@@ -5708,7 +5716,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
           rates.k <- rates.and.weights[1:ncats]
           weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
         }
-        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+        final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites.unique)
         for(k.cat in sequence(ncats)){
           if(k.levels > 0){
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
@@ -5806,7 +5814,8 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-  nsites <- dim(codon.data$unique.site.patterns)[2]-1
+  nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
+  nsites <- sum(codon.data$site.pattern.counts)
   
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
@@ -5823,7 +5832,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
       rates.k <- rates.and.weights[1:ncats]
       weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
     }
-    final.likelihood = matrix(0, nrow=ncats, ncol=nsites)
+    final.likelihood = matrix(0, nrow=ncats, ncol=nsites.unique)
     for(k.cat in sequence(ncats)){
       if(k.levels > 0){
         aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=poly.params, k=k.levels)
