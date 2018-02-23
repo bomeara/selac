@@ -1190,8 +1190,8 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 
 
 GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, root.p_array=NULL, Q_codon, numcode, n.cores.by.gene.by.site=1) {
-  nsites <- dim(codon.data$unique.site.patterns)[2] - 1
-  final.likelihood.vector <- rep(NA, nsites)
+  nsites.unique <- dim(codon.data$unique.site.patterns)[2] - 1
+  final.likelihood.vector <- rep(NA, nsites.unique)
   
   diag(Q_codon) = 0
   diag(Q_codon) = -rowSums(Q_codon)
@@ -1205,14 +1205,14 @@ GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, r
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
-  final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
+  final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
   return(final.likelihood.vector)
 }
 
 
 GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation.rates, include.gamma=FALSE, rates.k=NULL, ncats=NULL, root.p_array=NULL, n.cores.by.gene.by.site=1) {
-  nsites <- dim(nuc.data$unique.site.patterns)[2]-1
-  final.likelihood.vector <- rep(NA, nsites)
+  nsites.unique <- dim(nuc.data$unique.site.patterns)[2]-1
+  final.likelihood.vector <- rep(NA, nsites.unique)
   if(is.null(root.p_array)) {
     #Generate matrix of equal frequencies for each site:
     root.p_array <- rep(0.25, 4)
@@ -1231,7 +1231,7 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=nuc.data$unique.site.patterns, phy=phy, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
-  final.likelihood.vector <- unlist(mclapply(1:nsites, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
+  final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
   return(final.likelihood.vector)
 }
 
@@ -1614,7 +1614,7 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
   }else{
     transition.rates <- x[1:length(x)]
   }
-  nsites <- dim(nuc.data$unique.site.patterns)[2]-1
+  nsites.unique <- dim(nuc.data$unique.site.patterns)[2]-1
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(transition.rates, model=nuc.model)
   
   if(include.gamma==TRUE){
@@ -1632,7 +1632,7 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
       rates.k <- rates.and.weights[1:ncats]
       weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
     }
-    final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites)
+    final.likelihood.mat = matrix(0, nrow=ncats, ncol=nsites.unique)
     for(k in sequence(ncats)){
       final.likelihood.mat[k,] = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=rates.k[k], root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     }
