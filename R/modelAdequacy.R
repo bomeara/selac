@@ -1018,17 +1018,17 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
     }
     
     if(model.to.reconstruct.under == "selac" & model.to.simulate.under == "gtr" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "selac" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "fmutsel"){
-        simulated.across.intervals.and.sites <- selac:::GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
+        simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
             for(site.index in 1:selac.obj.to.reconstruct$nsites[partition.number]){
-                reconstructed.sequence <- c(reconstructed.sequence, selac:::.aa.translation[[numcode]][simulated.across.intervals.and.sites$interval.recon_array[interval.index,site.index]])
+                reconstructed.sequence <- c(reconstructed.sequence, .aa.translation[[numcode]][simulated.across.intervals.and.sites$interval.recon_array[interval.index,site.index]])
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
             if(selac.obj.to.simulate$include.gamma == TRUE){
-                rates.cat <- selac:::LaguerreQuad(selac.obj.to.simulate$mle.pars[1,length(selac.obj.to.simulate$mle.pars[1,])], ncats=4)[1:4]
-                functionality.taxon.interval <- selac:::GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=rates.cat[simulated.across.intervals.and.sites$site.gamma.indicator], aa.properties=selac.obj.to.reconstruct$aa.properties)
+                rates.cat <- LaguerreQuad(selac.obj.to.simulate$mle.pars[1,length(selac.obj.to.simulate$mle.pars[1,])], ncats=4)[1:4]
+                functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=rates.cat[simulated.across.intervals.and.sites$site.gamma.indicator], aa.properties=selac.obj.to.reconstruct$aa.properties)
             }else{
                 functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=NULL, aa.properties=selac.obj.to.reconstruct$aa.properties, fmutsel=TRUE)
             }
@@ -1062,8 +1062,7 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
 #' Performs a parallelized analysis of the model adequacy test. The test prunes out a user-specified taxon from the tree, performs site data reconstruction for all nodes in the tree under a user-specified model, then simulates the expected data of the pruned taxon according to a user-specified model along uniformly sampled points along the branch. The functionality of the reconstructed sequence is also calculated along the way to see how functionality changes as the simulation reaches the end of the known branch length. The output is a list with elements equally the number of repititions. Each element contains the functionality of the simulated points along equally spaced sampling points along the known branch length (i.e., edge.length * seq(0, 1, by=0.05))
 GetAdequateManyReps <- function(nreps, n.cores, model.to.reconstruct.under="selac", model.to.simulate.under="gtr", selac.obj.to.reconstruct, selac.obj.to.simulate, aa.optim.input=NULL, fasta.rows.to.keep=NULL, taxon.to.drop=2, partition.number=17, numcode=1, for.gtr.only=NULL){
     RunMany <- function(nrep){
-        print(nrep)
-        tmp <- selac:::GetAdequateSelac(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj.to.reconstruct=selac.obj.to.reconstruct, selac.obj.to.simulate=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number, numcode=numcode, for.gtr.only=for.gtr.only)
+        tmp <- GetAdequateSelac(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj.to.reconstruct=selac.obj.to.reconstruct, selac.obj.to.simulate=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number, numcode=numcode, for.gtr.only=for.gtr.only)
         return(tmp)
     }
     pp <- mclapply(1:nreps, RunMany, mc.cores=n.cores)
