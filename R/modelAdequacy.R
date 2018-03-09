@@ -223,31 +223,16 @@ GetFunctionalityModelAdequacy <- function(gene.length, aa.data, optimal.aa, alph
     if(is.null(gp)){
         gp <- rep(1, gene.length)
     }
-    if(fmutsel == TRUE){
-        aa.distances <- c()
-        #Note using only the second row, because we are comparing empirical S. cervisae rates:
-        for(site.index in 1:gene.length){
-            if(aa.data[site.index]!="NA"){
-                #broke this up to make debugging easier:
-                distance <- ((alpha*(aa.properties[aa.data[site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))
-                aa.distances <- c(aa.distances, (1+gp[site.index]*distance))
-            }else{
-                aa.distances <- c(aa.distances, 0)
-                gene.length <- gene.length - 1
-            }
-        }
-    }else{
-        aa.distances <- c()
-        #Note using only the second row, because we are comparing empirical S. cervisae rates:
-        for(site.index in 1:gene.length){
-            if(aa.data[site.index]!="NA"){
-                #broke this up to make debugging easier:
-                distance <- ((alpha*(aa.properties[aa.data[site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))
-                aa.distances <- c(aa.distances, (1+gp[site.index]*distance))
-            }else{
-                aa.distances <- c(aa.distances, 0)
-                gene.length <- gene.length - 1
-            }
+    aa.distances <- c()
+    #Note using only the second row, because we are comparing empirical S. cervisae rates:
+    for(site.index in 1:gene.length){
+        if(aa.data[site.index]!="NA" & aa.data[site.index]!="*"){
+            #broke this up to make debugging easier:
+            distance <- ((alpha*(aa.properties[aa.data[site.index],1] - aa.properties[optimal.aa[site.index],1])^2 + beta*(aa.properties[aa.data[site.index],2]-aa.properties[optimal.aa[site.index],2])^2+gamma*(aa.properties[aa.data[site.index],3]-aa.properties[optimal.aa[site.index],3])^2)^(1/2))
+            aa.distances <- c(aa.distances, (1+gp[site.index]*distance))
+        }else{
+            aa.distances <- c(aa.distances, 0)
+            gene.length <- gene.length - 1
         }
     }
     functionality = 1/((1/gene.length) * sum(aa.distances))
@@ -1018,19 +1003,19 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
     }
     
     if(model.to.reconstruct.under == "selac" & model.to.simulate.under == "gtr" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "selac" | model.to.reconstruct.under == "selac" & model.to.simulate.under == "fmutsel"){
-        simulated.across.intervals.and.sites <- GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
+        simulated.across.intervals.and.sites <- selac:::GetIntervalSequencesAllSites(model.to.simulate.under=model.to.simulate.under, model.to.reconstruct.under=model.to.reconstruct.under, selac.obj1=selac.obj.to.reconstruct, selac.obj2=selac.obj.to.simulate, aa.optim.input=aa.optim.input, fasta.rows.to.keep=fasta.rows.to.keep, taxon.to.drop=taxon.to.drop, partition.number=partition.number)
         functionality.taxon <- c()
         for(interval.index in 1:length(prop.intervals)){
             reconstructed.sequence <- c()
             for(site.index in 1:selac.obj.to.reconstruct$nsites[partition.number]){
-                reconstructed.sequence <- c(reconstructed.sequence, .aa.translation[[numcode]][simulated.across.intervals.and.sites$interval.recon_array[interval.index,site.index]])
+                reconstructed.sequence <- c(reconstructed.sequence, selac:::.aa.translation[[numcode]][simulated.across.intervals.and.sites$interval.recon_array[interval.index,site.index]])
                 reconstructed.sequence <- unname(reconstructed.sequence)
             }
             if(selac.obj.to.simulate$include.gamma == TRUE){
-                rates.cat <- LaguerreQuad(selac.obj.to.simulate$mle.pars[1,length(selac.obj.to.simulate$mle.pars[1,])], ncats=4)[1:4]
-                functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=rates.cat[simulated.across.intervals.and.sites$site.gamma.indicator], aa.properties=selac.obj.to.reconstruct$aa.properties)
+                rates.cat <- selac:::LaguerreQuad(selac.obj.to.simulate$mle.pars[1,length(selac.obj.to.simulate$mle.pars[1,])], ncats=4)[1:4]
+                functionality.taxon.interval <- selac:::GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=rates.cat[simulated.across.intervals.and.sites$site.gamma.indicator], aa.properties=selac.obj.to.reconstruct$aa.properties)
             }else{
-                functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=NULL, aa.properties=selac.obj.to.reconstruct$aa.properties, fmutsel=TRUE)
+                functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=NULL, aa.properties=selac.obj.to.reconstruct$aa.properties, fmutsel=FALSE)
             }
             functionality.taxon <- c(functionality.taxon, functionality.taxon.interval)
         }
