@@ -1573,18 +1573,18 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     x = exp(x)
   }
   if(nuc.model == "JC") {
-    base.freqs <- c(x[1:3], 1-sum(x[1:3]))
+    base.freqs <- c(x[2:4], 1-sum(x[2:4]))
     nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
-    x = x[-(1:3)]
+    x = x[-c(2:4)]
   }
   if(nuc.model == "GTR") {
-    base.freqs <- c(x[1:3], 1-sum(x[1:3]))
-    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:8], model=nuc.model, base.freqs=base.freqs)
-    x = x[-(1:8)]
+    base.freqs <- c(x[2:4], 1-sum(x[2:4]))
+    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[5:9], model=nuc.model, base.freqs=base.freqs)
+    x = x[-c(2:9)]
   }
   if(nuc.model == "UNREST") {
-    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[1:11], model=nuc.model, base.freqs=NULL)
-    x = x[-(1:11)]
+    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[2:12], model=nuc.model, base.freqs=NULL)
+    x = x[-c(2:12)]
   }
   
   #During the early stages of the optimization process it will try weird values for the base frequencies.
@@ -2245,7 +2245,6 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
             likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
         if(codon.model == "FMutSel0" | codon.model == "FMutSel"){
-          #To do: figure out way to allow for the crazy 60 fitness par model.
           if(codon.model == "FMutSel0"){
               if(nuc.model == "JC"){
                   #base.freq + nuc.rates + omega + fitness.pars
