@@ -1600,16 +1600,16 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     fitness.pars <- c(x[-1],0)
     fitness.pars.ordered <- numeric(n.codons)
     if(length(fitness.pars)>21){
-      fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
+        fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
     }else{
-      fitness.pars.ordered <- numeric(n.codons)
-      #codon.set.translate <- apply(.codon.sets, 2, n2s)
-      #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
-      aa.translations <- .aa.translation[[numcode]][.codon.name]
-      unique.aa.nostop = .unique.aa[-which(.unique.aa=="*")]
-      for(par.index in 1:length(unique.aa.nostop)){
-        fitness.pars.ordered[which(aa.translations == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
-      }
+        fitness.pars.ordered <- numeric(n.codons)
+        #codon.set.translate <- apply(.codon.sets, 2, n2s)
+        #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+        aa.translations <- .aa.translation[[numcode]][.codon.name]
+        unique.aa.nostop = .unique.aa[-which(.unique.aa=="*")]
+        for(par.index in 1:length(unique.aa.nostop)){
+            fitness.pars.ordered[which(aa.translations == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
+        }
     }
     for(codon.index in 1:n.codons){
       #In the canonical model stop codons are ignored. We do the same here.
@@ -2244,17 +2244,30 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
             partition.order <- 1:n.partitions
             likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
-        if(codon.model == "FMutSel0"){
+        if(codon.model == "FMutSel0" | codon.model == "FMutSel"){
           #To do: figure out way to allow for the crazy 60 fitness par model.
-          if(nuc.model == "JC"){
-            #base.freq + nuc.rates + omega + fitness.pars
-            max.par = 3 + 0 + 1 + 19
-          }
-          if(nuc.model == "GTR"){
-            max.par = 3 + 5 + 1 + 19
-          }
-          if(nuc.model == "UNREST"){
-            max.par = 0 + 11 + 1 + 19
+          if(codon.model == "FMutSel0"){
+              if(nuc.model == "JC"){
+                  #base.freq + nuc.rates + omega + fitness.pars
+                  max.par = 3 + 0 + 1 + 19
+              }
+              if(nuc.model == "GTR"){
+                  max.par = 3 + 5 + 1 + 19
+              }
+              if(nuc.model == "UNREST"){
+                  max.par = 0 + 11 + 1 + 19
+              }
+          }else{
+              if(nuc.model == "JC"){
+                  #base.freq + nuc.rates + omega + fitness.pars
+                  max.par = 3 + 0 + 1 + 60
+              }
+              if(nuc.model == "GTR"){
+                  max.par = 3 + 5 + 1 + 60
+              }
+              if(nuc.model == "UNREST"){
+                  max.par = 0 + 11 + 1 + 60
+              }
           }
           MultiCoreLikelihood <- function(partition.index){
             codon.data = NULL
@@ -2685,32 +2698,47 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
         }
         likelihood = sum(likelihood.vector)
     }
-    if(codon.model == "FMutSel0") {
-      #To do: figure out way to allow for the crazy 60 fitness par model.
-      if(nuc.model == "JC"){
-        #base.freq + nuc.rates + omega + fitness.pars
-        max.par = 3 + 0 + 1 + 19
-      }
-      if(nuc.model == "GTR"){
-        max.par = 3 + 5 + 1 + 19
-      }
-      if(nuc.model == "UNREST"){
-        max.par = 0 + 11 + 1 + 19
-      }
-      likelihood.vector <- c()
-      for(partition.index in sequence(n.partitions)){
-        codon.data = NULL
-        codon.data$unique.site.patterns = codon.site.data
-        codon.data$site.pattern.counts = codon.site.counts
-        likelihood.vector.tmp <- NA
-        try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-        if(is.na(likelihood.vector.tmp[1])){
-          return(10000000)
+    if(codon.model == "FMutSel0" | codon.model == "FMutSel") {
+        if(codon.model == "FMutSel0"){
+            #To do: figure out way to allow for the crazy 60 fitness par model.
+            if(nuc.model == "JC"){
+                #base.freq + nuc.rates + omega + fitness.pars
+                max.par = 3 + 0 + 1 + 19
+            }
+            if(nuc.model == "GTR"){
+                max.par = 3 + 5 + 1 + 19
+            }
+            if(nuc.model == "UNREST"){
+                max.par = 0 + 11 + 1 + 19
+            }
         }else{
-          likelihood.vector <- c(likelihood.vector, likelihood.vector.tmp)
+            #To do: figure out way to allow for the crazy 60 fitness par model.
+            if(nuc.model == "JC"){
+                #base.freq + nuc.rates + omega + fitness.pars
+                max.par = 3 + 0 + 1 + 60
+            }
+            if(nuc.model == "GTR"){
+                max.par = 3 + 5 + 1 + 60
+            }
+            if(nuc.model == "UNREST"){
+                max.par = 0 + 11 + 1 + 60
+            }
+ 
         }
-      }
-      likelihood = sum(likelihood.vector)
+        likelihood.vector <- c()
+        for(partition.index in sequence(n.partitions)){
+            codon.data = NULL
+            codon.data$unique.site.patterns = codon.site.data
+            codon.data$site.pattern.counts = codon.site.counts
+            likelihood.vector.tmp <- NA
+            try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+            if(is.na(likelihood.vector.tmp[1])){
+                return(10000000)
+            }else{
+                likelihood.vector <- c(likelihood.vector, likelihood.vector.tmp)
+            }
+        }
+        likelihood = sum(likelihood.vector)
     }
   }
   return(likelihood)
@@ -3563,7 +3591,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
-#' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "selac".
+#' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "FMutSel", "selac".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".
@@ -3936,18 +3964,19 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       if(codon.model == "FMutSel0"){
           fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]])[-c(17,21)]
-          aa.ordered <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "Y", "C", "W")
+          aa.ordered <- .unique.aa
+          aa.ordered <- aa.ordered[-c(17,21)]
           if(nuc.model == "UNREST"){
               max.par.model.count <- max.par.model.count + 1 + 19
-              ip = c(nuc.ip, 0.4, fitness.pars)
-              parameter.column.names <- c(parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
-              upper = c(rep(log(99), length(ip)-3))
+              ip = c(0.4, nuc.ip, fitness.pars)
+              parameter.column.names <- c("omega", parameter.column.names, paste("fitness", aa.ordered, sep="_"))
+              upper = rep(log(99), length(ip))
               lower = rep(-10, length(ip))
           }else{
               max.par.model.count <- max.par.model.count + 3 + 1 + 19
-              ip = c(.25, .25, .25, nuc.ip, 0.4, fitness.pars)
-              parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
-              upper = c(0, 0, 0, rep(log(99), length(ip)-3))
+              ip = c(0.4, .25, .25, .25, nuc.ip, fitness.pars)
+              parameter.column.names <- c("omega", "freqA", "freqC", "freqG", parameter.column.names, paste("fitness", aa.ordered, sep="_"))
+              upper = c(log(99), 0, 0, 0, rep(log(99), length(ip)-4))
               lower = rep(-10, length(ip))
           }
           
@@ -3960,15 +3989,49 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           lower.vector = lower
           if(n.partitions > 1){
               for(partition.index in 2:n.partitions){
-                  if(nuc.model == "UNREST"){
-                      ip = c(nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
-                  }else{
-                      ip = c(.25, .25, .25, nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
-                  }
+                  ip.vector = c(ip.vector, 0.4)
+                  upper.vector = c(upper.vector, log(99))
+                  lower.vector = c(lower.vector, -10)
+                  index.matrix.tmp = numeric(max.par.model.count)
+                  index.matrix.tmp[[2:max.par.model.count,]] = 2:max.par.model.count
+                  index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+                  index.matrix[partition.index,] <- index.matrix.tmp
+              }
+          }
+      }
+      if(codon.model == "FMutSel"){
+          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]], n.pars=64)[-c(49,51,57,64)]
+          codon.ordered <- .codon.name
+          codon.ordered <- codon.ordered[-c(49,51,57,64)]
+          if(nuc.model == "UNREST"){
+              max.par.model.count <- max.par.model.count + 1 + 60
+              ip = c(0.4, nuc.ip, fitness.pars)
+              parameter.column.names <- c("omega", parameter.column.names, paste("fitness", codon.ordered, sep="_"))
+              upper = c(rep(log(99), length(ip)-3))
+              lower = rep(-10, length(ip))
+          }else{
+              max.par.model.count <- max.par.model.count + 3 + 1 + 60
+              ip = c(0.4, .25, .25, .25, nuc.ip, fitness.pars)
+              parameter.column.names <- c("omega", "freqA", "freqC", "freqG", parameter.column.names, paste("fitness", codon.ordered, sep="_"))
+              upper = c(log(99), 0, 0, 0, rep(log(99), length(ip)-4))
+              lower = rep(-10, length(ip))
+          }
+          
+          codon.index.matrix = NA
+          
+          index.matrix = matrix(0, n.partitions, length(ip))
+          index.matrix[1,] = 1:ncol(index.matrix)
+          ip.vector = ip
+          upper.vector = upper
+          lower.vector = lower
+          if(n.partitions > 1){
+              for(partition.index in 2:n.partitions){
+                  ip = c(0.4)
                   ip.vector = c(ip.vector, ip)
                   upper.vector = c(upper.vector, upper)
                   lower.vector = c(lower.vector, lower)
                   index.matrix.tmp = numeric(max.par.model.count)
+                  index.matrix.tmp[[2:max.par.model.count,]] = 2:max.par.model.count
                   index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
                   index.matrix[partition.index,] <- index.matrix.tmp
               }
@@ -3981,6 +4044,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         cat(paste("Finished. Performing analysis...", sep=""), "\n")
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
+        print(mle.pars.mat)
         if(edge.length == "optimize"){
           cat("       Optimizing edge lengths", "\n")
           phy$edge.length <- colMeans(starting.branch.lengths)
