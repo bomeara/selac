@@ -3993,7 +3993,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                   upper.vector = c(upper.vector, log(99))
                   lower.vector = c(lower.vector, -10)
                   index.matrix.tmp = numeric(max.par.model.count)
-                  index.matrix.tmp[2:max.par.model.count,] = 2:max.par.model.count
+                  index.matrix.tmp[2:max.par.model.count] = 2:max.par.model.count
                   index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
                   index.matrix[partition.index,] <- index.matrix.tmp
               }
@@ -4031,7 +4031,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                   upper.vector = c(upper.vector, upper)
                   lower.vector = c(lower.vector, lower)
                   index.matrix.tmp = numeric(max.par.model.count)
-                  index.matrix.tmp[2:max.par.model.count,] = 2:max.par.model.count
+                  index.matrix.tmp[2:max.par.model.count] = 2:max.par.model.count
                   index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
                   index.matrix[partition.index,] <- index.matrix.tmp
               }
