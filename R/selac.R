@@ -4001,10 +4001,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
       }
       if(codon.model == "FMutSel"){
-          print(empirical.aa.freq.list)
-          print(codon.freq.by.gene.list)
-          print(matrix(unlist(codon.freq.by.gene.list), ncol = 64, byrow = TRUE))
-          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list, n.pars=64)
+          empirical.codon.freq.unlist <- matrix(unlist(codon.freq.by.gene.list), ncol = 64, byrow = TRUE)
+          empirical.codon.freq <- colSums(empirical.codon.freq.unlist)/ sum(colSums(empirical.codon.freq.unlist))
+          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.codon.freq, n.pars=64)
           codon.ordered <- .codon.name
           codon.ordered <- codon.ordered[-c(49,51,57,64)]
           if(nuc.model == "UNREST"){
