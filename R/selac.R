@@ -4000,6 +4000,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       if(codon.model == "FMutSel"){
           fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]], n.pars=64)[-c(49,51,57,64)]
+          print(length(fitness.pars))
           codon.ordered <- .codon.name
           codon.ordered <- codon.ordered[-c(49,51,57,64)]
           if(nuc.model == "UNREST"){
