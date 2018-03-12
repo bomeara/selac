@@ -3696,6 +3696,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         site.pattern.count.list[[partition.index]] = nucleotide.data$site.pattern.counts
       }
     }else{
+      codon.freq.by.gene.list <- as.list(numeric(n.partitions))
       empirical.aa.freq.list <- as.list(numeric(n.partitions))
       starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge[,1]))
       for (partition.index in sequence(n.partitions)) {
@@ -3712,6 +3713,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=numcode)
         aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
         empirical.aa.freq.list[[partition.index]] <- GetAAFreqsByGene(codon.data[,-1], aa.optim, numcode=numcode)
+        codon.freq.by.gene.list[[partition.index]] <- GetCodonFreqsByGene(codon.data[,-1])
         codon.data <- SitePattern(codon.data, includes.optimal.aa=FALSE)
         site.pattern.data.list[[partition.index]] = codon.data$unique.site.patterns
         site.pattern.count.list[[partition.index]] = codon.data$site.pattern.counts
@@ -4000,9 +4002,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       if(codon.model == "FMutSel"){
           print(empirical.aa.freq.list)
-          print(empirical.codon.freq.list)
+          print(codon.freq.by.gene.list)
+          print(matrix(unlist(codon.freq.by.gene.list), ncol = 64, byrow = TRUE))
           fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list, n.pars=64)
-          print(length(fitness.pars))
           codon.ordered <- .codon.name
           codon.ordered <- codon.ordered[-c(49,51,57,64)]
           if(nuc.model == "UNREST"){
