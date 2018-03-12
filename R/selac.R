@@ -3628,7 +3628,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   if(!data.type == "codon" & !data.type == "nucleotide"){
     stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
   }
-  if(!codon.model == "none" & !codon.model == "GY94" & !codon.model == "YN98" & !codon.model == "FMutSel0" & !codon.model == "selac"){
+  if(!codon.model == "none" & !codon.model == "GY94" & !codon.model == "YN98" & !codon.model == "FMutSel0" & !codon.model == "FMutSel" & !codon.model == "selac"){
     stop("Check that your codon model is correct. Options are GY94, FMutSel0, or selac", call.=FALSE)
   }
   if(!edge.length == "optimize" & !edge.length == "fixed"){
