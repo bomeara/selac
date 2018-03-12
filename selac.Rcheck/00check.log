@@ -1,0 +1,103 @@
+* using log directory ‘/home/clandere/SELAC/selac/selac.Rcheck’
+* using R version 3.4.1 (2017-06-30)
+* using platform: x86_64-pc-linux-gnu (64-bit)
+* using session charset: UTF-8
+* using option ‘--as-cran’
+* checking for file ‘selac/DESCRIPTION’ ... OK
+* checking extension type ... Package
+* this is package ‘selac’ version ‘1.5.9’
+* checking CRAN incoming feasibility ... NOTE
+Maintainer: ‘Jeremy Beaulieu <jbeaulieu@nimbios.org>’
+
+New submission
+
+The Date field is over a month old.
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... NOTE
+Found the following hidden files and directories:
+  .travis.yml
+These were most likely included in error. See section ‘Package
+structure’ in the ‘Writing R Extensions’ manual.
+
+CRAN-pack does not know about
+  .travis.yml
+* checking for portable file names ... OK
+* checking for sufficient/correct file permissions ... OK
+* checking whether package ‘selac’ can be installed ... OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... NOTE
+Non-standard file/directory found at top level:
+  ‘docs’
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking R files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking loading without being on the library search path ... OK
+* checking use of S3 registration ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... OK
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd line widths ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... WARNING
+Undocumented code objects:
+  ‘SelacHMMSimulator’
+All user-level objects in a package should have documentation entries.
+See chapter ‘Writing R documentation files’ in the ‘Writing R
+Extensions’ manual.
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... OK
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of ‘data’ directory ... WARNING
+Files not of a type allowed in a ‘data’ directory:
+  ‘non_zero_pos.Rda’
+Please use e.g. ‘inst/extdata’ for non-R data files
+* checking data for non-ASCII characters ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking line endings in C/C++/Fortran sources/headers ... OK
+* checking line endings in Makefiles ... OK
+* checking compilation flags in Makevars ... OK
+* checking for GNU extensions in Makefiles ... OK
+* checking for portable use of $(BLAS_LIBS) and $(LAPACK_LIBS) ... OK
+* checking compiled code ... OK
+* checking examples ... NONE
+* checking for unstated dependencies in ‘tests’ ... OK
+* checking tests ... ERROR
+  Running ‘testthat.R’ [48m/46m]
+Running the tests in ‘tests/testthat.R’ failed.
+Last 13 lines of output:
+  ── 3. Failure: selac+GAMMA_likelihood_median (@test_likelihood.R#128)  ─────────
+  `comparison` isn't true.
+  
+  ── 4. Failure: selac+GAMMA_likelihood_quad (@test_likelihood.R#153)  ───────────
+  `comparison` isn't true.
+  
+  ══ testthat results  ═══════════════════════════════════════════════════════════
+  OK: 28 SKIPPED: 0 FAILED: 4
+  1. Failure: selac_likelihood_gtr (@test_likelihood.R#78) 
+  2. Failure: selac_likelihood_unrest (@test_likelihood.R#103) 
+  3. Failure: selac+GAMMA_likelihood_median (@test_likelihood.R#128) 
+  4. Failure: selac+GAMMA_likelihood_quad (@test_likelihood.R#153) 
+  
+  Error: testthat unit tests failed
+  Execution halted
+* checking PDF version of manual ... OK
+* DONE
+Status: 1 ERROR, 2 WARNINGs, 3 NOTEs

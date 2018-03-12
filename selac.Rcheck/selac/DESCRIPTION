@@ -1,0 +1,28 @@
+Package: selac
+Type: Package
+Title: Selection Models for Amino Acid and/or Codon Evolution
+Version: 1.5.9
+Date: 2017-11-01
+Authors@R: c(person("Jeremy", "Beaulieu", role=c("aut", "cre"),
+                     email = "jbeaulieu@nimbios.org"),
+                     person("JJ", "Chai", role=c("aut")),
+                     person("Mike", "Gilchrist", role=c("aut")),
+                     person("Cedric", "Landerer", role=c("aut")),
+                     person("Brian", "O'Meara", role=c("aut")))
+Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
+Description: Implements models for amino acid or codon evolution with selection.
+Suggests: testthat, igraph
+Depends: ape, deSolve, nloptr, nnet
+Imports: expm, MASS, parallel, phangorn, seqinr, statmod, zoo,
+        RColorBrewer
+License: GPL
+ByteCompile: TRUE
+RoxygenNote: 6.0.1
+NeedsCompilation: yes
+Packaged: 2018-03-12 16:44:27 UTC; clandere
+Author: Jeremy Beaulieu [aut, cre],
+  JJ Chai [aut],
+  Mike Gilchrist [aut],
+  Cedric Landerer [aut],
+  Brian O'Meara [aut]
+Built: R 3.4.1; x86_64-pc-linux-gnu; 2018-03-12 16:45:19 UTC; unix

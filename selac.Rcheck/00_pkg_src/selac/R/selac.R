@@ -3304,6 +3304,7 @@ FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
 ######################################################################################################################################
 
 TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likelihood=-100000, root.p) {
+  
   ##start with first method and move to next if problems encountered
   ## when solving ode, such as negative pr values < neg.pr.threshold
   ode.method.vec <- c("ode45", "lsoda")
