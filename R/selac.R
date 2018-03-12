@@ -1652,7 +1652,7 @@ GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data,
         }
         codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
     }
-    if(model == "GY94"){
+    if(model.type == "GY94"){
         aa.distances <- CreateAADistanceMatrix()
         Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
     }else{
