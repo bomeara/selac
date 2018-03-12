@@ -288,6 +288,26 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
     }
     return(nuc.mutation.rates)
   }
+  if(model == "HKY") {
+      index <- matrix(NA, 4, 4)
+      rates <- c(1,rates)
+      sel <- col(index) < row(index)
+      index[sel] <- c(1,2,1,1,2,1)
+      index <- t(index)
+      index[sel] <- c(1,2,1,1,2,1)
+      nuc.mutation.rates <- matrix(0, nrow=4, ncol=4)
+      nuc.mutation.rates<-matrix(rates[index], dim(index))
+      rownames(nuc.mutation.rates) <- n2s(0:3)
+      colnames(nuc.mutation.rates) <- n2s(0:3)
+      diag(nuc.mutation.rates) <- 0
+      diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+      if(!is.null(base.freqs)){
+          diag(nuc.mutation.rates) = 0
+          nuc.mutation.rates = t(nuc.mutation.rates * base.freqs)
+          diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
+      }
+      return(nuc.mutation.rates)
+  }
   if(model == "GTR") {
     index <- matrix(NA, 4, 4)
     np <- 5
@@ -445,6 +465,55 @@ CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutatio
   diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
   return(codon.mutation.rates)
 }
+
+
+CreateCodonMutationMatrixYN98 <- function(x, codon.freqs, numcode) {
+    omega.par = x[1]
+    kappa.par <- x[2]
+    #The last value is arbitrarily set to 0 per Yang and Nielsen (2008):
+    #codon.sets <- CreateCodonSets()
+    n.codons <- dim(.codon.sets)[1]
+    codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
+    rownames(codon.mutation.rates) <- rep("",n.codons)
+    colnames(codon.mutation.rates) <- rep("",n.codons)
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+    #We add this in because the stop codons are not included in Grantham's distance calculation:
+    aa.translations <- .aa.translation[[numcode]][.codon.name]
+    for (i in sequence(n.codons)) {
+        for (j in sequence(n.codons)) {
+            if(aa.translations[i] == aa.translations[j]){ #synonymous -- set distance to zero.
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+                    if(.codon.sets[i, mismatch.position] == 0 & .codon.sets[j,mismatch.position] == 2 | .codon.sets[i, mismatch.position] == 2 & .codon.sets[j,mismatch.position] == 0 | .codon.sets[i, mismatch.position] == 1 & .codon.sets[j,mismatch.position] == 3 | .codon.sets[i, mismatch.position] == 3 & .codon.sets[j,mismatch.position] == 1){
+                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j]
+                    }else{
+                        codon.mutation.rates[i,j] <- codon.freqs[j]
+                    }
+                }
+            }else{ #nonsynonymous -- so we need to know Grantham's distance.
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+                    if(.codon.sets[i, mismatch.position] == 0 & .codon.sets[j,mismatch.position] == 2 | .codon.sets[i, mismatch.position] == 2 & .codon.sets[j,mismatch.position] == 0 | .codon.sets[i, mismatch.position] == 1 & .codon.sets[j,mismatch.position] == 3 | .codon.sets[i, mismatch.position] == 3 & .codon.sets[j,mismatch.position] == 1){
+                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * omega.par
+                    }else{
+                        codon.mutation.rates[i,j] <- codon.freqs[j] * omega.par
+                    }
+                }
+            }
+        }
+    }
+    #Remove stop codon rates -- they should be removed already, but just in case...
+    codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
+    #Now let us finish up the matrix:
+    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
+    diag(codon.mutation.rates) <- 0
+    diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
+    return(codon.mutation.rates)
+}
+
 
 
 CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode) {
@@ -1569,35 +1638,38 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
 }
 
 
-GetLikelihoodGY94_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
-  if(logspace) {
-    x = exp(x)
-  }
-  if(!is.null(root.p_array)){
-    codon.freqs <- root.p_array
-  }else{
-    codon.freqs.tabled <- table(as.matrix(codon.data$unique.site.patterns[,2:dim(codon.data$unique.site.patterns)[2]]))
-    codon.freqs <- numeric(64)
-    for(codon.index in 1:length(codon.freqs.tabled)){
-      codon.freqs[as.numeric(names(codon.freqs.tabled))[codon.index]] <- codon.freqs.tabled[codon.index]
+GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode, model.type="GY94", logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
+    if(logspace) {
+        x = exp(x)
     }
-    codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
-  }
-  
-  aa.distances <- CreateAADistanceMatrix()
-  Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
-  final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freqs, Q_codon=Q_codon, numcode=numcode, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
-  likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
-  
-  if(neglnl) {
-    likelihood <- -1 * likelihood
-  }
-  if(verbose) {
-    results.vector <- c(likelihood, x)
-    names(results.vector) <- c("likelihood")
-    print(results.vector)
-  }
-  return(likelihood)
+    if(!is.null(root.p_array)){
+        codon.freqs <- root.p_array
+    }else{
+        codon.freqs.tabled <- table(as.matrix(codon.data$unique.site.patterns[,2:dim(codon.data$unique.site.patterns)[2]]))
+        codon.freqs <- numeric(64)
+        for(codon.index in 1:length(codon.freqs.tabled)){
+            codon.freqs[as.numeric(names(codon.freqs.tabled))[codon.index]] <- codon.freqs.tabled[codon.index]
+        }
+        codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
+    }
+    if(model == "GY94"){
+        aa.distances <- CreateAADistanceMatrix()
+        Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
+    }else{
+        Q_codon = CreateCodonMutationMatrixYN98(x=x, codon.freqs=codon.freqs, numcode=numcode)
+    }
+    final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freqs, Q_codon=Q_codon, numcode=numcode, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+    likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
+    
+    if(neglnl) {
+        likelihood <- -1 * likelihood
+    }
+    if(verbose) {
+        results.vector <- c(likelihood, x)
+        names(results.vector) <- c("likelihood")
+        print(results.vector)
+    }
+    return(likelihood)
 }
 
 
@@ -2152,12 +2224,25 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
             codon.data = NULL
             codon.data$unique.site.patterns = codon.site.data[[partition.index]]
             codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-            likelihood.tmp = GetLikelihoodGY94_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+            likelihood.tmp = GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
             return(likelihood.tmp)
           }
           #This orders the nsites per partition in decreasing order (to increase efficiency):
           partition.order <- 1:n.partitions
           likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
+        }
+        if(codon.model == "YN98"){
+            max.par = 2
+            MultiCoreLikelihood <- function(partition.index){
+                codon.data = NULL
+                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
+                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                likelihood.tmp = GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+                return(likelihood.tmp)
+            }
+            #This orders the nsites per partition in decreasing order (to increase efficiency):
+            partition.order <- 1:n.partitions
+            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
         if(codon.model == "FMutSel0"){
           #To do: figure out way to allow for the crazy 60 fitness par model.
@@ -2585,10 +2670,22 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
         codon.data = NULL
         codon.data$unique.site.patterns = codon.site.data
         codon.data$site.pattern.counts = codon.site.counts
-        likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+        likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
       }
       likelihood = sum(likelihood.vector)
-    }else{
+    }
+    if(codon.model == "YN98"){
+        max.par = 2
+        likelihood.vector <- c()
+        for(partition.index in sequence(n.partitions)){
+            codon.data = NULL
+            codon.data$unique.site.patterns = codon.site.data
+            codon.data$site.pattern.counts = codon.site.counts
+            likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+        }
+        likelihood = sum(likelihood.vector)
+    }
+    if(codon.model == "FMutSel0") {
       #To do: figure out way to allow for the crazy 60 fitness par model.
       if(nuc.model == "JC"){
         #base.freq + nuc.rates + omega + fitness.pars
@@ -3466,7 +3563,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
-#' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".
+#' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "selac".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".
@@ -3504,7 +3601,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   if(!data.type == "codon" & !data.type == "nucleotide"){
     stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
   }
-  if(!codon.model == "none" & !codon.model == "GY94" & !codon.model == "FMutSel0" & !codon.model == "selac"){
+  if(!codon.model == "none" & !codon.model == "GY94" & !codon.model == "YN98" & !codon.model == "FMutSel0" & !codon.model == "selac"){
     stop("Check that your codon model is correct. Options are GY94, FMutSel0, or selac", call.=FALSE)
   }
   if(!edge.length == "optimize" & !edge.length == "fixed"){
@@ -3788,7 +3885,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       if(codon.model == "GY94"){
         max.par.model.count <- 2
         ip = c(1,1)
-        parameter.column.names <- c("Kappa", "V")
+        parameter.column.names <- c("kappa", "V")
         upper = rep(log(99), length(ip))
         lower = rep(-21, length(ip))
         
@@ -3810,45 +3907,72 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             index.matrix[partition.index,] <- index.matrix.tmp
           }
         }
-      }else{
-        fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]])[-c(17,21)]
-        aa.ordered <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "Y", "C", "W")
-        if(nuc.model == "UNREST"){
-          max.par.model.count <- max.par.model.count + 1 + 19
-          ip = c(nuc.ip, 0.4, fitness.pars)
-          parameter.column.names <- c(parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
-          upper = c(rep(log(99), length(ip)-3))
-          lower = rep(-10, length(ip))
-        }else{
-          max.par.model.count <- max.par.model.count + 3 + 1 + 19
-          ip = c(.25, .25, .25, nuc.ip, 0.4, fitness.pars)
-          parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
-          upper = c(0, 0, 0, rep(log(99), length(ip)-3))
-          lower = rep(-10, length(ip))
-        }
-        
-        codon.index.matrix = NA
-        
-        index.matrix = matrix(0, n.partitions, length(ip))
-        index.matrix[1,] = 1:ncol(index.matrix)
-        ip.vector = ip
-        upper.vector = upper
-        lower.vector = lower
-        if(n.partitions > 1){
-          for(partition.index in 2:n.partitions){
-            if(nuc.model == "UNREST"){
-              ip = c(nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
-            }else{
-              ip = c(.25, .25, .25, nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
-            }
-            ip.vector = c(ip.vector, ip)
-            upper.vector = c(upper.vector, upper)
-            lower.vector = c(lower.vector, lower)
-            index.matrix.tmp = numeric(max.par.model.count)
-            index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-            index.matrix[partition.index,] <- index.matrix.tmp
+      }
+      if(codon.model == "YN98"){
+          max.par.model.count <- 2
+          ip = c(1,1)
+          parameter.column.names <- c("omega", "kappa")
+          upper = rep(log(99), length(ip))
+          lower = rep(-21, length(ip))
+          
+          codon.index.matrix = NA
+          
+          index.matrix = matrix(0, n.partitions, length(ip))
+          index.matrix[1,] = 1:ncol(index.matrix)
+          ip.vector = ip
+          upper.vector = upper
+          lower.vector = lower
+          if(n.partitions > 1){
+              for(partition.index in 2:n.partitions){
+                  ip = c(1,1)
+                  ip.vector = c(ip.vector, ip)
+                  upper.vector = c(upper.vector, upper)
+                  lower.vector = c(lower.vector, lower)
+                  index.matrix.tmp = numeric(max.par.model.count)
+                  index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+                  index.matrix[partition.index,] <- index.matrix.tmp
+              }
           }
-        }
+      }
+      if(codon.model == "FMutSel0"){
+          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]])[-c(17,21)]
+          aa.ordered <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "Y", "C", "W")
+          if(nuc.model == "UNREST"){
+              max.par.model.count <- max.par.model.count + 1 + 19
+              ip = c(nuc.ip, 0.4, fitness.pars)
+              parameter.column.names <- c(parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
+              upper = c(rep(log(99), length(ip)-3))
+              lower = rep(-10, length(ip))
+          }else{
+              max.par.model.count <- max.par.model.count + 3 + 1 + 19
+              ip = c(.25, .25, .25, nuc.ip, 0.4, fitness.pars)
+              parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
+              upper = c(0, 0, 0, rep(log(99), length(ip)-3))
+              lower = rep(-10, length(ip))
+          }
+          
+          codon.index.matrix = NA
+          
+          index.matrix = matrix(0, n.partitions, length(ip))
+          index.matrix[1,] = 1:ncol(index.matrix)
+          ip.vector = ip
+          upper.vector = upper
+          lower.vector = lower
+          if(n.partitions > 1){
+              for(partition.index in 2:n.partitions){
+                  if(nuc.model == "UNREST"){
+                      ip = c(nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+                  }else{
+                      ip = c(.25, .25, .25, nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+                  }
+                  ip.vector = c(ip.vector, ip)
+                  upper.vector = c(upper.vector, upper)
+                  lower.vector = c(lower.vector, lower)
+                  index.matrix.tmp = numeric(max.par.model.count)
+                  index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+                  index.matrix[partition.index,] <- index.matrix.tmp
+              }
+          }
       }
       
       number.of.current.restarts <- 1
