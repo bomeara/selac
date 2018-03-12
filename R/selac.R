@@ -1638,7 +1638,7 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
 }
 
 
-GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode, model.type="GY94", logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
+GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, model.type="GY94", numcode, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
     if(logspace) {
         x = exp(x)
     }
