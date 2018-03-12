@@ -1,3 +1,4 @@
+#define USE_OPENCL
 #ifdef USE_OPENCL
 #include <vector>
 
@@ -8,14 +9,6 @@
 #include "R.h"
 
 //I dont know how to enable OpenCL in R compilation have to learn how to write configure files
-
-// -------------------------------
-// ATTENTION!!!!!
-// CAREFUL!!!!!!
-// MIXING C AND C++ CODE IN OPENCL CALLS, HAVE TO SORT THAT OUT LATER
-// -------------------------------
-
-// 
 
 // OpenCL platform/device settings
 const cl::Platform platform_id = 0;
@@ -48,11 +41,12 @@ const char *kernelAdd =                                       "\n" \
 "}                                                               \n" \
                                                                 "\n" ;
 // Create the compute program from the source buffer
-program = clCreateProgramWithSource(context, 1, (const char **) & kernelAdd, NULL, &err);
-// Build the program executable
-clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-// Create the compute kernel in the program we wish to run
-cl_kernel add = clCreateKernel(program, "add", &err);
+// Build kernel from source string
+cl::Program::Sources source(1, std::make_pair(kernelAdd,strlen(kernelAdd)));
+cl::Program programADD = cl::Program(context, source);
+programADD.build(devices);
+// Create kernel object
+cl::Kernel sub(programADD, "add", &err);
 
 const char *kernelSub =                                       "\n" \
 "#pragma OPENCL EXTENSION cl_khr_fp64 : enable                    \n" \
@@ -70,11 +64,12 @@ const char *kernelSub =                                       "\n" \
 "}                                                               \n" \
                                                                 "\n" ;                                                               
 // Create the compute program from the source buffer
-program = clCreateProgramWithSource(context, 1, (const char **) & kernelSub, NULL, &err);
-// Build the program executable
-clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-// Create the compute kernel in the program we wish to run
-cl_kernel sub = clCreateKernel(program, "sub", &err);
+// Build kernel from source string
+cl::Program::Sources source(1, std::make_pair(kernelSub,strlen(kernelSub)));
+cl::Program programSUB = cl::Program(context, source);
+programSUB.build(devices);
+// Create kernel object
+cl::Kernel sub(programSUB, "sub", &err);
 
 const char *kernelNeg =                                       "\n" \
 "#pragma OPENCL EXTENSION cl_khr_fp64 : enable                    \n" \
@@ -90,11 +85,13 @@ const char *kernelNeg =                                       "\n" \
 "}                                                               \n" \
                                                                 "\n" ;                                                               
 // Create the compute program from the source buffer
-program = clCreateProgramWithSource(context, 1, (const char **) & kernelNeg, NULL, &err);
-// Build the program executable
-clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-// Create the compute kernel in the program we wish to run
-cl_kernel neg = clCreateKernel(program, "neg", &err);
+// Build kernel from source string
+cl::Program::Sources source(1, std::make_pair(kernelNeg,strlen(kernelNeg)));
+cl::Program programNEG = cl::Program(context, source);
+programNEG.build(devices);
+// Create kernel object
+cl::Kernel neg(programNEG, "neg", &err);
+
 
 const char *kernelMtS =                                         "\n" \
 "#pragma OPENCL EXTENSION cl_khr_fp64 : enable                   \n" \
@@ -111,15 +108,18 @@ const char *kernelMtS =                                         "\n" \
 "}                                                               \n" \
                                                                 "\n" ;                                                               
 // Create the compute program from the source buffer
-program = clCreateProgramWithSource(context, 1, (const char **) & kernelMtS, NULL, &err);
-// Build the program executable
-clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
-// Create the compute kernel in the program we wish to run
-cl_kernel mts = clCreateKernel(program, "mts", &err);
+// Build kernel from source string
+cl::Program::Sources source(1, std::make_pair(kernelMtS,strlen(kernelMtS)));
+cl::Program programMTS = cl::Program(context, source);
+programMTS.build(devices);
+// Create kernel object
+cl::Kernel mts(programMTS, "mts", &err);
 
-size_t globalSize, localSize;
-localSize = 64;
-globalSize = ceil(n/(float)localSize)*localSize;
+
+// Number of work items in each local work group
+cl::NDRange localSize(64);
+// Number of total work items - localSize must be devisor
+cl::NDRange globalSize((int)(ceil(n/(float)64)*64));
 
 void add(std::vector<double>& m1, const std::vector<double>& m2)
 {
@@ -130,13 +130,13 @@ void add(std::vector<double>& m1, const std::vector<double>& m2)
     queue.enqueueWriteBuffer(device_b, CL_TRUE, 0, n*sizeof(double), m2.data());
 
     // Set the arguments to our compute kernel
-    cl_int err;
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_a);
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_b);
-    err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &n);
+	add.setArgs(0, device_a);
+	add.setArgs(1, device_b);
+	add.setArgs(2, n);
 
-    // Execute the kernel over the entire range of the data set 
-    err = clEnqueueNDRangeKernel(queue, add, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+    // Execute the kernel over the entire range of the data set
+	queue.enqueueNDRangeKernel(add, cl::NullRange, globalSize, localSize, NULL, &event);
+
     queue.enqueueReadBuffer(device_a, CL_TRUE, 0, n*sizeof(double), &m1[0], NULL, NULL);           
 }
 
@@ -149,13 +149,13 @@ void sub(std::vector<double>& m1, const std::vector<double>& m2)
     queue.enqueueWriteBuffer(device_b, CL_TRUE, 0, n*sizeof(double), m2.data());
 
     // Set the arguments to our compute kernel
-    cl_int err;
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_a);
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_b);
-    err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &n);
+	sub.setArgs(0, device_a);
+	sub.setArgs(1, device_b);
+	sub.setArgs(2, n);
 
-    // Execute the kernel over the entire range of the data set 
-    err = clEnqueueNDRangeKernel(queue, sub, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+    // Execute the kernel over the entire range of the data set
+	queue.enqueueNDRangeKernel(sub, cl::NullRange, globalSize, localSize, NULL, &event);
+
     queue.enqueueReadBuffer(device_a, CL_TRUE, 0, n*sizeof(double), &m1[0], NULL, NULL);           
 }
 
@@ -166,12 +166,11 @@ void negate(std::vector<double> m)
     queue.enqueueWriteBuffer(device_a, CL_TRUE, 0, n*sizeof(double), m.data());
 
     // Set the arguments to our compute kernel
-    cl_int err;
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_a);
-    err |= clSetKernelArg(kernel, 1, sizeof(unsigned int), &n);
+	neg.setArgs(0, device_a);
+	neg.setArgs(1, n);
 
-    // Execute the kernel over the entire range of the data set 
-    err = clEnqueueNDRangeKernel(queue, neg, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+    // Execute the kernel over the entire range of the data set
+	queue.enqueueNDRangeKernel(neg, cl::NullRange, globalSize, localSize, NULL, &event);
 
     queue.enqueueReadBuffer(device_a, CL_TRUE, 0, n*sizeof(double), &m[0], NULL, NULL);           
 }
@@ -183,13 +182,12 @@ void MatrixTimesScalar(std::vector<double> m, const double s)
     queue.enqueueWriteBuffer(device_a, CL_TRUE, 0, n*sizeof(double), m.data());
 
     // Set the arguments to our compute kernel
-    cl_int err;
-    err  = clSetKernelArg(kernel, 0, sizeof(cl_mem), &device_a);
-    err |= clSetKernelArg(kernel, 1, sizeof(double), &s);
-    err |= clSetKernelArg(kernel, 2, sizeof(unsigned int), &n);
+	mts.setArgs(0, device_a);
+	mts.setArgs(1, s);
+	mts.setArgs(2, n);
 
-    // Execute the kernel over the entire range of the data set 
-    err = clEnqueueNDRangeKernel(queue, mts, 1, NULL, &globalSize, &localSize, 0, NULL, NULL);
+    // Execute the kernel over the entire range of the data set
+	queue.enqueueNDRangeKernel(mts, cl::NullRange, globalSize, localSize, NULL, &event);
 
     queue.enqueueReadBuffer(device_a, CL_TRUE, 0, n*sizeof(double), &m[0], NULL, NULL);           
 }
@@ -233,7 +231,7 @@ void MatrixPlusIndentity(std::vector<double> &m)
 }
 
 // invert matrix without pivot element (less stable but faster, so far unecessary, maybe with HMM matrix)
-// add AVX to improve speed
+// add AVX or opencl to improve speed
 void invert(const std::vector<double>& Aprime, std::vector<double>& R)
 {
 	unsigned n = sqrt(Aprime.size());
