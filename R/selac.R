@@ -2232,7 +2232,6 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
           likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
         if(codon.model == "YN98"){
-            print("did we make it here?")
             max.par = 2
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
