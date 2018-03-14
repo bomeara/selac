@@ -2647,7 +2647,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
   if(logspace) {
     x <- exp(x)
   }
-  
+
   if(class(index.matrix)=="numeric"){
     index.matrix <- matrix(index.matrix, 1, length(index.matrix))
   }
@@ -2724,6 +2724,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
             }
  
         }
+        print(par.mat)
         likelihood.vector <- c()
         for(partition.index in sequence(n.partitions)){
             codon.data = NULL
