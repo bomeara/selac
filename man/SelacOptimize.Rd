@@ -28,7 +28,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
 
-\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "selac".}
+\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "FMutSel", "selac".}
 
 \item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.}
 
