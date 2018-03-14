@@ -3964,7 +3964,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
       }
       if(codon.model == "FMutSel0"){
-          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]])[-c(17,21)]
+          empirical.aa.freq.unlist <- matrix(unlist(empirical.aa.freq.list), ncol = 64, byrow = TRUE)
+          empirical.aa.freq <- colSums(empirical.aa.freq.unlist)/ sum(colSums(empirical.aa.freq.unlist))
+          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq)[-c(17,21)]
           aa.ordered <- .unique.aa
           aa.ordered <- aa.ordered[-c(17,21)]
           if(nuc.model == "UNREST"){
