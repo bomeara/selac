@@ -2731,7 +2731,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
                 codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-                try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+                try(likelihood.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
                 return(likelihood.tmp)
             }
             #This orders the nsites per partition in decreasing order (to increase efficiency):
@@ -3963,7 +3963,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
       }
       if(codon.model == "FMutSel0"){
-          empirical.aa.freq.unlist <- matrix(unlist(empirical.aa.freq.list), ncol = 64, byrow = TRUE)
+          empirical.aa.freq.unlist <- matrix(unlist(empirical.aa.freq.list), ncol = 21, byrow = TRUE)
           empirical.aa.freq <- colSums(empirical.aa.freq.unlist)/ sum(colSums(empirical.aa.freq.unlist))
           fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq)[-c(17,21)]
           aa.ordered <- .unique.aa
