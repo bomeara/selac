@@ -4042,7 +4042,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       
       number.of.current.restarts <- 1
-      best.lik <- 1000000
+      best.lik <- 10000000
       while(number.of.current.restarts < (max.restarts+1)){
         cat(paste("Finished. Performing analysis...", sep=""), "\n")
         mle.pars.mat <- index.matrix
@@ -4061,7 +4061,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         }
         cat("       Optimizing model parameters", "\n")
         #ParallelizedOptimizedByGene <- function(n.partition){
-        optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeMutSel, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix[1,], phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
+        optim.by.gene <- nloptr(x0=log(ip), eval_f = OptimizeMutSel, ub=upper, lb=lower, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
           #tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
           #return(tmp.pars)
           #}
