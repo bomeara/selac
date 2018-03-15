@@ -792,7 +792,7 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
     numcode.idx <- .numcode.translation.idx[numcode]
     aa.names <- .aa.translation[[numcode.idx]]
 
-    aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for importance parameter and using 1/d instead of d
+    aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
     diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here
     aa.trans.mat[,colnames(aa.trans.mat) == "*"] <- 0 # find better solution
     aa.trans.mat[colnames(aa.trans.mat) == "*",] <- 0
