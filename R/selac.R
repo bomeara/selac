@@ -2644,104 +2644,102 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
 
 
 OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=1, neglnl=FALSE) {
-  if(logspace) {
-    x <- exp(x)
-  }
-
-  if(class(index.matrix)=="numeric"){
-    index.matrix <- matrix(index.matrix, 1, length(index.matrix))
-  }
-  par.mat <- index.matrix
-  par.mat[] <- c(x, 0)[index.matrix]
-  if(data.type == "nucleotide"){
-    if(nuc.model == "JC"){
-      max.par = 0
+    if(logspace) {
+        x <- exp(x)
     }
-    if(nuc.model == "GTR"){
-      max.par = 5
+    
+    if(class(index.matrix)=="numeric"){
+        index.matrix <- matrix(index.matrix, 1, length(index.matrix))
     }
-    if(nuc.model == "UNREST"){
-      max.par = 11
-    }
-    if(include.gamma == TRUE){
-      max.par = max.par + 1
-    }
-    likelihood.vector <- c()
-    for(partition.index in sequence(n.partitions)){
-      nuc.data = NULL
-      nuc.data$unique.site.patterns = codon.site.data
-      nuc.data$site.pattern.counts = codon.site.counts
-      likelihood.vector = c(likelihood.vector, GetLikelihoodNucleotideForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, root.p_array=root.p_array, numcode=numcode, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-    }
-    likelihood = sum(likelihood.vector)
-  }else{
-    if(codon.model == "GY94"){
-      max.par = 2
-      likelihood.vector <- c()
-      for(partition.index in sequence(n.partitions)){
-        codon.data = NULL
-        codon.data$unique.site.patterns = codon.site.data
-        codon.data$site.pattern.counts = codon.site.counts
-        likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-      }
-      likelihood = sum(likelihood.vector)
-    }
-    if(codon.model == "YN98"){
-        max.par = 2
+    par.mat <- index.matrix
+    par.mat[] <- c(x, 0)[index.matrix]
+    print(par.mat)
+    
+    if(data.type == "nucleotide"){
+        if(nuc.model == "JC"){
+            max.par = 0
+        }
+        if(nuc.model == "GTR"){
+            max.par = 5
+        }
+        if(nuc.model == "UNREST"){
+            max.par = 11
+        }
+        if(include.gamma == TRUE){
+            max.par = max.par + 1
+        }
         likelihood.vector <- c()
         for(partition.index in sequence(n.partitions)){
-            codon.data = NULL
-            codon.data$unique.site.patterns = codon.site.data
-            codon.data$site.pattern.counts = codon.site.counts
-            likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+            nuc.data = NULL
+            nuc.data$unique.site.patterns = codon.site.data
+            nuc.data$site.pattern.counts = codon.site.counts
+            likelihood.vector = c(likelihood.vector, GetLikelihoodNucleotideForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, root.p_array=root.p_array, numcode=numcode, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
         }
         likelihood = sum(likelihood.vector)
-    }
-    if(codon.model == "FMutSel0" | codon.model == "FMutSel") {
-        if(codon.model == "FMutSel0"){
-            #To do: figure out way to allow for the crazy 60 fitness par model.
-            if(nuc.model == "JC"){
-                #base.freq + nuc.rates + omega + fitness.pars
-                max.par = 3 + 0 + 1 + 19
+    }else{
+        if(codon.model == "GY94"){
+            max.par = 2
+            likelihood.vector <- c()
+            for(partition.index in sequence(n.partitions)){
+                codon.data = NULL
+                codon.data$unique.site.patterns = codon.site.data
+                codon.data$site.pattern.counts = codon.site.counts
+                likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
             }
-            if(nuc.model == "GTR"){
-                max.par = 3 + 5 + 1 + 19
-            }
-            if(nuc.model == "UNREST"){
-                max.par = 0 + 11 + 1 + 19
-            }
-        }else{
-            #To do: figure out way to allow for the crazy 60 fitness par model.
-            if(nuc.model == "JC"){
-                #base.freq + nuc.rates + omega + fitness.pars
-                max.par = 3 + 0 + 1 + 60
-            }
-            if(nuc.model == "GTR"){
-                max.par = 3 + 5 + 1 + 60
-            }
-            if(nuc.model == "UNREST"){
-                max.par = 0 + 11 + 1 + 60
-            }
- 
+            likelihood = sum(likelihood.vector)
         }
-        print(par.mat)
-        likelihood.vector <- c()
-        for(partition.index in sequence(n.partitions)){
-            codon.data = NULL
-            codon.data$unique.site.patterns = codon.site.data
-            codon.data$site.pattern.counts = codon.site.counts
-            likelihood.vector.tmp <- NA
-            try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-            if(is.na(likelihood.vector.tmp[1])){
-                return(10000000)
+        if(codon.model == "YN98"){
+            max.par = 2
+            likelihood.vector <- c()
+            for(partition.index in sequence(n.partitions)){
+                codon.data = NULL
+                codon.data$unique.site.patterns = codon.site.data
+                codon.data$site.pattern.counts = codon.site.counts
+                likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+            }
+            likelihood = sum(likelihood.vector)
+        }
+        if(codon.model == "FMutSel0" | codon.model == "FMutSel") {
+            if(codon.model == "FMutSel0"){
+                #To do: figure out way to allow for the crazy 60 fitness par model.
+                if(nuc.model == "JC"){
+                    #base.freq + nuc.rates + omega + fitness.pars
+                    max.par = 3 + 0 + 1 + 19
+                }
+                if(nuc.model == "GTR"){
+                    max.par = 3 + 5 + 1 + 19
+                }
+                if(nuc.model == "UNREST"){
+                    max.par = 0 + 11 + 1 + 19
+                }
             }else{
-                likelihood.vector <- c(likelihood.vector, likelihood.vector.tmp)
+                #To do: figure out way to allow for the crazy 60 fitness par model.
+                if(nuc.model == "JC"){
+                    #base.freq + nuc.rates + omega + fitness.pars
+                    max.par = 3 + 0 + 1 + 60
+                }
+                if(nuc.model == "GTR"){
+                    max.par = 3 + 5 + 1 + 60
+                }
+                if(nuc.model == "UNREST"){
+                    max.par = 0 + 11 + 1 + 60
+                }
+                
             }
+            
+            MultiCoreLikelihood <- function(partition.index){
+                codon.data = NULL
+                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
+                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+                return(likelihood.tmp)
+            }
+            #This orders the nsites per partition in decreasing order (to increase efficiency):
+            partition.order <- 1:n.partitions
+            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
-        likelihood = sum(likelihood.vector)
     }
-  }
-  return(likelihood)
+    return(likelihood)
 }
 
 
@@ -4062,17 +4060,19 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           phy$edge.length <- exp(results.edge.final$solution)
         }
         cat("       Optimizing model parameters", "\n")
-        ParallelizedOptimizedByGene <- function(n.partition){
-          optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsLarge, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix[1,], phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
-          tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
-          return(tmp.pars)
-        }
-        results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
+        #ParallelizedOptimizedByGene <- function(n.partition){
+        optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeMutSel, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix[1,], phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
+          #tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
+          #return(tmp.pars)
+          #}
+        #results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
         #results.set <- lapply(1:n.partitions, ParallelizedOptimizedByGene)
-        parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
-        results.final <- NULL
-        results.final$objective <- sum(parallelized.parameters[,1])
-        results.final$solution <- c(t(parallelized.parameters[,-1]))
+        #parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
+        #results.final <- NULL
+        #results.final$objective <- sum(parallelized.parameters[,1])
+        #results.final$solution <- c(t(parallelized.parameters[,-1]))
+        results.final$objective <- optim.by.gene$objective
+        results.final$solution <- optim.by.gene$solution
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
         print(results.final$objective)
