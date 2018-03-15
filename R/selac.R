@@ -4098,16 +4098,19 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           opts.params <- opts
           opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
           
-          ParallelizedOptimizedByGene <- function(n.partition){
-            optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsLarge, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts.params, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix[1,], phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
-            tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
-            return(tmp.pars)
-          }
-          results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
-          parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
-          results.final <- NULL
-          results.final$objective <- sum(parallelized.parameters[,1])
-          results.final$solution <- c(t(parallelized.parameters[,-1]))
+          #ParallelizedOptimizedByGene <- function(n.partition){
+          optim.by.gene <- nloptr(x0=log(results.final$solution), eval_f = OptimizeModelParsLarge, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
+          #tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
+          # return(tmp.pars)
+          #}
+          #results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
+          #results.set <- lapply(1:n.partitions, ParallelizedOptimizedByGene)
+          #parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
+          #results.final <- NULL
+          #results.final$objective <- sum(parallelized.parameters[,1])
+          #results.final$solution <- c(t(parallelized.parameters[,-1]))
+          results.final$objective <- optim.by.gene$objective
+          results.final$solution <- optim.by.gene$solution
           mle.pars.mat <- index.matrix
           mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
           print(results.final$objective)
