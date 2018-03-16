@@ -2732,7 +2732,11 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
                 codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
                 try(likelihood.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-                return(likelihood.tmp)
+                if(length(likelihood.tmp)==0){
+                    return(10000000)
+                }else{
+                    return(likelihood.tmp)
+                }
             }
             #This orders the nsites per partition in decreasing order (to increase efficiency):
             partition.order <- 1:n.partitions
