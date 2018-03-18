@@ -2723,9 +2723,8 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                 if(nuc.model == "UNREST"){
                     max.par = 0 + 11 + 1 + 60
                 }
-                
             }
-            
+            print(x)
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
@@ -4100,7 +4099,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           cat("       Optimizing model parameters", "\n")
           opts.params <- opts
           opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
-          
+          print(length(results.final$solution))
+          print(results.final$solution)
           #ParallelizedOptimizedByGene <- function(n.partition){
           optim.by.gene <- nloptr(x0=results.final$solution, eval_f = OptimizeModelParsLarge, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
           #tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
