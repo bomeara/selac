@@ -3923,7 +3923,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         if(n.partitions > 1){
             for(partition.index in 2:n.partitions){
                 ip = c(1,1)
-                ip.vector = c(ip.vector, ip)
+                ip.vector = c(ip.vector, 1)
                 upper.vector = c(upper.vector, log(99))
                 lower.vector = c(lower.vector, -10)
                 index.matrix.tmp = numeric(max.par.model.count)
