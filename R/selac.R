@@ -517,8 +517,8 @@ CreateCodonMutationMatrixYN98 <- function(x, codon.freqs, numcode) {
 
 
 CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode) {
-  kappa.par = x[1]
-  v.par <- x[2]
+  v.par <- x[1]
+  kappa.par = x[2]
   #The last value is arbitrarily set to 0 per Yang and Nielsen (2008):
   #codon.sets <- CreateCodonSets()
   n.codons <- dim(.codon.sets)[1]
@@ -2690,13 +2690,20 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
         if(codon.model == "YN98"){
             max.par = 2
             likelihood.vector <- c()
-            for(partition.index in sequence(n.partitions)){
+            MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
-                codon.data$unique.site.patterns = codon.site.data
-                codon.data$site.pattern.counts = codon.site.counts
-                likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
+                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                try(likelihood.tmp <- GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+                if(length(likelihood.tmp)==0){
+                    return(10000000)
+                }else{
+                    return(likelihood.tmp)
+                }
             }
-            likelihood = sum(likelihood.vector)
+            #This orders the nsites per partition in decreasing order (to increase efficiency):
+            partition.order <- 1:n.partitions
+            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
         if(codon.model == "FMutSel0" | codon.model == "FMutSel") {
             if(codon.model == "FMutSel0"){
@@ -2724,7 +2731,6 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                     max.par = 0 + 11 + 1 + 60
                 }
             }
-            print(x)
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
@@ -3915,7 +3921,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       if(codon.model == "GY94"){
         max.par.model.count <- 2
         ip = c(1,1)
-        parameter.column.names <- c("kappa", "V")
+        parameter.column.names <- c("V", "kappa")
         upper = rep(log(99), length(ip))
         lower = rep(-21, length(ip))
         
@@ -3927,15 +3933,16 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         upper.vector = upper
         lower.vector = lower
         if(n.partitions > 1){
-          for(partition.index in 2:n.partitions){
-            ip = c(1,1)
-            ip.vector = c(ip.vector, ip)
-            upper.vector = c(upper.vector, upper)
-            lower.vector = c(lower.vector, lower)
-            index.matrix.tmp = numeric(max.par.model.count)
-            index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-            index.matrix[partition.index,] <- index.matrix.tmp
-          }
+            for(partition.index in 2:n.partitions){
+                ip = c(1,1)
+                ip.vector = c(ip.vector, ip)
+                upper.vector = c(upper.vector, log(99))
+                lower.vector = c(lower.vector, -10)
+                index.matrix.tmp = numeric(max.par.model.count)
+                index.matrix.tmp[2] = 2
+                index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+                index.matrix[partition.index,] <- index.matrix.tmp
+            }
         }
       }
       if(codon.model == "YN98"){
@@ -3956,9 +3963,10 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
               for(partition.index in 2:n.partitions){
                   ip = c(1,1)
                   ip.vector = c(ip.vector, ip)
-                  upper.vector = c(upper.vector, upper)
-                  lower.vector = c(lower.vector, lower)
+                  upper.vector = c(upper.vector, log(99))
+                  lower.vector = c(lower.vector, -10)
                   index.matrix.tmp = numeric(max.par.model.count)
+                  index.matrix.tmp[2] = 2
                   index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
                   index.matrix[partition.index,] <- index.matrix.tmp
               }
