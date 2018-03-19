@@ -2676,24 +2676,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
         }
         likelihood = sum(likelihood.vector)
     }else{
-        if(codon.model == "GY94"){
-            max.par = 2
-            MultiCoreLikelihood <- function(partition.index){
-                codon.data = NULL
-                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
-                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-                try(likelihood.tmp <- GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-                if(length(likelihood.tmp)==0){
-                    return(10000000)
-                }else{
-                    return(likelihood.tmp)
-                }
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
-        }
-        if(codon.model == "YN98"){
+        if(codon.model == "GY94" | codon.model == "YN98"){
             max.par = 2
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
