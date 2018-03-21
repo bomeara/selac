@@ -2644,6 +2644,8 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
 
 
 OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=1, neglnl=FALSE) {
+    
+    poo <- x
     if(logspace) {
         x <- exp(x)
     }
@@ -2720,7 +2722,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                     max.par = 0 + 11 + 1 + 60
                 }
             }
-            save(log(x), phy, codon.site.data, codon.site.counts, file="checkpoint.fmutsel.Rsave")
+            save(poo, phy, index.matrix, codon.site.data, codon.site.counts, file="checkpoint.fmutsel.Rsave")
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
