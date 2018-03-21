@@ -2631,6 +2631,8 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
         codon.data = NULL
         codon.data$unique.site.patterns = codon.site.data[[partition.index]]
         codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+        print(partition.index)
+        print(
         likelihood.tmp = GetLikelihoodSAC_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, aa.optim_array=aa.optim_array[[partition.index]], codon.freq.by.aa=codon.freq.by.aa[[partition.index]], codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
         return(likelihood.tmp)
       }
@@ -2682,6 +2684,7 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
                 codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                likelihood.tmp <- c()
                 try(likelihood.tmp <- GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
                 if(length(likelihood.tmp)==0){
                     return(10000000)
@@ -2719,10 +2722,12 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
                     max.par = 0 + 11 + 1 + 60
                 }
             }
+            save(log(x), phy, codon.site.data, codon.site.counts, file="checkpoint.fmutsel.Rsave")
             MultiCoreLikelihood <- function(partition.index){
                 codon.data = NULL
                 codon.data$unique.site.patterns = codon.site.data[[partition.index]]
                 codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
+                likelihood.tmp <- c()
                 try(likelihood.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
                 if(length(likelihood.tmp)==0){
                     return(10000000)
