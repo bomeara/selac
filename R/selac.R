@@ -424,46 +424,38 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 
 
 CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutation.rates, numcode) {
-  #codon.sets <- CreateCodonSets()
-  n.codons <- dim(.codon.sets)[1]
-  codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
-  rownames(codon.mutation.rates) <- rep("",n.codons)
-  colnames(codon.mutation.rates) <- rep("",n.codons)
-  #codon.set.translate <- apply(.codon.sets, 2, n2s)
-  #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
-  aa.translations <- .aa.translation[[numcode]][.codon.name]
-  for (i in sequence(n.codons)) {
-    for (j in sequence(n.codons)) {
-      if(aa.translations[i] == aa.translations[j]){ #synonymous
-        if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
-          mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
-          matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-          if((fitness.pars[j]-fitness.pars[i]) == 0){
-            codon.mutation.rates[i,j] = nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
-          }else{
-            codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[i] - fitness.pars[j]) / (1-exp(-fitness.pars[i] - fitness.pars[j])))
-          }
+    #codon.sets <- CreateCodonSets()
+    n.codons <- dim(.codon.sets)[1]
+    codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
+    rownames(codon.mutation.rates) <- rep("",n.codons)
+    colnames(codon.mutation.rates) <- rep("",n.codons)
+    #codon.set.translate <- apply(.codon.sets, 2, n2s)
+    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+    aa.translations <- .aa.translation[[numcode]][.codon.name]
+    for (i in sequence(n.codons)) {
+        for (j in sequence(n.codons)) {
+            if(aa.translations[i] == aa.translations[j]){ #synonymous
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+                    codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(-fitness.pars[i] - fitness.pars[j])))
+                }
+            }else{ #nonsynonymous
+                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+                    codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(-fitness.pars[i] - fitness.pars[j])))
+                }
+            }
         }
-      }else{ #nonsynonymous
-        if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
-          mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
-          matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-          if((fitness.pars[j]-fitness.pars[i]) == 0){
-            codon.mutation.rates[i,j] = omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
-          }else{
-            codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[i] - fitness.pars[j]) / (1-exp(-fitness.pars[i] - fitness.pars[j])))
-          }
-        }
-      }
     }
-  }
-  #Remove stop codon rates -- they should be removed already, but just in case...
-  codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
-  #Now let us finish up the matrix:
-  rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
-  diag(codon.mutation.rates) <- 0
-  diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
-  return(codon.mutation.rates)
+    #Remove stop codon rates -- they should be removed already, but just in case...
+    codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
+    #Now let us finish up the matrix:
+    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
+    diag(codon.mutation.rates) <- 0
+    diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
+    return(codon.mutation.rates)
 }
 
 
