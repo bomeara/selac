@@ -438,13 +438,13 @@ CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutatio
                 if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
                     mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
                     matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-                    codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(-fitness.pars[i] - fitness.pars[j])))
+                    codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
                 }
             }else{ #nonsynonymous
                 if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
                     mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
                     matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-                    codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(-fitness.pars[i] - fitness.pars[j])))
+                    codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
                 }
             }
         }
