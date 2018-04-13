@@ -700,7 +700,6 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
                             Q_codon_array <- rate.Q_codon.list[[site.rate]]
                             Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
                             Q_codon_sim <- simulation.model.info$Q_matrix[,,aa.optim_array[i]]
-                            print("here?")
                             interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
                         }
                     }
