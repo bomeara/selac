@@ -3623,7 +3623,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #'
 #' @details
 #' Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL) {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL, max.iterations=6) {
 
   if(!data.type == "codon" & !data.type == "nucleotide"){
     stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -3843,12 +3843,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
         lik.diff <- 10
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number<7){
+        while(lik.diff != 0 & iteration.number<=max.iterations){
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
 
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
@@ -3857,7 +3857,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
           cat("       Optimizing model parameters", "\n")
           opts.params <- opts
-          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
 
           ParallelizedOptimizedByGene <- function(n.partition){
             optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsLarge, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts.params, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
@@ -4087,12 +4087,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
         lik.diff <- 10
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number<7){
+        while(lik.diff != 0 & iteration.number<=max.iterations){
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
 
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
@@ -4101,7 +4101,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
           cat("       Optimizing model parameters", "\n")
           opts.params <- opts
-          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
           print(length(results.final$solution))
           print(results.final$solution)
           #ParallelizedOptimizedByGene <- function(n.partition){
@@ -4514,7 +4514,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
         lik.diff <- 10
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number < 7){
+        while(lik.diff != 0 & iteration.number <= max.iterations){
           cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           cat("              Optimizing amino acids", "\n")
           aa.optim.list <- as.list(numeric(n.partitions))
@@ -4552,7 +4552,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
 
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=NULL, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
@@ -4572,7 +4572,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             lower.bounds.gene <- lower[1]
             #}
             opts.params <- opts
-            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
             optim.by.gene <- nloptr(x0=log(tmp.par.mat[n.partition,]), eval_f=OptimizeModelParsAlphaBetaGtrFixed, ub=upper.bounds.gene, lb=lower.bounds.gene, opts=opts.params, alpha.beta.gtr=alpha.beta.gtr, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, aa.optim_array=aa.optim.list[[n.partition]], codon.freq.by.aa=codon.freq.by.aa.list[[n.partition]], codon.freq.by.gene=codon.freq.by.gene.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
             return(tmp.pars)
@@ -4732,12 +4732,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
         lik.diff <- 10
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number < 7){
+        while(lik.diff != 0 & iteration.number <= max.iterations){
           cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
 
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=NULL, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
@@ -4757,7 +4757,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             lower.bounds.gene <- lower[1]
             #}
             opts.params <- opts
-            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
             optim.by.gene <- nloptr(x0=log(tmp.par.mat[n.partition,]), eval_f=OptimizeModelParsAlphaBetaGtrFixed, ub=upper.bounds.gene, lb=lower.bounds.gene, opts=opts.params, alpha.beta.gtr=alpha.beta.gtr, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, aa.optim_array=aa.optim.list[[n.partition]], codon.freq.by.aa=codon.freq.by.aa.list[[n.partition]], codon.freq.by.gene=codon.freq.by.gene.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
             return(tmp.pars)
@@ -5383,12 +5383,12 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
     lik.diff <- 10
     iteration.number <- 1
-    while(lik.diff != 0 & iteration.number < 7){
+    while(lik.diff != 0 & iteration.number <= max.iterations){
       cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
       if(edge.length == "optimize"){
         cat("              Optimizing edge lengths", "\n")
         #opts.edge <- opts
-        opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+        opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
         results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=estimate.importance, neglnl=TRUE, HMM=TRUE)
         print(results.edge.final$objective)
         print(exp(results.edge.final$solution))
