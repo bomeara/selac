@@ -3698,6 +3698,14 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   stopifnot(errorStatus!="exit")
 } 
  
+  
+  #checks that the options being used make sense #DE
+  if(codon.model=="none"&optimal.aa=="none"&data.type=="codon"){
+  print("You have turned off amino-acid optimization and you're not using a codon model. Please set your data-type to 'nucleotide'. Exiting...")
+  errorStatus <- "exit"
+  }
+  stopifnot(errorStatus!="exit")
+  
  ##########
   
   
