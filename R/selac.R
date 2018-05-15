@@ -3670,8 +3670,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
  
 ###If using user supplied branch lengths this deals with the exception of branch lengths being smaller than the upper and lower bound specified in other sections### DE
 if(recalculate.starting.brlen == FALSE){
- upper.edge=log(10)
- lower.edge=log(1e-8)
+ upper.edge=10
+ lower.edge=1e-8
  perc = phy$edge.length/max(phy$edge.length)
  per5 = perc+(((upper.edge+lower.edge-1)/2) - mean(perc)) #recenter
  rescaled = per5/(mean(per5)*(1/((upper.edge+lower.edge-1)/2)))
