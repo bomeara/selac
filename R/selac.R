@@ -3666,14 +3666,52 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
   }
 
-  
- ###If using user supplied branch lengths this deals with the exception of branch lengths == 0### DE
-  if(recalculate.starting.brlen == FALSE){
-  replaceValue<-max(phy$edge.length)*2;
-  phy$edge.length[phy$edge.length==0]<-replaceValue
-  aVerySmallBranchLength<-min(phy$edge.length)*(1/100000)
-  phy$edge.length[phy$edge.length==replaceValue]<-aVerySmallBranchLength
+ 
+ 
+###If using user supplied branch lengths this deals with the exception of branch lengths being smaller than the upper and lower bound specified in other sections### DE
+if(recalculate.starting.brlen == FALSE){
+ upper.edge=log(10)
+ lower.edge=log(1e-8)
+ perc = phy$edge.length/max(phy$edge.length)
+ per5 = perc+(((upper.edge+lower.edge-1)/2) - mean(perc)) #recenter
+ rescaled = per5/(mean(per5)*(1/((upper.edge+lower.edge-1)/2)))
+ phy$edge.length <- rescaled
+}
+ 
+ 
+#check that the taxon names are correctly formatted in comparison to the tree (DE)
+{fastas=list.files(codon.data.path,pattern="*.fasta")
+  if (identical(sort(unlist(names(read.FASTA(fastas[1])))) , sort(unlist(phy[[4]])))
+  ) {
+    print("DATA CHECK: Taxa in first alignment identical to taxa in tree. Good.")
+    errorStatus<-"Safe"
+  } else {
+    print("Error: Taxa in alignment are not identical to taxa in tree. Check your input files. Exiting...")
+    errorStatus<-"exit"
   }
+  stopifnot(errorStatus!="exit")
+  
+  #check that the taxon names are correctly formated within all alignment files_DEvangelista
+  if(
+    all(unlist(foreach(j = 1:length(fastas))%do%{                               ##makes pairwise checks of all the alignments to see if the taxon names are identical. If they are ALL identical then no error is thrown. 
+      foreach(k = length(fastas):1)%do%{                                         
+        identical(                                                               
+          sort(names(read.FASTA(fastas[j]))), sort(names(read.FASTA(fastas[k])))
+        )
+      }
+    }))
+  ){
+    print("DATA CHECK: Taxa in alignments identical to each other. Good.")
+    errorStatus<-"Safe"
+  } else {
+    print("Error: Taxa in alignments are not identical each other. Check your input files. Exiting...")
+    errorStatus<-"exit"
+  }
+  stopifnot(errorStatus!="exit")
+}
+ 
+ 
+ 
  ##########
   
   
