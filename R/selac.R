@@ -3666,7 +3666,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
   }
 
- 
+  
+  #fix user-supplied branch lengths that are shorter than the prespecified minimum.
+  if(recalculate.starting.brlen==FALSE){ 
+  phy$edge.length[phy$edge.length <= 1e-8]<-(1e-8)*1.01
+    }
+  
+  
 #check that the taxon names are correctly formatted in comparison to the tree (DE)
 {fastas=list.files(codon.data.path,pattern="*.fasta")
   if (identical(sort(unlist(names(read.FASTA(fastas[1])))) , sort(unlist(phy[[4]])))
@@ -3679,7 +3685,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   }
   stopifnot(errorStatus!="exit")
   
-  #check that the taxon names are correctly formated within all alignment files_DEvangelista
+  #check that the taxon names are correctly formated within all alignment files (DE)
   if(
     all(unlist(foreach(j = 1:length(fastas))%do%{                               ##makes pairwise checks of all the alignments to see if the taxon names are identical. If they are ALL identical then no error is thrown. 
       foreach(k = length(fastas):1)%do%{                                         
@@ -3699,7 +3705,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 } 
  
   
-  #checks that the options being used make sense #DE
+  #checks that the options being used make sense (DE)
   if(codon.model=="none"&optimal.aa=="none"&data.type=="codon"){
   print("You have turned off amino-acid optimization and you're not using a codon model. Please set your data-type to 'nucleotide'. Exiting...")
   errorStatus <- "exit"
