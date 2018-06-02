@@ -3422,10 +3422,6 @@ FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
 ######################################################################################################################################
 
 TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likelihood=-100000, root.p) {
-<<<<<<< HEAD
-=======
-
->>>>>>> 4f5b333bb496795c113a9353844e470d5b5b9fcd
   ##start with first method and move to next if problems encountered
   ## when solving ode, such as negative pr values < neg.pr.threshold
   ode.method.vec <- c("ode45", "lsoda")
@@ -3605,7 +3601,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param max.tol.edges Supplies the relative optimization tolerance for branch lengths only. Default is that is the same as the max.tol.
 #' @param max.evals Supplies the max number of iterations tried during optimization.
-#' @param max.restarts Supplies the number of random restarts.
+#' @param max.initial.cond Supplies the number of initial conditions tried.
 #' @param user.optimal.aa If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
@@ -3617,10 +3613,13 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param start.from.mle If TRUE, will start optimization from the MLE. Default is FALSE.
 #' @param mle.matrix The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.
 #' @param partition.order Allows for a specialized order of the partitions to be gathered from the working directory.
+#' @param max.iterations Sets the number of restarts performed for each set of initial conditions (Default: 5)
+#' @param conv.crit Sets the difference in log-likelihood at after which a fitting is considered converged (Default: 0.01)
+#' @param convergence.step Sets the number if iterations taken into account for conv.crit (Default: 3)
 #'
 #' @details
 #' Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL, max.iterations=6) {
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.initial.cond=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL, max.iterations=5, conv.crit=0.01, convergence.step = 3) {
 
   if(!data.type == "codon" & !data.type == "nucleotide"){
     stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
@@ -3805,7 +3804,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       number.of.current.restarts <- 1
       best.lik <- 1000000
-      while(number.of.current.restarts < (max.restarts+1)){
+      while(number.of.current.restarts < (max.initial.cond+1)){
         cat(paste("Finished. Performing analysis...", sep=""), "\n")
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
@@ -3837,10 +3836,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         print(mle.pars.mat)
 
         current.likelihood <- results.final$objective
-        cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
-        lik.diff <- 10
+        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
+        lik.storage <- rep(NA, max.iterations)
+        continue.restarts <- TRUE
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number<=max.iterations){
+        while(continue.restarts & iteration.number <= max.iterations)
+        {
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
@@ -3871,11 +3872,22 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           print(results.final$objective)
           print(mle.pars.mat)
 
-          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+          lik.diff <- abs(current.likelihood-results.final$objective)
           current.likelihood <- results.final$objective
-          cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          lik.storage[iteration.number] <- current.likelihood
+          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
+            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
+          
+          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          if(!continue.restarts)
+          {
+            cat("##################################################################################################\n")  
+            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
+            cat("##################################################################################################\n")  
+          }
+          
           iteration.number <- iteration.number + 1
-        }
+        } # end while restarts from previous fit
         #Output for use in sims#
         if(output.by.restart == TRUE){
           obj.tmp = list(np=max(index.matrix) + length(phy$edge.length) + sum(nsites.vector), loglik = -results.final$objective, AIC = -2*(-results.final$objective)+2*(max(index.matrix) + length(phy$edge.length) + sum(nsites.vector)), mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, data.type=data.type, codon.model=codon.model, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.evals=max.evals, selac.starting.vals=ip.vector)
@@ -4045,7 +4057,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 
       number.of.current.restarts <- 1
       best.lik <- 10000000
-      while(number.of.current.restarts < (max.restarts+1)){
+      while(number.of.current.restarts < (max.initial.cond+1)){
         cat(paste("Finished. Performing analysis...", sep=""), "\n")
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
@@ -4081,10 +4093,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         print(mle.pars.mat)
 
         current.likelihood <- results.final$objective
-        cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
-        lik.diff <- 10
+        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
+        lik.storage <- rep(NA, max.iterations)
+        continue.restarts <- TRUE
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number<=max.iterations){
+        while(continue.restarts & iteration.number <= max.iterations)
+        {
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
@@ -4119,9 +4133,20 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           print(results.final$objective)
           print(mle.pars.mat)
 
-          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+          lik.diff <- abs(current.likelihood-results.final$objective)
           current.likelihood <- results.final$objective
-          cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          lik.storage[iteration.number] <- current.likelihood
+          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
+            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
+          
+          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          if(!continue.restarts)
+          {
+            cat("##################################################################################################\n")  
+            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
+            cat("##################################################################################################\n")  
+          }
+          
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#
@@ -4159,11 +4184,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   if(optimal.aa=="majrule" | optimal.aa=="optimize" | optimal.aa=="averaged" | optimal.aa=="user") {
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
-    if(max.restarts > 1){
-      selac.starting.vals <- matrix(0, max.restarts+1, 3)
-      selac.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
-      selac.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 3)
-      selac.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 1)
+    if(max.initial.cond > 1){
+      selac.starting.vals <- matrix(0, max.initial.cond+1, 3)
+      selac.starting.vals[,1] <- runif(n = max.initial.cond+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
+      selac.starting.vals[,2] <- runif(n = max.initial.cond+1, min = 0.01, max = 3)
+      selac.starting.vals[,3] <- runif(n = max.initial.cond+1, min = 0.01, max = 1)
     }else{
       if(is.null(user.supplied.starting.param.vals)){
         selac.starting.vals <- matrix(c(2, 1.8292716544, 0.1017990371), 1, 3)
@@ -4431,7 +4456,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       number.of.current.restarts <- 1
       aa.optim.original <- aa.optim.list
       best.lik <- 1000000
-      while(number.of.current.restarts < (max.restarts+1)){
+      while(number.of.current.restarts < (max.initial.cond+1)){
         cat(paste("Finished. Performing random restart ", number.of.current.restarts,"...", sep=""), "\n")
         aa.optim.list <- aa.optim.original
         cat("       Doing first pass using majority-rule optimal amino acid...", "\n")
@@ -4508,10 +4533,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         print(mle.pars.mat)
 
         current.likelihood <- results.final$objective
-        cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
-        lik.diff <- 10
+        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
+        lik.storage <- rep(NA, max.iterations)
+        continue.restarts <- TRUE
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number <= max.iterations){
+        while(continue.restarts & iteration.number <= max.iterations)
+        {
           cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           cat("              Optimizing amino acids", "\n")
           aa.optim.list <- as.list(numeric(n.partitions))
@@ -4604,9 +4631,21 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           #}
           print(results.final$objective)
           print(mle.pars.mat)
-          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+          
+          lik.diff <- abs(current.likelihood-results.final$objective)
           current.likelihood <- results.final$objective
-          cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          lik.storage[iteration.number] <- current.likelihood
+          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
+            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
+          
+          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          if(!continue.restarts)
+          {
+            cat("##################################################################################################\n")  
+            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
+            cat("##################################################################################################\n")  
+          }
+          
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#
@@ -4646,7 +4685,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       number.of.current.restarts <- 1
       best.lik <- 1000000
-      while(number.of.current.restarts < (max.restarts+1)){
+      while(number.of.current.restarts < (max.initial.cond+1)){
         if(optimal.aa == "user"){
           cat(paste("Finished. Performing random restart ", number.of.current.restarts," using user-supplied optimal amino acids...", sep=""), "\n")
         }else{
@@ -4726,10 +4765,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         print(mle.pars.mat)
 
         current.likelihood <- results.final$objective
-        cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
-        lik.diff <- 10
+        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
+        lik.storage <- rep(NA, max.iterations)
+        continue.restarts <- TRUE
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number <= max.iterations){
+        while(continue.restarts & iteration.number <= max.iterations)
+        {
           cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
@@ -4789,9 +4830,22 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           #}
           print(results.final$objective)
           print(mle.pars.mat)
-          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+          
+          
+          lik.diff <- abs(current.likelihood-results.final$objective)
           current.likelihood <- results.final$objective
-          cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          lik.storage[iteration.number] <- current.likelihood
+          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
+            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
+          
+          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          if(!continue.restarts)
+          {
+            cat("##################################################################################################\n")  
+            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
+            cat("##################################################################################################\n")  
+          }
+          
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#
@@ -4878,7 +4932,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param max.tol.edges Supplies the relative optimization tolerance for branch lengths only. Default is that is the same as the max.tol.
 #' @param max.evals Supplies the max number of iterations tried during optimization.
-#' @param max.restarts Supplies the number of random restarts.
+#' @param max.initial.cond Supplies the number of initial conditions tried.
 #' @param user.optimal.aa If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
@@ -4887,10 +4941,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param tol.step If > 1, makes for coarser tolerance at earlier iterations of the optimizer
 #' @param optimizer.algorithm The optimizer used by nloptr.
+#' @param max.iterations Sets the number of restarts performed for each set of initial conditions (Default: 5)
+#' @param conv.crit Sets the difference in log-likelihood at after which a fitting is considered converged (Default: 0.01)
+#' @param convergence.step Sets the number if iterations taken into account for conv.crit (Default: 3)
 #'
 #' @details
 #' A hidden Markov model which no longers optimizes the optimal amino acids, but instead allows for the optimal sequence to vary along branches, clades, taxa, etc. Like the original function, we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
+SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.initial.cond=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", max.iterations = 5, conv.crit = 0.01, convergence.step = 3) {
 
   if(!data.type == "codon"){
     stop("Check that your data type input is correct. Options currently are codon only", call.=FALSE)
@@ -4968,11 +5025,11 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
 
   codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
   cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
-  if(max.restarts > 1){
-    selac.starting.vals <- matrix(0, max.restarts+1, 3)
-    selac.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
-    selac.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 3)
-    selac.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 1)
+  if(max.initial.cond > 1){
+    selac.starting.vals <- matrix(0, max.initial.cond+1, 3)
+    selac.starting.vals[,1] <- runif(n = max.initial.cond+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
+    selac.starting.vals[,2] <- runif(n = max.initial.cond+1, min = 0.01, max = 3)
+    selac.starting.vals[,3] <- runif(n = max.initial.cond+1, min = 0.01, max = 1)
   }else{
     if(is.null(user.supplied.starting.param.vals)){
       selac.starting.vals <- matrix(c(2, 1.8292716544, 0.1017990371), 1, 3)
@@ -5298,7 +5355,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
 
   number.of.current.restarts <- 1
   best.lik <- 1000000
-  while(number.of.current.restarts < (max.restarts+1)){
+  while(number.of.current.restarts < (max.initial.cond+1)){
     cat(paste("Finished. Performing random restart ", number.of.current.restarts," ...", sep=""), "\n")
     mle.pars.mat <- index.matrix
     mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
@@ -5377,10 +5434,12 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     print(mle.pars.mat)
 
     current.likelihood <- results.final$objective
-    cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
-    lik.diff <- 10
+    cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
+    lik.storage <- rep(NA, max.iterations)
+    continue.restarts <- TRUE
     iteration.number <- 1
-    while(lik.diff != 0 & iteration.number <= max.iterations){
+    while(continue.restarts & iteration.number <= max.iterations)
+    {
       cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
       if(edge.length == "optimize"){
         cat("              Optimizing edge lengths", "\n")
@@ -5439,9 +5498,21 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
       }
       print(results.final$objective)
       print(mle.pars.mat)
-      lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+      
+      lik.diff <- abs(current.likelihood-results.final$objective)
       current.likelihood <- results.final$objective
-      cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+      lik.storage[iteration.number] <- current.likelihood
+      if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
+        continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
+      
+      cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+      if(!continue.restarts)
+      {
+        cat("##################################################################################################\n")  
+        cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
+        cat("##################################################################################################\n")  
+      }
+      
       iteration.number <- iteration.number + 1
     }
     #Output for use in sims#

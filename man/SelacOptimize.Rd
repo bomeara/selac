@@ -10,14 +10,14 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
   numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
   verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
-  max.tol = 1e-3,
-  max.tol.edges = 1e-3, max.evals = 1e+06,
-  max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
+  max.tol = 0.001, max.tol.edges = 0.001, max.evals = 1e+06,
+  max.initial.cond = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
   user.supplied.starting.param.vals = NULL, tol.step = 1,
   optimizer.algorithm = "NLOPT_LN_SBPLX", start.from.mle = FALSE,
-  mle.matrix = NULL, partition.order = NULL)
+  mle.matrix = NULL, partition.order = NULL, max.iterations = 5,
+  conv.crit = 0.01, convergence.step = 3)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -64,7 +64,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{max.evals}{Supplies the max number of iterations tried during optimization.}
 
-\item{max.restarts}{Supplies the number of random restarts.}
+\item{max.initial.cond}{Supplies the number of initial conditions tried.}
 
 \item{user.optimal.aa}{If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.}
 
@@ -87,6 +87,12 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{mle.matrix}{The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.}
 
 \item{partition.order}{Allows for a specialized order of the partitions to be gathered from the working directory.}
+
+\item{max.iterations}{Sets the number of restarts performed for each set of initial conditions (Default: 5)}
+
+\item{conv.crit}{Sets the difference in log-likelihood at after which a fitting is considered converged (Default: 0.01)}
+
+\item{convergence.step}{Sets the number if iterations taken into account for conv.crit (Default: 3)}
 }
 \description{
 Efficient optimization of model parameters under the SELAC model
