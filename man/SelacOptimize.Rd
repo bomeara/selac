@@ -10,8 +10,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
   numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
   verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
-  max.tol = .Machine$double.eps^0.5,
-  max.tol.edges = .Machine$double.eps^0.5, max.evals = 1e+06,
+  max.tol = 1e-3,
+  max.tol.edges = 1e-3, max.evals = 1e+06,
   max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
@@ -28,7 +28,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
 
-\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".}
+\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "FMutSel", "selac".}
 
 \item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.}
 
