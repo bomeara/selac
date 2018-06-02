@@ -2988,12 +2988,6 @@ GetMatrixAANames <-function(numcode){
 
 
 GetCodonFreqsByAA <- function(codon.data, aa.opt.vector, numcode){
-  #codon.sets <- CreateCodonSets()
-  #codon.set.translate <- apply(.codon.sets, 2, n2s)
-  #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
-  aa.translations <- .aa.translation[[numcode=numcode]][codon.data=codon.data[,1]]
-  names(aa.translations) = NULL
-  #unique.aa <- unique(aa.translation)
   codon.freqs <- c()
   for(aa.id.index in sequence(21)) {
     cols <- which(aa.opt.vector == .unique.aa[aa.id.index])
