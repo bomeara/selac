@@ -1,5 +1,5 @@
 #ifdef USE_AVX2
-
+#ifdef BLA
 #include <vector>
 #include <immintrin.h>
 
@@ -259,4 +259,5 @@ std::vector<double>& expm(std::vector<double>& H, double t, const unsigned p) {
 
 	return H;
 }
+#endif
 #endif
