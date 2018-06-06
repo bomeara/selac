@@ -235,7 +235,7 @@ PolynomialTransform <- function(x, xi, poly.params, k){
   #	mk2_1 <- xi + (coef.vec[2-1,]/2)*x + (coef.vec[3-1,]/3)*(x^2) + (coef.vec[4-1]/4)*(x^3) + (coef.vec[5-1]/5)*(x^4) + (coef.vec[6-1]/6)*(x^5) + (coef.vec[7-1]/7)*(x^6) + (coef.vec[8-1]/8)*(x^7)
   #}
   ####################
-
+  
   return(mk2_1)
 }
 
@@ -287,26 +287,6 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
       diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
     }
     return(nuc.mutation.rates)
-  }
-  if(model == "HKY") {
-      index <- matrix(NA, 4, 4)
-      rates <- c(1,rates)
-      sel <- col(index) < row(index)
-      index[sel] <- c(1,2,1,1,2,1)
-      index <- t(index)
-      index[sel] <- c(1,2,1,1,2,1)
-      nuc.mutation.rates <- matrix(0, nrow=4, ncol=4)
-      nuc.mutation.rates<-matrix(rates[index], dim(index))
-      rownames(nuc.mutation.rates) <- n2s(0:3)
-      colnames(nuc.mutation.rates) <- n2s(0:3)
-      diag(nuc.mutation.rates) <- 0
-      diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-      if(!is.null(base.freqs)){
-          diag(nuc.mutation.rates) = 0
-          nuc.mutation.rates = t(nuc.mutation.rates * base.freqs)
-          diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
-      }
-      return(nuc.mutation.rates)
   }
   if(model == "GTR") {
     index <- matrix(NA, 4, 4)
@@ -380,11 +360,11 @@ CreateCodonMutationMatrixIndex <- function() {
 
 CreateCodonMutationMatrixIndexEvolveAA <- function() {
   codon.mut.index.mat <- CreateCodonMutationMatrixIndex()
-
+  
   n.codons <- dim(.codon.sets)[1]
   mat.dim <- 21*n.codons
   evolv.codon.mut.index.mat <- matrix(data=0, nrow=mat.dim, ncol=mat.dim)
-
+  
   for(i in 1:21)
   {
     index.vec.diag <- (1+(i-1)*64):(64+(i-1)*64)
@@ -392,7 +372,7 @@ CreateCodonMutationMatrixIndexEvolveAA <- function() {
     evolv.codon.mut.index.mat[index.vec.diag, -index.vec.diag] <- diag(17, 64, 64)#do.call(cbind, replicate(20, diag(18, 64, 64), simplify = FALSE))
     evolv.codon.mut.index.mat[index.vec.diag, index.vec.diag] <- codon.mut.index.mat # fill in matrix on the diagonal
   }
-
+  
   evolv.codon.mut.index.mat[evolv.codon.mut.index.mat == 0] = NA
   return(evolv.codon.mut.index.mat)
 }
@@ -414,7 +394,7 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
     #codon.name <- paste(n2s(as.numeric(.codon.sets[i,])), collapse="")
     rownames(codon.mutation.rates)[i] <- .codon.name
     colnames(codon.mutation.rates)[i] <- .codon.name
-
+    
   }
   diag(codon.mutation.rates) <- 0
   diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
@@ -424,101 +404,52 @@ CreateCodonMutationMatrix <- function(nuc.mutation.rates) {
 
 
 CreateCodonMutationMatrixMutSel <- function(omega.par, fitness.pars, nuc.mutation.rates, numcode) {
-    #codon.sets <- CreateCodonSets()
-    n.codons <- dim(.codon.sets)[1]
-    codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
-    rownames(codon.mutation.rates) <- rep("",n.codons)
-    colnames(codon.mutation.rates) <- rep("",n.codons)
-    #codon.set.translate <- apply(.codon.sets, 2, n2s)
-    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
-    aa.translations <- .aa.translation[[numcode]][.codon.name]
-    for (i in sequence(n.codons)) {
-        for (j in sequence(n.codons)) {
-            if(aa.translations[i] == aa.translations[j]){ #synonymous
-                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
-                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-                    if((fitness.pars[j]-fitness.pars[i]) == 0){
-                        codon.mutation.rates[i,j] = nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
-                    }else{
-                        codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
-                    }
-                }
-            }else{ #nonsynonymous
-                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
-                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-                    if((fitness.pars[j]-fitness.pars[i]) == 0){
-                        codon.mutation.rates[i,j] = omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
-                    }else{
-                        codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
-                    }
-                }
-            }
+  #codon.sets <- CreateCodonSets()
+  n.codons <- dim(.codon.sets)[1]
+  codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
+  rownames(codon.mutation.rates) <- rep("",n.codons)
+  colnames(codon.mutation.rates) <- rep("",n.codons)
+  #codon.set.translate <- apply(.codon.sets, 2, n2s)
+  #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+  aa.translations <- .aa.translation[[numcode]][.codon.name]
+  for (i in sequence(n.codons)) {
+    for (j in sequence(n.codons)) {
+      if(aa.translations[i] == aa.translations[j]){ #synonymous
+        if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+          mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+          matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+          if((fitness.pars[j]-fitness.pars[i]) == 0){
+            codon.mutation.rates[i,j] = nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
+          }else{
+            codon.mutation.rates[i,j] <- nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
+          }
         }
-    }
-    #Remove stop codon rates -- they should be removed already, but just in case...
-    codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
-    #Now let us finish up the matrix:
-    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
-    diag(codon.mutation.rates) <- 0
-    diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
-    return(codon.mutation.rates)
-}
-
-
-CreateCodonMutationMatrixYN98 <- function(x, codon.freqs, numcode) {
-    omega.par = x[1]
-    kappa.par <- x[2]
-    #The last value is arbitrarily set to 0 per Yang and Nielsen (2008):
-    #codon.sets <- CreateCodonSets()
-    n.codons <- dim(.codon.sets)[1]
-    codon.mutation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
-    rownames(codon.mutation.rates) <- rep("",n.codons)
-    colnames(codon.mutation.rates) <- rep("",n.codons)
-    #codon.set.translate <- apply(.codon.sets, 2, n2s)
-    #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
-    #We add this in because the stop codons are not included in Grantham's distance calculation:
-    aa.translations <- .aa.translation[[numcode]][.codon.name]
-    for (i in sequence(n.codons)) {
-        for (j in sequence(n.codons)) {
-            if(aa.translations[i] == aa.translations[j]){ #synonymous -- set distance to zero.
-                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
-                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-                    if(.codon.sets[i, mismatch.position] == 0 & .codon.sets[j,mismatch.position] == 2 | .codon.sets[i, mismatch.position] == 2 & .codon.sets[j,mismatch.position] == 0 | .codon.sets[i, mismatch.position] == 1 & .codon.sets[j,mismatch.position] == 3 | .codon.sets[i, mismatch.position] == 3 & .codon.sets[j,mismatch.position] == 1){
-                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j]
-                    }else{
-                        codon.mutation.rates[i,j] <- codon.freqs[j]
-                    }
-                }
-            }else{ #nonsynonymous -- so we need to know Grantham's distance.
-                if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
-                    mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
-                    matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
-                    if(.codon.sets[i, mismatch.position] == 0 & .codon.sets[j,mismatch.position] == 2 | .codon.sets[i, mismatch.position] == 2 & .codon.sets[j,mismatch.position] == 0 | .codon.sets[i, mismatch.position] == 1 & .codon.sets[j,mismatch.position] == 3 | .codon.sets[i, mismatch.position] == 3 & .codon.sets[j,mismatch.position] == 1){
-                        codon.mutation.rates[i,j] <- kappa.par * codon.freqs[j] * omega.par
-                    }else{
-                        codon.mutation.rates[i,j] <- codon.freqs[j] * omega.par
-                    }
-                }
-            }
+      }else{ #nonsynonymous
+        if(sum(.codon.sets[i,] == .codon.sets[j,])==2) { #means that two of the bases match
+          mismatch.position <- which(.codon.sets[i,] != .codon.sets[j,])
+          matched.position <- which(.codon.sets[i,] == .codon.sets[j,])
+          if((fitness.pars[j]-fitness.pars[i]) == 0){
+            codon.mutation.rates[i,j] = omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]]
+          }else{
+            codon.mutation.rates[i,j] <- omega.par * nuc.mutation.rates[1+.codon.sets[i,mismatch.position], 1+.codon.sets[j, mismatch.position]] * ((fitness.pars[j] - fitness.pars[i]) / (1-exp(fitness.pars[i] - fitness.pars[j])))
+          }
         }
+      }
     }
-    #Remove stop codon rates -- they should be removed already, but just in case...
-    codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
-    #Now let us finish up the matrix:
-    rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
-    diag(codon.mutation.rates) <- 0
-    diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
-    return(codon.mutation.rates)
+  }
+  #Remove stop codon rates -- they should be removed already, but just in case...
+  codon.mutation.rates[which(aa.translations == "*"),] = codon.mutation.rates[,which(aa.translations == "*")] = 0
+  #Now let us finish up the matrix:
+  rownames(codon.mutation.rates) <- colnames(codon.mutation.rates) <- .codon.name
+  diag(codon.mutation.rates) <- 0
+  diag(codon.mutation.rates) <- -rowSums(codon.mutation.rates)
+  return(codon.mutation.rates)
 }
-
 
 
 CreateCodonMutationMatrixGY94 <- function(x, aa.distances, codon.freqs, numcode) {
-  v.par <- x[1]
-  kappa.par = x[2]
+  kappa.par = x[1]
+  v.par <- x[2]
   #The last value is arbitrarily set to 0 per Yang and Nielsen (2008):
   #codon.sets <- CreateCodonSets()
   n.codons <- dim(.codon.sets)[1]
@@ -803,7 +734,7 @@ CreateAAFixationMatrixForEverything <- function(aa.distances=CreateAADistanceMat
     for (col.index in sequence(length(states))) {
       for (optimal.index in sequence(length(states))) {
         fixation.array[row.index, col.index, optimal.index] <- GetPairwiseProteinFixationProbabilitySingleSite(GetProteinProteinDistance(protein1=states[row.index], protein2=states[optimal.index], aa.distances=aa.distances),  GetProteinProteinDistance(protein1=states[col.index], protein2=states[optimal.index], aa.distances=aa.distances), nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid)
-
+        
       }
     }
   }
@@ -828,7 +759,7 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
   }
   codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
   #unique.aa <- unique(codon.aa)
-
+  
   codon.fixation.probs <- array(data=0, dim=c(n.codons, n.codons, length(.unique.aa)), dimnames=list(codon.names, codon.names, .unique.aa))
   for (i in sequence(n.codons)) {
     for (j in sequence(n.codons)) {
@@ -847,32 +778,32 @@ FastCreateAllCodonFixationProbabilityMatrices <- function(aa.distances=CreateAAD
 
 
 FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatrix(), C, Phi, q, Ne, diploid, numcode=1, importance = 1) { #Cedric: added importance
-
+  
   if(diploid == TRUE) {
     Ne <- 2*Ne
   } #Cedric: pay attention to diploid flag
-
+  
   aa.dist.names <- colnames(aa.distances)
   aa.distances <- cbind(aa.distances, 0)
   aa.distances <- rbind(aa.distances, 0)
   colnames(aa.distances) <- c(aa.dist.names, "*")
   rownames(aa.distances) <- c(aa.dist.names, "*")
-
+  
   numcode.idx <- .numcode.translation.idx[numcode]
   aa.names <- .aa.translation[[numcode.idx]]
-
+  
   #aa.trans.mat <- (1.0/(aa.distances[.unique.aa, .unique.aa])^importance)/Ne #Cedric: adjusting for imporatance parameter and using 1/d instead of d
   aa.trans.mat <- (exp(-importance*aa.distances[.unique.aa, .unique.aa]))/Ne
   diag(aa.trans.mat) <- 0 # because R CAN divide by 0, some real Chuck Norris stuff here
   aa.trans.mat[,colnames(aa.trans.mat) == "*"] <- 0 # find better solution
   aa.trans.mat[colnames(aa.trans.mat) == "*",] <- 0
-
+  
   # normalize distance
   norm.const <- rowSums(aa.trans.mat, na.rm = T)
   for(i in nrow(aa.trans.mat))
     aa.trans.mat[i,] <- aa.trans.mat[i,] / norm.const[i]
-
-
+  
+  
   aa.trans.matrices <- vector("list", 21)
   for(j in 1:21) {
     trans.matrix <- matrix(0, ncol=1344, nrow=64)
@@ -890,20 +821,20 @@ FastCreateOptAATransitionMatrices <- function(aa.distances=CreateAADistanceMatri
 FastCreateEvolveAACodonFixationProbabilityMatrix <- function(aa.distances = CreateAADistanceMatrix(), nsites, C = 4, Phi = 0.5, q = 4e-7, Ne = 5e6, include.stop.codon = TRUE, numcode = 1, diploid = TRUE, flee.stop.codon.rate = 0.9999999, importance = 1) { #Cedric: Added the importance parameter
   codon.fixation.probs <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances, nsites, C, Phi, q, Ne, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
   opt.aa.transition.rate <- FastCreateOptAATransitionMatrices(aa.distances=aa.distances, C=C, Phi=Phi, q=q, Ne=Ne, diploid=diploid, numcode=numcode, importance) #Cedric: passing importance through
-
+  
   n.codons <- dim(.codon.sets)[1]
   mat.dim <- 21*n.codons
   evolv.codon.fixation.probs <- matrix(data=0, nrow=mat.dim, ncol=mat.dim)
-
+  
   for(i in 1:21) {
     index.vec.diag <- (1+(i-1)*64):(64+(i-1)*64)
     evolv.codon.fixation.probs[index.vec.diag, ] <- opt.aa.transition.rate[[i]] # fill in a complete coloumn of matrices, has to be done before the matrix on the diagonal
     evolv.codon.fixation.probs[index.vec.diag, index.vec.diag] <- codon.fixation.probs[,,.unique.aa[i]] # fill in matrix on the diagonal
   }
-
+  
   rownames(evolv.codon.fixation.probs) <- paste(rep(.codon.name, times=21), rep(.unique.aa, each=64), sep="")
   colnames(evolv.codon.fixation.probs) <- paste(rep(.codon.name, times=21), rep(.unique.aa, each=64), sep="")
-
+  
   return(evolv.codon.fixation.probs)
 }
 
@@ -996,7 +927,7 @@ CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites,
   rownames(codon.fixation.rates) <- codon.names
   colnames(codon.fixation.rates) <- codon.names
   codon.aa <- sapply(codon.names, TranslateCodon, numcode=numcode)
-
+  
   for (i in sequence(n.codons)) {
     for (j in sequence(n.codons)) {
       if(sum(.codon.sets[i,] == .codon.sets[j,])>=2) { #match at two or three sites of three
@@ -1078,7 +1009,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1, codon.data, phy, Q_codon_array_vectored, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
-
+  
   nl <- 64
   #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
   liks <- matrix(0, nb.tip + nb.node, nl)
@@ -1116,7 +1047,7 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
 GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.data, phy, Q_codon, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
-
+  
   nl <- nrow(Q_codon[[1]])
   #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
   liks <- matrix(0, nb.tip + nb.node, nl)
@@ -1147,10 +1078,10 @@ GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot <- function(codon.
 
 
 GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, n.cores.by.gene.by.site=1){
-
+  
   nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   final.likelihood.vector <- rep(NA, nsites.unique)
-
+  
   #We rescale the codon matrix only:
   diag(codon_mutation_matrix) = 0
   diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
@@ -1166,7 +1097,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   diag(Q_codon_array) = -rowSums(Q_codon_array)
   #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
   #scale.factor <- -sum(Q_codon_array[DiagArray(dim(Q_codon_array))] * equilibrium.codon.freq, na.rm=TRUE)
-
+  
   ## This is obviously not very elegant, but not sure how else to code it to store this stuff in this way -- WORK IN PROGRESS:
   #expQt <- GetExpQt(phy=phy, Q=Q_codon_array, scale.factor=NULL, rates=rates)
   #Generate matrix of root frequencies for each optimal AA:
@@ -1188,11 +1119,11 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
 
 
 GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, n.cores.by.gene.by.site=1) {
-
+  
   nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   final.likelihood.vector <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
-
+  
   #We rescale the codon matrix only:
   diag(codon_mutation_matrix) = 0
   diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
@@ -1208,11 +1139,11 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
     diag(Q_codon_array[,,.unique.aa[k]]) = 0
     diag(Q_codon_array[,,.unique.aa[k]]) = -rowSums(Q_codon_array[,,.unique.aa[k]])
   }
-
+  
   #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
   #scale.factor <- -sum(Q_codon_array[DiagArray(dim(Q_codon_array))] * equilibrium.codon.freq, na.rm=TRUE)
   phy <- reorder(phy, "pruningwise")
-
+  
   ## This is obviously not very elegant, but not sure how else to code it to store this stuff in this way -- WORK IN PROGRESS:
   expQt <- NULL
   expQt$K <- GetExpQt(phy=phy, Q=Q_codon_array[,,"K"], scale.factor=NULL, rates=rates)
@@ -1235,13 +1166,13 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
   expQt$C <- GetExpQt(phy=phy, Q=Q_codon_array[,,"C"], scale.factor=NULL, rates=rates)
   expQt$W <- GetExpQt(phy=phy, Q=Q_codon_array[,,"W"], scale.factor=NULL, rates=rates)
   expQt$F <- GetExpQt(phy=phy, Q=Q_codon_array[,,"F"], scale.factor=NULL, rates=rates)
-
+  
   #Generate matrix of root frequencies for each optimal AA:
   root.p_array <- matrix(codon.freq.by.aa, nrow=dim(Q_codon_array)[2], ncol=21)
   root.p_array <- t(root.p_array)
   root.p_array <- root.p_array / rowSums(root.p_array)
   rownames(root.p_array) <- .unique.aa
-
+  
   phy.sort <- reorder(phy, "pruningwise")
   anc.indices <- unique(phy.sort$edge[,1])
   MultiCoreLikelihoodBySite <- function(i){
@@ -1261,15 +1192,15 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
 GetLikelihoodMutSel_CodonForManyCharVaryingBySite <- function(codon.data, phy, root.p_array=NULL, Q_codon, numcode, n.cores.by.gene.by.site=1) {
   nsites.unique <- dim(codon.data$unique.site.patterns)[2] - 1
   final.likelihood.vector <- rep(NA, nsites.unique)
-
+  
   diag(Q_codon) = 0
   diag(Q_codon) = -rowSums(Q_codon)
   scale.factor <- -sum(diag(Q_codon) * root.p_array, na.rm=TRUE)
   expQt <- GetExpQt(phy=phy, Q=Q_codon, scale.factor=scale.factor, rates=NULL)
-
+  
   phy.sort <- reorder(phy, "pruningwise")
   anc.indices <- unique(phy.sort$edge[,1])
-
+  
   MultiCoreLikelihoodBySite <- function(nsite.index){
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
@@ -1291,11 +1222,11 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
   nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
   diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
   scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
-
+  
   expQt <- GetExpQt(phy=phy, Q=nuc.mutation.rates, scale.factor=scale.factor, rates=rates.k)
   phy.sort <- reorder(phy, "pruningwise")
   anc.indices <- unique(phy.sort$edge[,1])
-
+  
   MultiCoreLikelihoodBySite <- function(nsite.index){
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimum(charnum=nsite.index, codon.data=nuc.data$unique.site.patterns, phy=phy, Q_codon=expQt, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
@@ -1306,26 +1237,26 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
 
 
 GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.data, phy, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix, include.gamma, gamma.type, ncats, k.levels=0, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1, estimate.importance=FALSE) {
-
+  
   if(logspace) {
     x = exp(x)
   }
-
+  
   if(estimate.importance == TRUE){
     importance.of.aa.dist.in.selective.environment.change = x[length(x)]
     x = x[-length(x)]
   }else{
     importance.of.aa.dist.in.selective.environment.change = 1
   }
-
+  
   rate.for.selective.environment.change = x[length(x)]
   x = x[-length(x)]
-
+  
   if(include.gamma == TRUE){
     shape = x[length(x)]
     x = x[-length(x)]
   }
-
+  
   C.Phi.q.Ne <- x[1]
   C <- 4
   q <- 4e-7
@@ -1336,7 +1267,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
   alpha <- x[2]
   beta <- x[3]
   gamma <- volume.fixed.value
-
+  
   if(k.levels > 0){
     if(nuc.model == "JC") {
       base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -1381,13 +1312,13 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
       nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
     }
   }
-
+  
   nuc.mutation.rates.vector <- c(nuc.mutation.rates, rate.for.selective.environment.change)
   codon_mutation_matrix <- matrix(nuc.mutation.rates.vector[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   nsites <- sum(codon.data$site.pattern.counts)
-
+  
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
       rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -1426,13 +1357,13 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
     final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
   }
-
+  
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
   if(verbose) {
-    results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne, ape::write.tree(phy))
-    names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne", "phy")
+    results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne)
+    names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne")
     print(results.vector)
   }
   if(is.na(likelihood) || is.nan(likelihood)){
@@ -1451,7 +1382,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
     shape = x[length(x)]
     x = x[-length(x)]
   }
-
+  
   C.Phi.q.Ne <- x[1]
   C <- 4
   q <- 4e-7
@@ -1462,7 +1393,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
   alpha <- x[2]
   beta <- x[3]
   gamma <- volume.fixed.value
-
+  
   if(k.levels > 0){
     if(nuc.model == "JC") {
       base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -1507,14 +1438,14 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
       nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
     }
   }
-
+  
   #codon_mutation_matrix = CreateCodonMutationMatrix(nuc.mutation.rates) #We now make an index matrix first then just place the nucleotide rates into it:
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   nsites <- sum(codon.data$site.pattern.counts)
-
+  
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
       rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -1551,13 +1482,13 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
     final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
   }
-
+  
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
   if(verbose) {
-    results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne, ape::write.tree(phy))
-    names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne", "phy")
+    results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne)
+    names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne")
     print(results.vector)
   }
   if(is.na(likelihood) || is.nan(likelihood)){
@@ -1573,20 +1504,20 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     x = exp(x)
   }
   if(nuc.model == "JC") {
-    base.freqs <- c(x[2:4], 1-sum(x[2:4]))
+    base.freqs <- c(x[1:3], 1-sum(x[1:3]))
     nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
-    x = x[-c(2:4)]
+    x = x[-(1:3)]
   }
   if(nuc.model == "GTR") {
-    base.freqs <- c(x[2:4], 1-sum(x[2:4]))
-    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[5:9], model=nuc.model, base.freqs=base.freqs)
-    x = x[-c(2:9)]
+    base.freqs <- c(x[1:3], 1-sum(x[1:3]))
+    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:8], model=nuc.model, base.freqs=base.freqs)
+    x = x[-(1:8)]
   }
   if(nuc.model == "UNREST") {
-    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[2:12], model=nuc.model, base.freqs=NULL)
-    x = x[-c(2:12)]
+    nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[1:11], model=nuc.model, base.freqs=NULL)
+    x = x[-(1:11)]
   }
-
+  
   #During the early stages of the optimization process it will try weird values for the base frequencies.
   if(any(base.freqs < 0)){
     return(1000000)
@@ -1600,16 +1531,16 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     fitness.pars <- c(x[-1],0)
     fitness.pars.ordered <- numeric(n.codons)
     if(length(fitness.pars)>21){
-        fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
+      fitness.pars.ordered = c(fitness.pars[1:48], 0, fitness.pars[49], 0, fitness.pars[50:54], 0, fitness.pars[55:61])
     }else{
-        fitness.pars.ordered <- numeric(n.codons)
-        #codon.set.translate <- apply(.codon.sets, 2, n2s)
-        #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
-        aa.translations <- .aa.translation[[numcode]][.codon.name]
-        unique.aa.nostop = .unique.aa[-which(.unique.aa=="*")]
-        for(par.index in 1:length(unique.aa.nostop)){
-            fitness.pars.ordered[which(aa.translations == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
-        }
+      fitness.pars.ordered <- numeric(n.codons)
+      #codon.set.translate <- apply(.codon.sets, 2, n2s)
+      #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+      aa.translations <- .aa.translation[[numcode]][.codon.name]
+      unique.aa.nostop = .unique.aa[-which(.unique.aa=="*")]
+      for(par.index in 1:length(unique.aa.nostop)){
+        fitness.pars.ordered[which(aa.translations == unique.aa.nostop[par.index])] <- fitness.pars[par.index]
+      }
     }
     for(codon.index in 1:n.codons){
       #In the canonical model stop codons are ignored. We do the same here.
@@ -1621,55 +1552,52 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     }
     codon.eq.freq <- codon.eq.freq[1:64]/sum(codon.eq.freq[1:64])
   }
-
+  
   Q_codon = CreateCodonMutationMatrixMutSel(omega.par=x[1], fitness.pars=fitness.pars.ordered, nuc.mutation.rates=nuc.mutation.rates, numcode=numcode)
   final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.eq.freq, Q_codon=Q_codon, numcode=numcode, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
   likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
-
+  
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
   if(verbose) {
-    results.vector <- c(likelihood, x, ape::write.tree(phy))
-    names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))), "phy")
+    results.vector <- c(likelihood, x)
+    names(results.vector) <- c("likelihood")
     print(results.vector)
   }
   return(likelihood)
 }
 
 
-GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, model.type="GY94", numcode, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
-    if(logspace) {
-        x = exp(x)
+GetLikelihoodGY94_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, root.p_array=NULL, numcode, logspace=FALSE, verbose=TRUE, neglnl=FALSE, n.cores.by.gene.by.site=1) {
+  if(logspace) {
+    x = exp(x)
+  }
+  if(!is.null(root.p_array)){
+    codon.freqs <- root.p_array
+  }else{
+    codon.freqs.tabled <- table(as.matrix(codon.data$unique.site.patterns[,2:dim(codon.data$unique.site.patterns)[2]]))
+    codon.freqs <- numeric(64)
+    for(codon.index in 1:length(codon.freqs.tabled)){
+      codon.freqs[as.numeric(names(codon.freqs.tabled))[codon.index]] <- codon.freqs.tabled[codon.index]
     }
-    if(!is.null(root.p_array)){
-        codon.freqs <- root.p_array
-    }else{
-        codon.freqs.tabled <- table(as.matrix(codon.data$unique.site.patterns[,2:dim(codon.data$unique.site.patterns)[2]]))
-        codon.freqs <- numeric(64)
-        for(codon.index in 1:length(codon.freqs.tabled)){
-            codon.freqs[as.numeric(names(codon.freqs.tabled))[codon.index]] <- codon.freqs.tabled[codon.index]
-        }
-        codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
-    }
-    if(model.type == "GY94"){
-        aa.distances <- CreateAADistanceMatrix()
-        Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
-    }else{
-        Q_codon = CreateCodonMutationMatrixYN98(x=x, codon.freqs=codon.freqs, numcode=numcode)
-    }
-    final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freqs, Q_codon=Q_codon, numcode=numcode, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
-    likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
-
-    if(neglnl) {
-        likelihood <- -1 * likelihood
-    }
-    if(verbose) {
-      results.vector <- c(likelihood, x, ape::write.tree(phy))
-      names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))), "phy")
-      print(results.vector)
-    }
-    return(likelihood)
+    codon.freqs <- codon.freqs[1:64]/sum(codon.freqs[1:64])
+  }
+  
+  aa.distances <- CreateAADistanceMatrix()
+  Q_codon = CreateCodonMutationMatrixGY94(x=x, aa.distances=aa.distances, codon.freqs=codon.freqs, numcode=numcode)
+  final.likelihood <- GetLikelihoodMutSel_CodonForManyCharVaryingBySite(codon.data, phy, root.p_array=codon.freqs, Q_codon=Q_codon, numcode=numcode, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+  likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
+  
+  if(neglnl) {
+    likelihood <- -1 * likelihood
+  }
+  if(verbose) {
+    results.vector <- c(likelihood, x)
+    names(results.vector) <- c("likelihood")
+    print(results.vector)
+  }
+  return(likelihood)
 }
 
 
@@ -1688,7 +1616,7 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
   }
   nsites.unique <- dim(nuc.data$unique.site.patterns)[2]-1
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(transition.rates, model=nuc.model)
-
+  
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
       rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -1713,7 +1641,7 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
     final.likelihood = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=NULL, root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     likelihood <- sum(final.likelihood * nuc.data$site.pattern.counts)
   }
-
+  
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
@@ -1721,8 +1649,8 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
     return(1000000)
   }
   if(verbose) {
-    results.vector <- c(likelihood, x, ape::write.tree(phy))
-    names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))), "phy")
+    results.vector <- c(likelihood)
+    names(results.vector) <- c("likelihood")
     print(results.vector)
   }
   return(likelihood)
@@ -1737,7 +1665,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
     shape = x[length(x)]
     x = x[-length(x)]
   }
-
+  
   C.Phi.q.Ne <- x[1]
   C <- 4
   q <- 4e-7
@@ -1748,7 +1676,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
   alpha <- x[2]
   beta <- x[3]
   gamma <- volume.fixed.value
-
+  
   if(k.levels > 0){
     if(nuc.model == "JC") {
       base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -1777,7 +1705,7 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
       nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
     }
   }
-
+  
   if(!is.null(codon.data$unique.site.patterns)){
     codon.data.list <- codon.data
     nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
@@ -1788,15 +1716,15 @@ GetOptimalAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.f
     codon.data.list$site.pattern.counts <- rep(1, nsites.unique)
   }
   nsites <- sum(codon.data.list$site.pattern.counts)
-
+  
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-
+  
   optimal.vector.by.site <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
   optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites.unique)
-
+  
   for(i in 1:length(.unique.aa)){
     if(.unique.aa[i]=="*"){
       optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites.unique)
@@ -1860,7 +1788,7 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
     shape = x[length(x)]
     x = x[-length(x)]
   }
-
+  
   C.Phi.q.Ne <- x[1]
   C <- 4
   q <- 4e-7
@@ -1871,7 +1799,7 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
   alpha <- x[2]
   beta <- x[3]
   gamma <- volume.fixed.value
-
+  
   if(k.levels > 0){
     if(nuc.model == "JC") {
       base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -1900,7 +1828,7 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
       nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
     }
   }
-
+  
   if(!is.null(codon.data$unique.site.patterns)){
     codon.data.list <- codon.data
     nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
@@ -1911,15 +1839,15 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
     codon.data.list$site.pattern.counts <- rep(1, nsites.unique)
   }
   nsites <- sum(codon.data.list$site.pattern.counts)
-
+  
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-
+  
   likelihood.by.site <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
   optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites.unique)
-
+  
   for(i in 1:length(.unique.aa)){
     if(.unique.aa[i]=="*"){
       optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites.unique)
@@ -1973,11 +1901,11 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
     likelihood.by.site[j] <- log(mean(exp(optimal.aa.likelihood.mat[which(!.unique.aa=="*"),j])))
   }
   final.likelihood <- sum(likelihood.by.site * codon.data$site.pattern.counts)
-
+  
   if(neglnl) {
     final.likelihood <- -1 * final.likelihood
   }
-
+  
   return(final.likelihood)
 }
 
@@ -2174,7 +2102,7 @@ GetAveAAPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codon.freq.
 
 ##Redundant to code above. This is a work in progress. Will likely change quite a bit in the future to speed things up.
 OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, n.cores.by.gene, n.cores.by.gene.by.site=1, estimate.importance=FALSE, neglnl=FALSE, HMM=FALSE) {
-
+  
   if(logspace) {
     x <- exp(x)
   }
@@ -2224,49 +2152,24 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
             codon.data = NULL
             codon.data$unique.site.patterns = codon.site.data[[partition.index]]
             codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-            likelihood.tmp = GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+            likelihood.tmp = GetLikelihoodGY94_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
             return(likelihood.tmp)
           }
           #This orders the nsites per partition in decreasing order (to increase efficiency):
           partition.order <- 1:n.partitions
           likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
-        if(codon.model == "YN98"){
-            max.par = 2
-            MultiCoreLikelihood <- function(partition.index){
-                codon.data = NULL
-                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
-                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-                likelihood.tmp = GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
-                return(likelihood.tmp)
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
-        }
-        if(codon.model == "FMutSel0" | codon.model == "FMutSel"){
-          if(codon.model == "FMutSel0"){
-              if(nuc.model == "JC"){
-                  #base.freq + nuc.rates + omega + fitness.pars
-                  max.par = 3 + 0 + 1 + 19
-              }
-              if(nuc.model == "GTR"){
-                  max.par = 3 + 5 + 1 + 19
-              }
-              if(nuc.model == "UNREST"){
-                  max.par = 0 + 11 + 1 + 19
-              }
-          }else{
-              if(nuc.model == "JC"){
-                  #base.freq + nuc.rates + omega + fitness.pars
-                  max.par = 3 + 0 + 1 + 60
-              }
-              if(nuc.model == "GTR"){
-                  max.par = 3 + 5 + 1 + 60
-              }
-              if(nuc.model == "UNREST"){
-                  max.par = 0 + 11 + 1 + 60
-              }
+        if(codon.model == "FMutSel0"){
+          #To do: figure out way to allow for the crazy 60 fitness par model.
+          if(nuc.model == "JC"){
+            #base.freq + nuc.rates + omega + fitness.pars
+            max.par = 3 + 0 + 1 + 19
+          }
+          if(nuc.model == "GTR"){
+            max.par = 3 + 5 + 1 + 19
+          }
+          if(nuc.model == "UNREST"){
+            max.par = 0 + 11 + 1 + 19
           }
           MultiCoreLikelihood <- function(partition.index){
             codon.data = NULL
@@ -2307,7 +2210,7 @@ OptimizeEdgeLengths <- function(x, par.mat, codon.site.data, codon.site.counts, 
           partition.order <- 1:n.partitions
           likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
         }
-
+        
       }
     }
   }else{
@@ -2434,7 +2337,7 @@ OptimizeModelParsAlphaBetaGtrFixed <- function(x, alpha.beta.gtr, codon.site.dat
   if(logspace) {
     x <- exp(x)
   }
-
+  
   if(HMM == TRUE) {
     if(estimate.importance == TRUE){
       max.par <- length(c(x[1], alpha.beta.gtr, x[2], x[3]))
@@ -2465,16 +2368,16 @@ OptimizeModelParsAlphaBetaGtrFixed <- function(x, alpha.beta.gtr, codon.site.dat
       if(k.levels > 0){
         max.par = max.par + 2
       }
-
+      
       #THIS ASSUMES A SEPARATE GAMMA PER GENE
       #if(include.gamma == TRUE){
       #    par.mat <- matrix(c(x[1], alpha.beta.gtr, x[2]), 1, max.par)
       #}else{
       #    par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
       #}
-
+      
       par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
-
+      
       codon.data = NULL
       codon.data$unique.site.patterns = codon.site.data
       codon.data$site.pattern.counts = codon.site.counts
@@ -2496,16 +2399,16 @@ OptimizeModelParsAlphaBetaGtrFixed <- function(x, alpha.beta.gtr, codon.site.dat
       if(k.levels > 0){
         max.par = max.par + 2
       }
-
+      
       #THIS ASSUMES A SEPARATE GAMMA PER GENE
       #if(include.gamma == TRUE){
       #    par.mat <- matrix(c(x[1], alpha.beta.gtr, x[2]), 1, max.par)
       #}else{
       #    par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
       #}
-
+      
       par.mat <- matrix(c(x[1], alpha.beta.gtr), 1, max.par)
-
+      
       codon.data = NULL
       codon.data$unique.site.patterns = codon.site.data
       codon.data$site.pattern.counts = codon.site.counts
@@ -2541,11 +2444,11 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
       likelihood.tmp = GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene[[partition.index]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=volume.fixed.value, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=estimate.importance)
       return(likelihood.tmp)
     }
-
+    
     #This orders the nsites per partition in decreasing order (to increase efficiency):
     partition.order <- 1:n.partitions
     likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
-
+    
   }else{
     if(is.null(aa.optim_array)){
       if(nuc.model == "JC"){
@@ -2563,7 +2466,7 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
       if(k.levels > 0){
         max.par = max.par + 2
       }
-
+      
       #THIS ASSUMES SEPARATE GAMMA PER GENE:
       #    if(include.gamma == TRUE){
       #    par.mat <- c()
@@ -2576,12 +2479,12 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
       #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
       #    }
       #}
-
+      
       par.mat <- c()
       for(row.index in 1:dim(fixed.pars)[1]){
         par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
       }
-
+      
       MultiCoreLikelihood <- function(partition.index){
         codon.data = NULL
         codon.data$unique.site.patterns = codon.site.data[[partition.index]]
@@ -2608,7 +2511,7 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
       if(k.levels > 0){
         max.par = max.par + 2
       }
-
+      
       #THIS ASSUMES SEPARATE GAMMA PER GENE:
       #    if(include.gamma == TRUE){
       #    par.mat <- c()
@@ -2621,12 +2524,12 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
       #        par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
       #    }
       #}
-
+      
       par.mat <- c()
       for(row.index in 1:dim(fixed.pars)[1]){
         par.mat <- rbind(par.mat, c(fixed.pars[row.index,1], x))
       }
-
+      
       MultiCoreLikelihood <- function(partition.index){
         codon.data = NULL
         codon.data$unique.site.patterns = codon.site.data[[partition.index]]
@@ -2644,103 +2547,76 @@ OptimizeAlphaBetaGtrOnly <- function(x, fixed.pars, codon.site.data, codon.site.
 
 
 OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.type, codon.model, n.partitions, nsites.vector, index.matrix, phy, aa.optim_array=NULL, root.p_array=NULL, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model, codon.index.matrix=NULL, edge.length="optimize", include.gamma=FALSE, gamma.type, ncats, k.levels, logspace=FALSE, verbose=TRUE, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=1, neglnl=FALSE) {
-
-    poo <- x
-    if(logspace) {
-        x <- exp(x)
+  if(logspace) {
+    x <- exp(x)
+  }
+  
+  if(class(index.matrix)=="numeric"){
+    index.matrix <- matrix(index.matrix, 1, length(index.matrix))
+  }
+  par.mat <- index.matrix
+  par.mat[] <- c(x, 0)[index.matrix]
+  if(data.type == "nucleotide"){
+    if(nuc.model == "JC"){
+      max.par = 0
     }
-
-    if(class(index.matrix)=="numeric"){
-        index.matrix <- matrix(index.matrix, 1, length(index.matrix))
+    if(nuc.model == "GTR"){
+      max.par = 5
     }
-    par.mat <- index.matrix
-    par.mat[] <- c(x, 0)[index.matrix]
-
-    if(data.type == "nucleotide"){
-        if(nuc.model == "JC"){
-            max.par = 0
-        }
-        if(nuc.model == "GTR"){
-            max.par = 5
-        }
-        if(nuc.model == "UNREST"){
-            max.par = 11
-        }
-        if(include.gamma == TRUE){
-            max.par = max.par + 1
-        }
-        likelihood.vector <- c()
-        for(partition.index in sequence(n.partitions)){
-            nuc.data = NULL
-            nuc.data$unique.site.patterns = codon.site.data
-            nuc.data$site.pattern.counts = codon.site.counts
-            likelihood.vector = c(likelihood.vector, GetLikelihoodNucleotideForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, root.p_array=root.p_array, numcode=numcode, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-        }
-        likelihood = sum(likelihood.vector)
+    if(nuc.model == "UNREST"){
+      max.par = 11
+    }
+    if(include.gamma == TRUE){
+      max.par = max.par + 1
+    }
+    likelihood.vector <- c()
+    for(partition.index in sequence(n.partitions)){
+      nuc.data = NULL
+      nuc.data$unique.site.patterns = codon.site.data
+      nuc.data$site.pattern.counts = codon.site.counts
+      likelihood.vector = c(likelihood.vector, GetLikelihoodNucleotideForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, root.p_array=root.p_array, numcode=numcode, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+    }
+    likelihood = sum(likelihood.vector)
+  }else{
+    if(codon.model == "GY94"){
+      max.par = 2
+      likelihood.vector <- c()
+      for(partition.index in sequence(n.partitions)){
+        codon.data = NULL
+        codon.data$unique.site.patterns = codon.site.data
+        codon.data$site.pattern.counts = codon.site.counts
+        likelihood.vector = c(likelihood.vector, GetLikelihoodGY94_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+      }
+      likelihood = sum(likelihood.vector)
     }else{
-        if(codon.model == "GY94" | codon.model == "YN98"){
-            max.par = 2
-            MultiCoreLikelihood <- function(partition.index){
-                codon.data = NULL
-                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
-                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-                likelihood.tmp <- c()
-                try(likelihood.tmp <- GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, model.type=codon.model, numcode=numcode, logspace=logspace, verbose=verbose, neglnl=neglnl, n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-                if(length(likelihood.tmp)==0){
-                    return(10000000)
-                }else{
-                    return(likelihood.tmp)
-                }
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
+      #To do: figure out way to allow for the crazy 60 fitness par model.
+      if(nuc.model == "JC"){
+        #base.freq + nuc.rates + omega + fitness.pars
+        max.par = 3 + 0 + 1 + 19
+      }
+      if(nuc.model == "GTR"){
+        max.par = 3 + 5 + 1 + 19
+      }
+      if(nuc.model == "UNREST"){
+        max.par = 0 + 11 + 1 + 19
+      }
+      likelihood.vector <- c()
+      for(partition.index in sequence(n.partitions)){
+        codon.data = NULL
+        codon.data$unique.site.patterns = codon.site.data
+        codon.data$site.pattern.counts = codon.site.counts
+        likelihood.vector.tmp <- NA
+        try(likelihood.vector.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
+        if(is.na(likelihood.vector.tmp[1])){
+          return(10000000)
+        }else{
+          likelihood.vector <- c(likelihood.vector, likelihood.vector.tmp)
         }
-        if(codon.model == "FMutSel0" | codon.model == "FMutSel") {
-            if(codon.model == "FMutSel0"){
-                #To do: figure out way to allow for the crazy 60 fitness par model.
-                if(nuc.model == "JC"){
-                    #base.freq + nuc.rates + omega + fitness.pars
-                    max.par = 3 + 0 + 1 + 19
-                }
-                if(nuc.model == "GTR"){
-                    max.par = 3 + 5 + 1 + 19
-                }
-                if(nuc.model == "UNREST"){
-                    max.par = 0 + 11 + 1 + 19
-                }
-            }else{
-                #To do: figure out way to allow for the crazy 60 fitness par model.
-                if(nuc.model == "JC"){
-                    #base.freq + nuc.rates + omega + fitness.pars
-                    max.par = 3 + 0 + 1 + 60
-                }
-                if(nuc.model == "GTR"){
-                    max.par = 3 + 5 + 1 + 60
-                }
-                if(nuc.model == "UNREST"){
-                    max.par = 0 + 11 + 1 + 60
-                }
-            }
-            save(poo, phy, index.matrix, codon.site.data, codon.site.counts, file="checkpoint.fmutsel.Rsave")
-            MultiCoreLikelihood <- function(partition.index){
-                codon.data = NULL
-                codon.data$unique.site.patterns = codon.site.data[[partition.index]]
-                codon.data$site.pattern.counts = codon.site.counts[[partition.index]]
-                likelihood.tmp <- c()
-                try(likelihood.tmp <- GetLikelihoodMutSel_CodonForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), codon.data=codon.data, phy=phy, root.p_array=NULL, numcode=numcode, nuc.model=nuc.model, logspace=logspace, verbose=verbose, neglnl=neglnl,  n.cores.by.gene.by.site=n.cores.by.gene.by.site))
-                if(length(likelihood.tmp)==0){
-                    return(10000000)
-                }else{
-                    return(likelihood.tmp)
-                }
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores.by.gene)))
-        }
+      }
+      likelihood = sum(likelihood.vector)
     }
-    return(likelihood)
+  }
+  return(likelihood)
 }
 
 
@@ -2830,7 +2706,7 @@ LaguerreQuad <- function(shape, ncats) {
   roots <- findRoots(shape - 1, ncats)
   weights <- numeric(ncats)
   f <- prod(1 + (shape - 1)/(1:ncats))
-
+  
   for (i in 1:ncats) {
     weights[i] <- f*roots[i]/((ncats + 1)^2*Laguerre(roots[i], shape - 1, ncats + 1)^2)
   }
@@ -2899,7 +2775,7 @@ PlotBubbleMatrix <- function(x, main="", special=Inf, cex=1){
   plot(x=range(.5,.5+dim(x)[2]),y=-range(.5, .5+dim(x)[1]), xlab="", ylab="", type="n", sub=main,xaxt='n',yaxt='n', asp=1,bty="n")
   axis(side=2, at=-sequence(dim(x)[1]), labels=rownames(x), las=2, cex.axis=cex)
   axis(side=3, at=sequence(dim(x)[2]), labels=colnames(x), las=2, cex.axis=cex)
-
+  
   #abline(h=-1:(-dim(x)[2]), v=1:(dim(x)[1]), col="gray", lty=3)
   abline(h=-range(special)[1],v=range(special)[1], lty=2)
   abline(h=-range(special)[2],v=range(special)[2], lty=2)
@@ -3112,6 +2988,12 @@ GetMatrixAANames <-function(numcode){
 
 
 GetCodonFreqsByAA <- function(codon.data, aa.opt.vector, numcode){
+  #codon.sets <- CreateCodonSets()
+  #codon.set.translate <- apply(.codon.sets, 2, n2s)
+  #codon.name <- apply(.codon.set.translate, 1, paste, collapse="")
+  aa.translations <- .aa.translation[[numcode=numcode]][codon.data=codon.data[,1]]
+  names(aa.translations) = NULL
+  #unique.aa <- unique(aa.translation)
   codon.freqs <- c()
   for(aa.id.index in sequence(21)) {
     cols <- which(aa.opt.vector == .unique.aa[aa.id.index])
@@ -3180,7 +3062,7 @@ GetAAFreqsByGene <- function(codon.data, aa.opt.vector, numcode){
   root.p_array <- t(root.p_array)
   eq.freqs <- rowSums(root.p_array)
   eq.freqs <- as.vector(eq.freqs / sum(eq.freqs))
-
+  
   return(eq.freqs)
 }
 
@@ -3210,7 +3092,7 @@ GetMaxName <- function(x) {
 #eigenExpM <- cxxfunction(signature(a="numeric"), code, plugin="RcppEigen")
 
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
-
+  
   if(!is.null(scale.factor)){
     Q.scaled = Q * (1/scale.factor)
   }else{
@@ -3281,7 +3163,7 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 
 #Step 2: Finish likelihood by taking our already exponentiated Q down the tree and simply re-traverse the tree and multiply by the observed likelihood.
 FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
-
+  
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
   TIPS <- 1:nb.tip
@@ -3324,12 +3206,12 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
 
 
 FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
-
+  
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
-
+  
   if(any(root.p < 0) | any(is.na(root.p))){
     return(1000000)
   }
@@ -3422,49 +3304,50 @@ FinishLikelihoodCalculationHMM <- function(phy, liks, Q, root.p, anc){
 ######################################################################################################################################
 
 TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likelihood=-100000, root.p) {
+  
   ##start with first method and move to next if problems encountered
   ## when solving ode, such as negative pr values < neg.pr.threshold
   ode.method.vec <- c("ode45", "lsoda")
   num.ode.method <- length(ode.method.vec)
-
+  
   rtol = 1e-7 #default 1e-6 returns a negative value under long branch testing conditions
   atol = 1e-6 #default 1e-6
-
+  
   neg.pr.threshold <- -10*atol
-
-
+  
+  
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
-
+  
   anc <- unique(phy$edge[,1])
   TIPS <- 1:nb.tip
-
+  
   comp <- numeric(nb.tip + nb.node)
-
+  
   for (i in seq(from = 1, length.out = nb.node)) {
     focal <- anc[i]
     desRows <- which(phy$edge[,1]==focal) ##des = descendant
     desNodes <- phy$edge[desRows,2]
     state.pr.vector = rep(1, dim(liks.HMM)[2]) ##
-
+    
     for (desIndex in sequence(length(desRows))){
       yini <- liks.HMM[desNodes[desIndex],]
       times=c(0, phy$edge.length[desRows[desIndex]])
-
+      
       ode.not.solved <- TRUE
       ode.solver.attempt <- 0
-
+      
       while(ode.not.solved && ode.solver.attempt < num.ode.method){
         ode.solver.attempt <- ode.solver.attempt+1
         ode.method <-  ode.method.vec[ode.solver.attempt]
-
+        
         subtree.pr.ode.obj <- ode(
           y=yini, times=times, func = "selacHMM",
           parms=Q_codon_array_vectored, initfunc="initmod_selacHMM",
           dllname = "selac",
           method=ode.method, rtol=rtol, atol=atol
         )
-
+        
         ## CHECK TO ENSURE THAT THE INTEGRATION WAS SUCCESSFUL ###########
         ## $istate should be = 0 [documentation in doc/deSolve.Rnw indicates
         ## it should be 2]
@@ -3472,7 +3355,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
         ## TODO: take advantage of while() around ode solving created
         ## for when we hit negative values
         istate <- attributes(subtree.pr.ode.obj)$istate[1]
-
+        
         if(istate < 0){
           ## For \code{lsoda, lsodar, lsode, lsodes, vode, rk, rk4, euler} these are
           error.text <- switch(as.character(istate),
@@ -3484,9 +3367,9 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
                                "-6"="error weight became zero",
                                paste("unknown error. ode() istate value: ", as.character(istate))
           )
-
+          
           warning(print(paste("selac.R: Integration of descendent index", desIndex, ": ode solver returned state = ",  istate, " : ", error.text)))
-
+          
           if(ode.solver.attempt < num.ode.method){
             warning.message <- paste("\tTrying ode method ", ode.method.vec[ode.solver.attempt+1])
             warning(warning.message)
@@ -3501,8 +3384,8 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
           ## object consists of pr values at start and end time
           ## extract final state variable, dropping time entry
           subtree.pr.vector <- subtree.pr.ode.obj[dim(subtree.pr.ode.obj)[[1]],-1]
-
-
+          
+          
           ## test for negative entries
           ## if encountered and less than neg.pr.threshold
           ## replace the negative values to 0
@@ -3512,26 +3395,26 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
           ## http://stackoverflow.com/questions/34424716/using-events-in-desolve-to-prevent-negative-state-variables-r
           neg.vector.pos <- which(subtree.pr.vector < 0, arr.ind=TRUE)
           num.neg.vector.pos <- length(neg.vector.pos)
-
+          
           if(num.neg.vector.pos > 0){
             min.vector.val <- min(subtree.pr.vector[neg.vector.pos])
             neg.vector.pos.as.string <- toString(neg.vector.pos)
-
+            
             warning.message <- paste("WARNING: subtree.pr.vector solved with ode method ", ode.method, " contains ", num.neg.vector.pos, " negative values at positions ", neg.vector.pos.as.string ,  "of a ", length(subtree.pr.vector), " vector." )
-
-
+            
+            
             if(min.vector.val > neg.pr.threshold){
               warning.message <- paste(warning.message, "\nMinimum value ", min.vector.val, " >  ", neg.pr.threshold, " the neg.pr.threshold.\nSetting all negative values to 0.")
               warning(warning.message)
               subtree.pr.vector[neg.vector.pos] <- 0
-
+              
             }else{
               warning.message <- paste(warning.message, "selac.R: minimum value ", min.vector.val, " <  ", neg.pr.threshold, " the neg.pr.threshold.")
-
+              
               if(ode.solver.attempt < num.ode.method){
                 warning.message <- paste(warning.message, " Trying ode method ", ode.method.vec[ode.solver.attempt+1])
                 warning(warning.message)
-
+                
               }else{
                 warning.message <- paste(warning.message, "No additional ode methods available. Returning bad.likelihood: ", bad.likelihood)
                 warning(warning.message)
@@ -3544,31 +3427,31 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
           }
         } ## end else to istate < 0
       } ##end while() for ode solver
-
-
+      
+      
       state.pr.vector <- state.pr.vector * subtree.pr.vector
     }
     comp[focal] <- sum(state.pr.vector)
     liks.HMM[focal,] <- state.pr.vector/comp[focal]
   }
   root.node <- nb.tip + 1L
-
+  
   ##Check for negative transition rates
   ##mikeg:  For now, just issue warning
-
-
+  
+  
   neg.nodes <- which(liks.HMM[root.node,] <0)
   if(length(neg.nodes)>0){
     warning(paste("selac.R: encountered " , length(neg.nodes), " negatives values in liks.HMM[", root.node, ", ", neg.nodes, " ] =  ",  liks.HMM[root.node, neg.nodes], " at position ", i, " , desIndex ", desIndex))
   }
-
-
-
+  
+  
+  
   loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root.node,])))
-
+  
   ##return bad.likelihood if loglik is bad
   if(!is.finite(loglik)) return(bad.likelihood)
-
+  
   return(loglik)
 }
 
@@ -3583,7 +3466,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param n.partitions The number of partitions to analyze. The order is based on the Unix order of the fasta files in the directory.
 #' @param phy The phylogenetic tree to optimize the model parameters.
 #' @param data.type The data type being tested. Options are "codon" or "nucleotide".
-#' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "FMutSel", "selac".
+#' @param codon.model The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".
 #' @param edge.length Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.aa Indicates what type of optimal.aa should be used. There are five options: "none", "majrule", "averaged, "optimize", or "user".
@@ -3601,7 +3484,7 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param max.tol.edges Supplies the relative optimization tolerance for branch lengths only. Default is that is the same as the max.tol.
 #' @param max.evals Supplies the max number of iterations tried during optimization.
-#' @param max.initial.cond Supplies the number of initial conditions tried.
+#' @param max.restarts Supplies the number of random restarts.
 #' @param user.optimal.aa If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
@@ -3613,18 +3496,15 @@ TreeTraversalODE <- function(phy, Q_codon_array_vectored, liks.HMM, bad.likeliho
 #' @param start.from.mle If TRUE, will start optimization from the MLE. Default is FALSE.
 #' @param mle.matrix The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.
 #' @param partition.order Allows for a specialized order of the partitions to be gathered from the working directory.
-#' @param max.iterations Sets the number of restarts performed for each set of initial conditions (Default: 5)
-#' @param conv.crit Sets the difference in log-likelihood at after which a fitting is considered converged (Default: 0.01)
-#' @param convergence.step Sets the number if iterations taken into account for conv.crit (Default: 3)
 #'
 #' @details
 #' Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.initial.cond=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL, max.iterations=5, conv.crit=0.01, convergence.step = 3) {
-
+SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, optimal.aa="optimize", nuc.model="GTR", include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.tol.edges=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", start.from.mle=FALSE, mle.matrix=NULL, partition.order=NULL) {
+  
   if(!data.type == "codon" & !data.type == "nucleotide"){
     stop("Check that your data type input is correct. Options are codon or nucleotide", call.=FALSE)
   }
-  if(!codon.model == "none" & !codon.model == "GY94" & !codon.model == "YN98" & !codon.model == "FMutSel0" & !codon.model == "FMutSel" & !codon.model == "selac"){
+  if(!codon.model == "none" & !codon.model == "GY94" & !codon.model == "FMutSel0" & !codon.model == "selac"){
     stop("Check that your codon model is correct. Options are GY94, FMutSel0, or selac", call.=FALSE)
   }
   if(!edge.length == "optimize" & !edge.length == "fixed"){
@@ -3639,33 +3519,33 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   if(!gamma.type == "quadrature" & !gamma.type == "median" & !gamma.type == "lognormal"){
     stop("Check that you have a supported gamma type. Options are quadrature after Felsenstein 2001 or median after Yang 1994 or lognormal.", call.=FALSE)
   }
-
+  
   if(!is.null(user.optimal.aa)){
     if(is.list(user.optimal.aa) == FALSE){
       stop("User-supplied optimal amino acids must be input as a list.", call.=FALSE)
     }
   }
-
+  
   if(start.from.mle == TRUE){
     partitions <- partition.order
   }else{
     partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
   }
-
+  
   if(is.null(n.partitions)){
     n.partitions <- length(partitions)
   }else{
     n.partitions = n.partitions
   }
-
+  
   if(n.partitions<n.cores.by.gene) {
     warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
   }
-
+  
   cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
-
+  
   cat("Initializing data and model parameters...", "\n")
-
+  
   site.pattern.data.list <- as.list(numeric(n.partitions))
   site.pattern.count.list <- as.list(numeric(n.partitions))
   nsites.vector <- c()
@@ -3692,7 +3572,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         site.pattern.count.list[[partition.index]] = nucleotide.data$site.pattern.counts
       }
     }else{
-      codon.freq.by.gene.list <- as.list(numeric(n.partitions))
       empirical.aa.freq.list <- as.list(numeric(n.partitions))
       starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge[,1]))
       for (partition.index in sequence(n.partitions)) {
@@ -3709,7 +3588,6 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         aa.data <- ConvertCodonNumericDataToAAData(codon.data, numcode=numcode)
         aa.optim <- apply(aa.data[, -1], 2, GetMaxName) #starting values for all, final values for majrule
         empirical.aa.freq.list[[partition.index]] <- GetAAFreqsByGene(codon.data[,-1], aa.optim, numcode=numcode)
-        codon.freq.by.gene.list[[partition.index]] <- GetCodonFreqsByGene(codon.data[,-1])
         codon.data <- SitePattern(codon.data, includes.optimal.aa=FALSE)
         site.pattern.data.list[[partition.index]] = codon.data$unique.site.patterns
         site.pattern.count.list[[partition.index]] = codon.data$site.pattern.counts
@@ -3751,11 +3629,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       aa.optim.list[[partition.index]] = codon.data$optimal.aa
     }
   }
-
+  
   opts <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol)
   opts.edge <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol.edges)
-
-
+  
+  
   results.final <- c()
   if(nuc.model == "JC"){
     nuc.ip = NULL
@@ -3772,7 +3650,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     max.par.model.count = 11
     parameter.column.names <- c("C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
   }
-
+  
   if(optimal.aa=="none") {
     if(data.type == "nucleotide"){
       codon.index.matrix = NA
@@ -3804,7 +3682,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       number.of.current.restarts <- 1
       best.lik <- 1000000
-      while(number.of.current.restarts < (max.initial.cond+1)){
+      while(number.of.current.restarts < (max.restarts+1)){
         cat(paste("Finished. Performing analysis...", sep=""), "\n")
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
@@ -3834,20 +3712,18 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
         print(results.final$objective)
         print(mle.pars.mat)
-
+        
         current.likelihood <- results.final$objective
-        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
-        lik.storage <- rep(NA, max.iterations)
-        continue.restarts <- TRUE
+        cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
+        lik.diff <- 10
         iteration.number <- 1
-        while(continue.restarts & iteration.number <= max.iterations)
-        {
+        while(lik.diff != 0 & iteration.number<7){
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
             print(exp(results.edge.final$solution))
@@ -3855,8 +3731,8 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
           cat("       Optimizing model parameters", "\n")
           opts.params <- opts
-          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-
+          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+          
           ParallelizedOptimizedByGene <- function(n.partition){
             optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsLarge, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts.params, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
             tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
@@ -3871,23 +3747,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
           print(results.final$objective)
           print(mle.pars.mat)
-
-          lik.diff <- abs(current.likelihood-results.final$objective)
+          
+          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
           current.likelihood <- results.final$objective
-          lik.storage[iteration.number] <- current.likelihood
-          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
-            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
-          
-          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
-          if(!continue.restarts)
-          {
-            cat("##################################################################################################\n")  
-            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
-            cat("##################################################################################################\n")  
-          }
-          
+          cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
           iteration.number <- iteration.number + 1
-        } # end while restarts from previous fit
+        }
         #Output for use in sims#
         if(output.by.restart == TRUE){
           obj.tmp = list(np=max(index.matrix) + length(phy$edge.length) + sum(nsites.vector), loglik = -results.final$objective, AIC = -2*(-results.final$objective)+2*(max(index.matrix) + length(phy$edge.length) + sum(nsites.vector)), mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, data.type=data.type, codon.model=codon.model, aa.optim=NULL, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.evals=max.evals, selac.starting.vals=ip.vector)
@@ -3903,7 +3768,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         }
         number.of.current.restarts <- number.of.current.restarts + 1
       }
-
+      
       loglik <- -(best.lik) #to go from neglnl to lnl
       mle.pars.mat <- best.solution
       if(edge.length == "optimize"){
@@ -3911,7 +3776,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       cat("Finished. Summarizing results...", "\n")
       colnames(mle.pars.mat) <- parameter.column.names
-
+      
       if(edge.length == "optimize"){
         np <- max(index.matrix) + length(phy$edge.length)
       }else{
@@ -3923,145 +3788,75 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       if(codon.model == "GY94"){
         max.par.model.count <- 2
         ip = c(1,1)
-        parameter.column.names <- c("V", "kappa")
+        parameter.column.names <- c("Kappa", "V")
         upper = rep(log(99), length(ip))
         lower = rep(-21, length(ip))
-
+        
         codon.index.matrix = NA
-
+        
         index.matrix = matrix(0, n.partitions, length(ip))
         index.matrix[1,] = 1:ncol(index.matrix)
         ip.vector = ip
         upper.vector = upper
         lower.vector = lower
         if(n.partitions > 1){
-            for(partition.index in 2:n.partitions){
-                #ip.vector = c(ip.vector, 1)
-                #upper.vector = c(upper.vector, log(99))
-                #lower.vector = c(lower.vector, -10)
-                #index.matrix.tmp = numeric(max.par.model.count)
-                #index.matrix.tmp[2] = 2
-                #index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-                #index.matrix[partition.index,] <- index.matrix.tmp
-                index.matrix[partition.index,] <- 1:ncol(index.matrix)
+          for(partition.index in 2:n.partitions){
+            ip = c(1,1)
+            ip.vector = c(ip.vector, ip)
+            upper.vector = c(upper.vector, upper)
+            lower.vector = c(lower.vector, lower)
+            index.matrix.tmp = numeric(max.par.model.count)
+            index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+            index.matrix[partition.index,] <- index.matrix.tmp
+          }
+        }
+      }else{
+        fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[1]])[-c(17,21)]
+        aa.ordered <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "Y", "C", "W")
+        if(nuc.model == "UNREST"){
+          max.par.model.count <- max.par.model.count + 1 + 19
+          ip = c(nuc.ip, 0.4, fitness.pars)
+          parameter.column.names <- c(parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
+          upper = c(rep(log(99), length(ip)-3))
+          lower = rep(-10, length(ip))
+        }else{
+          max.par.model.count <- max.par.model.count + 3 + 1 + 19
+          ip = c(.25, .25, .25, nuc.ip, 0.4, fitness.pars)
+          parameter.column.names <- c("freqA", "freqC", "freqG", parameter.column.names, "omega", paste("fitness", aa.ordered, sep="_"))
+          upper = c(0, 0, 0, rep(log(99), length(ip)-3))
+          lower = rep(-10, length(ip))
+        }
+        
+        codon.index.matrix = NA
+        
+        index.matrix = matrix(0, n.partitions, length(ip))
+        index.matrix[1,] = 1:ncol(index.matrix)
+        ip.vector = ip
+        upper.vector = upper
+        lower.vector = lower
+        if(n.partitions > 1){
+          for(partition.index in 2:n.partitions){
+            if(nuc.model == "UNREST"){
+              ip = c(nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
+            }else{
+              ip = c(.25, .25, .25, nuc.ip, 0.4, GetFitnessStartingValues(codon.freqs=empirical.aa.freq.list[[partition.index]])[-c(17,21)])
             }
+            ip.vector = c(ip.vector, ip)
+            upper.vector = c(upper.vector, upper)
+            lower.vector = c(lower.vector, lower)
+            index.matrix.tmp = numeric(max.par.model.count)
+            index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+            index.matrix[partition.index,] <- index.matrix.tmp
+          }
         }
       }
-      if(codon.model == "YN98"){
-          max.par.model.count <- 2
-          ip = c(1,1)
-          parameter.column.names <- c("omega", "kappa")
-          upper = rep(log(99), length(ip))
-          lower = rep(-21, length(ip))
-
-          codon.index.matrix = NA
-
-          index.matrix = matrix(0, n.partitions, length(ip))
-          index.matrix[1,] = 1:ncol(index.matrix)
-          ip.vector = ip
-          upper.vector = upper
-          lower.vector = lower
-          if(n.partitions > 1){
-              for(partition.index in 2:n.partitions){
-                  #ip.vector = c(ip.vector, 1)
-                  #upper.vector = c(upper.vector, log(99))
-                  #lower.vector = c(lower.vector, -10)
-                  #index.matrix.tmp = numeric(max.par.model.count)
-                  #index.matrix.tmp[2] = 2
-                  #index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-                  #index.matrix[partition.index,] <- index.matrix.tmp
-                  index.matrix[partition.index,] <- 1:ncol(index.matrix)
-              }
-          }
-      }
-      if(codon.model == "FMutSel0"){
-          empirical.aa.freq.unlist <- matrix(unlist(empirical.aa.freq.list), ncol = 21, byrow = TRUE)
-          empirical.aa.freq <- colSums(empirical.aa.freq.unlist)/ sum(colSums(empirical.aa.freq.unlist))
-          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.aa.freq)[-c(17,21)]
-          aa.ordered <- .unique.aa
-          aa.ordered <- aa.ordered[-c(17,21)]
-          if(nuc.model == "UNREST"){
-              max.par.model.count <- max.par.model.count + 1 + 19
-              ip = c(0.4, nuc.ip, fitness.pars)
-              parameter.column.names <- c("omega", parameter.column.names, paste("fitness", aa.ordered, sep="_"))
-              upper = rep(log(99), length(ip))
-              lower = rep(-10, length(ip))
-          }else{
-              max.par.model.count <- max.par.model.count + 3 + 1 + 19
-              ip = c(0.4, .25, .25, .25, nuc.ip, fitness.pars)
-              parameter.column.names <- c("omega", "freqA", "freqC", "freqG", parameter.column.names, paste("fitness", aa.ordered, sep="_"))
-              upper = c(log(99), 0, 0, 0, rep(log(99), length(ip)-4))
-              lower = rep(-10, length(ip))
-          }
-
-          codon.index.matrix = NA
-
-          index.matrix = matrix(0, n.partitions, length(ip))
-          index.matrix[1,] = 1:ncol(index.matrix)
-          ip.vector = ip
-          upper.vector = upper
-          lower.vector = lower
-          if(n.partitions > 1){
-              for(partition.index in 2:n.partitions){
-                  #ip.vector = c(ip.vector, 0.4)
-                  #upper.vector = c(upper.vector, log(99))
-                  #lower.vector = c(lower.vector, -10)
-                  #index.matrix.tmp = numeric(max.par.model.count)
-                  #index.matrix.tmp[2:max.par.model.count] = 2:max.par.model.count
-                  #index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-                  #index.matrix[partition.index,] <- index.matrix.tmp
-                  index.matrix[partition.index,] <- 1:ncol(index.matrix)
-              }
-          }
-      }
-      if(codon.model == "FMutSel"){
-          empirical.codon.freq.unlist <- matrix(unlist(codon.freq.by.gene.list), ncol = 64, byrow = TRUE)
-          empirical.codon.freq <- colSums(empirical.codon.freq.unlist)/ sum(colSums(empirical.codon.freq.unlist))
-          fitness.pars <- GetFitnessStartingValues(codon.freqs=empirical.codon.freq, n.pars=64)
-          codon.ordered <- .codon.name
-          codon.ordered <- codon.ordered[-c(49,51,57,64)]
-          if(nuc.model == "UNREST"){
-              max.par.model.count <- max.par.model.count + 1 + 60
-              ip = c(0.4, nuc.ip, fitness.pars)
-              parameter.column.names <- c("omega", parameter.column.names, paste("fitness", codon.ordered, sep="_"))
-              upper = c(rep(log(99), length(ip)-3))
-              lower = rep(-10, length(ip))
-          }else{
-              max.par.model.count <- max.par.model.count + 3 + 1 + 60
-              ip = c(0.4, .25, .25, .25, nuc.ip, fitness.pars)
-              parameter.column.names <- c("omega", "freqA", "freqC", "freqG", parameter.column.names, paste("fitness", codon.ordered, sep="_"))
-              upper = c(log(99), 0, 0, 0, rep(log(99), length(ip)-4))
-              lower = rep(-10, length(ip))
-          }
-
-          codon.index.matrix = NA
-
-          index.matrix = matrix(0, n.partitions, length(ip))
-          index.matrix[1,] = 1:ncol(index.matrix)
-          ip.vector = ip
-          upper.vector = upper
-          lower.vector = lower
-          if(n.partitions > 1){
-              for(partition.index in 2:n.partitions){
-                  #ip.vector = c(ip.vector, 0.4)
-                  #upper.vector = c(upper.vector, log(99))
-                  #lower.vector = c(lower.vector, -10)
-                  #index.matrix.tmp = numeric(max.par.model.count)
-                  #index.matrix.tmp[2:max.par.model.count] = 2:max.par.model.count
-                  #index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-                  #index.matrix[partition.index,] <- index.matrix.tmp
-                  index.matrix[partition.index,] <- 1:ncol(index.matrix)
-              }
-          }
-      }
-
+      
       number.of.current.restarts <- 1
-      best.lik <- 10000000
-      while(number.of.current.restarts < (max.initial.cond+1)){
+      best.lik <- 1000000
+      while(number.of.current.restarts < (max.restarts+1)){
         cat(paste("Finished. Performing analysis...", sep=""), "\n")
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
-        print(mle.pars.mat)
         if(edge.length == "optimize"){
           cat("       Optimizing edge lengths", "\n")
           phy$edge.length <- colMeans(starting.branch.lengths)
@@ -4074,37 +3869,33 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           phy$edge.length <- exp(results.edge.final$solution)
         }
         cat("       Optimizing model parameters", "\n")
-        #ParallelizedOptimizedByGene <- function(n.partition){
-        optim.by.gene <- nloptr(x0=log(ip.vector), eval_f = OptimizeModelParsLarge, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
-          #tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
-          #return(tmp.pars)
-          #}
-        #results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
+        ParallelizedOptimizedByGene <- function(n.partition){
+          optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsLarge, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix[1,], phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
+          tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
+          return(tmp.pars)
+        }
+        results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
         #results.set <- lapply(1:n.partitions, ParallelizedOptimizedByGene)
-        #parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
-        #results.final <- NULL
-        #results.final$objective <- sum(parallelized.parameters[,1])
-        #results.final$solution <- c(t(parallelized.parameters[,-1]))
-        results.final$objective <- optim.by.gene$objective
-        results.final$solution <- optim.by.gene$solution
+        parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
+        results.final <- NULL
+        results.final$objective <- sum(parallelized.parameters[,1])
+        results.final$solution <- c(t(parallelized.parameters[,-1]))
         mle.pars.mat <- index.matrix
         mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
         print(results.final$objective)
         print(mle.pars.mat)
-
+        
         current.likelihood <- results.final$objective
-        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
-        lik.storage <- rep(NA, max.iterations)
-        continue.restarts <- TRUE
+        cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
+        lik.diff <- 10
         iteration.number <- 1
-        while(continue.restarts & iteration.number <= max.iterations)
-        {
+        while(lik.diff != 0 & iteration.number<7){
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
             print(exp(results.edge.final$solution))
@@ -4112,41 +3903,26 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           }
           cat("       Optimizing model parameters", "\n")
           opts.params <- opts
-          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-          print(length(results.final$solution))
-          print(results.final$solution)
-          #ParallelizedOptimizedByGene <- function(n.partition){
-          optim.by.gene <- nloptr(x0=results.final$solution, eval_f = OptimizeModelParsLarge, ub=upper.vector, lb=lower.vector, opts=opts, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
-          #tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
-          # return(tmp.pars)
-          #}
-          #results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
-          #results.set <- lapply(1:n.partitions, ParallelizedOptimizedByGene)
-          #parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
-          #results.final <- NULL
-          #results.final$objective <- sum(parallelized.parameters[,1])
-          #results.final$solution <- c(t(parallelized.parameters[,-1]))
-          results.final$objective <- optim.by.gene$objective
-          results.final$solution <- optim.by.gene$solution
+          opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+          
+          ParallelizedOptimizedByGene <- function(n.partition){
+            optim.by.gene <- nloptr(x0=log(mle.pars.mat[n.partition,]), eval_f = OptimizeModelParsLarge, ub=upper.vector[1:dim(mle.pars.mat)[2]], lb=lower.vector[1:dim(mle.pars.mat)[2]], opts=opts.params, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix[1,], phy=phy, aa.optim_array=NULL, root.p_array=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, neglnl=TRUE)
+            tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
+            return(tmp.pars)
+          }
+          results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores.by.gene)
+          parallelized.parameters <- t(matrix(unlist(results.set),dim(index.matrix)[2]+1,n.partitions))
+          results.final <- NULL
+          results.final$objective <- sum(parallelized.parameters[,1])
+          results.final$solution <- c(t(parallelized.parameters[,-1]))
           mle.pars.mat <- index.matrix
           mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
           print(results.final$objective)
           print(mle.pars.mat)
-
-          lik.diff <- abs(current.likelihood-results.final$objective)
+          
+          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
           current.likelihood <- results.final$objective
-          lik.storage[iteration.number] <- current.likelihood
-          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
-            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
-          
-          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
-          if(!continue.restarts)
-          {
-            cat("##################################################################################################\n")  
-            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
-            cat("##################################################################################################\n")  
-          }
-          
+          cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#
@@ -4171,7 +3947,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       cat("Finished. Summarizing results...", "\n")
       colnames(mle.pars.mat) <- parameter.column.names
-
+      
       if(edge.length == "optimize"){
         np <- max(index.matrix) + length(phy$edge.length)
       }else{
@@ -4184,11 +3960,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   if(optimal.aa=="majrule" | optimal.aa=="optimize" | optimal.aa=="averaged" | optimal.aa=="user") {
     codon.index.matrix = CreateCodonMutationMatrixIndex()
     cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
-    if(max.initial.cond > 1){
-      selac.starting.vals <- matrix(0, max.initial.cond+1, 3)
-      selac.starting.vals[,1] <- runif(n = max.initial.cond+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
-      selac.starting.vals[,2] <- runif(n = max.initial.cond+1, min = 0.01, max = 3)
-      selac.starting.vals[,3] <- runif(n = max.initial.cond+1, min = 0.01, max = 1)
+    if(max.restarts > 1){
+      selac.starting.vals <- matrix(0, max.restarts+1, 3)
+      selac.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
+      selac.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 3)
+      selac.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 1)
     }else{
       if(is.null(user.supplied.starting.param.vals)){
         selac.starting.vals <- matrix(c(2, 1.8292716544, 0.1017990371), 1, 3)
@@ -4441,22 +4217,22 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         }
       }
     }
-
+    
     #THIS IS FOR THERE IS A SEPARATE GAMMA PER GENE:
     #if(include.gamma == TRUE){
     #    index.matrix.red <- t(matrix(1:(n.partitions*2), 2, n.partitions))
     #}else{
     #    index.matrix.red <- t(matrix(1:n.partitions, 1, n.partitions))
     #}
-
+    
     #This is so we can break out alpha, beta, GTR, and gamma which are shared among ALL genes:
     index.matrix.red <- t(matrix(1:n.partitions, 1, n.partitions))
-
+    
     if(optimal.aa == "optimize"){
       number.of.current.restarts <- 1
       aa.optim.original <- aa.optim.list
       best.lik <- 1000000
-      while(number.of.current.restarts < (max.initial.cond+1)){
+      while(number.of.current.restarts < (max.restarts+1)){
         cat(paste("Finished. Performing random restart ", number.of.current.restarts,"...", sep=""), "\n")
         aa.optim.list <- aa.optim.original
         cat("       Doing first pass using majority-rule optimal amino acid...", "\n")
@@ -4476,7 +4252,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           phy$edge.length <- exp(results.edge.final$solution)
         }
         cat("              Optimizing model parameters", "\n")
-
+        
         #if(include.gamma == TRUE){
         #    alpha.beta.gtr <- mle.pars.mat[1,c(2:(max.par.model.count-1))]
         #    upper.bounds.shared <- upper[c(2:(max.par.model.count-1))]
@@ -4486,7 +4262,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         upper.bounds.shared <- upper[c(2:max.par.model.count)]
         lower.bounds.shared <- lower[c(2:max.par.model.count)]
         #}
-
+        
         ParallelizedOptimizedByGene <- function(n.partition){
           #if(include.gamma == TRUE){
           #    tmp.par.mat <- mle.pars.mat[,c(1, max.par.model.count)]
@@ -4531,14 +4307,12 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         #}
         print(results.final$objective)
         print(mle.pars.mat)
-
+        
         current.likelihood <- results.final$objective
-        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
-        lik.storage <- rep(NA, max.iterations)
-        continue.restarts <- TRUE
+        cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
+        lik.diff <- 10
         iteration.number <- 1
-        while(continue.restarts & iteration.number <= max.iterations)
-        {
+        while(lik.diff != 0 & iteration.number < 7){
           cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           cat("              Optimizing amino acids", "\n")
           aa.optim.list <- as.list(numeric(n.partitions))
@@ -4576,15 +4350,15 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=NULL, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
             print(exp(results.edge.final$solution))
             phy$edge.length <- exp(results.edge.final$solution)
           }
           cat("              Optimizing model parameters", "\n")
-
+          
           ParallelizedOptimizedByGene <- function(n.partition){
             #if(include.gamma == TRUE){
             #    tmp.par.mat <- mle.pars.mat[,c(1, max.par.model.count)]
@@ -4596,7 +4370,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             lower.bounds.gene <- lower[1]
             #}
             opts.params <- opts
-            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
+            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
             optim.by.gene <- nloptr(x0=log(tmp.par.mat[n.partition,]), eval_f=OptimizeModelParsAlphaBetaGtrFixed, ub=upper.bounds.gene, lb=lower.bounds.gene, opts=opts.params, alpha.beta.gtr=alpha.beta.gtr, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, aa.optim_array=aa.optim.list[[n.partition]], codon.freq.by.aa=codon.freq.by.aa.list[[n.partition]], codon.freq.by.gene=codon.freq.by.gene.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
             return(tmp.pars)
@@ -4614,7 +4388,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           results.final$solution <- c(t(parallelized.parameters[,-1]))
           mle.pars.mat.red <- index.matrix.red
           mle.pars.mat.red[] <- c(exp(results.final$solution), 0)[index.matrix.red]
-
+          
           optim.alpha.beta.gtr.all.genes <- nloptr(x0=log(alpha.beta.gtr), eval_f = OptimizeAlphaBetaGtrOnly, ub=upper.bounds.shared, lb=lower.bounds.shared, opts=opts, fixed.pars=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix.red, phy=phy, aa.optim_array=aa.optim.list, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
           results.final$objective <- optim.alpha.beta.gtr.all.genes$objective
           alpha.beta.gtr <- exp(optim.alpha.beta.gtr.all.genes$solution)
@@ -4631,21 +4405,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           #}
           print(results.final$objective)
           print(mle.pars.mat)
-          
-          lik.diff <- abs(current.likelihood-results.final$objective)
+          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
           current.likelihood <- results.final$objective
-          lik.storage[iteration.number] <- current.likelihood
-          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
-            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
-          
-          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
-          if(!continue.restarts)
-          {
-            cat("##################################################################################################\n")  
-            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
-            cat("##################################################################################################\n")  
-          }
-          
+          cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#
@@ -4675,7 +4437,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       aa.optim.full.list <- best.aa.optim.list
       codon.freq.by.aa.list <- best.codon.freq.by.aa
       codon.freq.by.gene.list <- best.codon.freq.by.gene
-
+      
       if(edge.length == "optimize"){
         phy$edge.length <- best.edge.lengths
       }
@@ -4685,7 +4447,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       }
       number.of.current.restarts <- 1
       best.lik <- 1000000
-      while(number.of.current.restarts < (max.initial.cond+1)){
+      while(number.of.current.restarts < (max.restarts+1)){
         if(optimal.aa == "user"){
           cat(paste("Finished. Performing random restart ", number.of.current.restarts," using user-supplied optimal amino acids...", sep=""), "\n")
         }else{
@@ -4708,7 +4470,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           phy$edge.length <- exp(results.edge.final$solution)
         }
         cat("              Optimizing model parameters", "\n")
-
+        
         #if(include.gamma == TRUE){
         #    alpha.beta.gtr <- mle.pars.mat[1,c(2:(max.par.model.count-1))]
         #    upper.bounds.shared <- upper[c(2:(max.par.model.count-1))]
@@ -4718,7 +4480,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         upper.bounds.shared <- upper[c(2:max.par.model.count)]
         lower.bounds.shared <- lower[c(2:max.par.model.count)]
         #}
-
+        
         ParallelizedOptimizedByGene <- function(n.partition){
           #if(include.gamma == TRUE){
           #    tmp.par.mat <- mle.pars.mat[,c(1, max.par.model.count)]
@@ -4763,27 +4525,25 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         #}
         print(results.final$objective)
         print(mle.pars.mat)
-
+        
         current.likelihood <- results.final$objective
-        cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
-        lik.storage <- rep(NA, max.iterations)
-        continue.restarts <- TRUE
+        cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
+        lik.diff <- 10
         iteration.number <- 1
-        while(continue.restarts & iteration.number <= max.iterations)
-        {
+        while(lik.diff != 0 & iteration.number < 7){
           cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-
+            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
+            
             results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=aa.optim.list, root.p_array=NULL, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             print(results.edge.final$objective)
             print(exp(results.edge.final$solution))
             phy$edge.length <- exp(results.edge.final$solution)
           }
           cat("              Optimizing model parameters", "\n")
-
+          
           ParallelizedOptimizedByGene <- function(n.partition){
             #if(include.gamma == TRUE){
             #    tmp.par.mat <- mle.pars.mat[,c(1, max.par.model.count)]
@@ -4795,7 +4555,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
             lower.bounds.gene <- lower[1]
             #}
             opts.params <- opts
-            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
+            opts.params$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
             optim.by.gene <- nloptr(x0=log(tmp.par.mat[n.partition,]), eval_f=OptimizeModelParsAlphaBetaGtrFixed, ub=upper.bounds.gene, lb=lower.bounds.gene, opts=opts.params, alpha.beta.gtr=alpha.beta.gtr, codon.site.data=site.pattern.data.list[[n.partition]], codon.site.counts=site.pattern.count.list[[n.partition]], data.type=data.type, codon.model=codon.model, n.partitions=1, nsites.vector=nsites.vector[n.partition], index.matrix=index.matrix.red[1,], phy=phy, aa.optim_array=aa.optim.list[[n.partition]], codon.freq.by.aa=codon.freq.by.aa.list[[n.partition]], codon.freq.by.gene=codon.freq.by.gene.list[[n.partition]], numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
             tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
             return(tmp.pars)
@@ -4813,7 +4573,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           results.final$solution <- c(t(parallelized.parameters[,-1]))
           mle.pars.mat.red <- index.matrix.red
           mle.pars.mat.red[] <- c(exp(results.final$solution), 0)[index.matrix.red]
-
+          
           optim.alpha.beta.gtr.all.genes <- nloptr(x0=log(alpha.beta.gtr), eval_f = OptimizeAlphaBetaGtrOnly, ub=upper.bounds.shared, lb=lower.bounds.shared, opts=opts, fixed.pars=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix.red, phy=phy, aa.optim_array=aa.optim.list, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
           results.final$objective <- optim.alpha.beta.gtr.all.genes$objective
           alpha.beta.gtr <- exp(optim.alpha.beta.gtr.all.genes$solution)
@@ -4830,22 +4590,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           #}
           print(results.final$objective)
           print(mle.pars.mat)
-          
-          
-          lik.diff <- abs(current.likelihood-results.final$objective)
+          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
           current.likelihood <- results.final$objective
-          lik.storage[iteration.number] <- current.likelihood
-          if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
-            continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
-          
-          cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
-          if(!continue.restarts)
-          {
-            cat("##################################################################################################\n")  
-            cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
-            cat("##################################################################################################\n")  
-          }
-          
+          cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#
@@ -4874,14 +4621,14 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
       mle.pars.mat <- best.solution
       codon.freq.by.aa.list <- best.codon.freq.by.aa
       codon.freq.by.gene.list <- best.codon.freq.by.gene
-
+      
       if(edge.length == "optimize"){
         phy$edge.length <- best.edge.lengths
       }
     }
     cat("Finished. Summarizing results...", "\n")
     colnames(mle.pars.mat) <- parameter.column.names
-
+    
     if(edge.length == "optimize"){
       if(optimal.aa == "user" | optimal.aa == "majrule" | optimal.aa == "averaged"){
         np <- max(index.matrix) + length(phy$edge.length)
@@ -4895,7 +4642,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         np <- max(index.matrix) + sum(nsites.vector)
       }
     }
-
+    
     #Counting parameters: Do we count the nsites too? Yup.
     obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, data.type=data.type, codon.model=codon.model, aa.optim=aa.optim.full.list, aa.optim.type=optimal.aa, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, max.tol=max.tol, max.evals=max.evals, selac.starting.vals=selac.starting.vals)
     class(obj) = "selac"
@@ -4932,7 +4679,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param max.tol Supplies the relative optimization tolerance.
 #' @param max.tol.edges Supplies the relative optimization tolerance for branch lengths only. Default is that is the same as the max.tol.
 #' @param max.evals Supplies the max number of iterations tried during optimization.
-#' @param max.initial.cond Supplies the number of initial conditions tried.
+#' @param max.restarts Supplies the number of random restarts.
 #' @param user.optimal.aa If optimal.aa is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #' @param recalculate.starting.brlen Whether to use given branch lengths in the starting tree or recalculate them.
@@ -4941,14 +4688,11 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param tol.step If > 1, makes for coarser tolerance at earlier iterations of the optimizer
 #' @param optimizer.algorithm The optimizer used by nloptr.
-#' @param max.iterations Sets the number of restarts performed for each set of initial conditions (Default: 5)
-#' @param conv.crit Sets the difference in log-likelihood at after which a fitting is considered converged (Default: 0.01)
-#' @param convergence.step Sets the number if iterations taken into account for conv.crit (Default: 3)
 #'
 #' @details
 #' A hidden Markov model which no longers optimizes the optimal amino acids, but instead allows for the optimal sequence to vary along branches, clades, taxa, etc. Like the original function, we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
-SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=1e-3, max.tol.edges=1e-3, max.evals=1000000, max.initial.cond=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX", max.iterations = 5, conv.crit = 0.01, convergence.step = 3) {
-
+SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="codon", codon.model="selac", edge.length="optimize", edge.linked=TRUE, nuc.model="GTR", estimate.aa.importance=FALSE, include.gamma=FALSE, gamma.type="quadrature", ncats=4, numcode=1, diploid=TRUE, k.levels=0, aa.properties=NULL, verbose=FALSE, n.cores.by.gene=1, n.cores.by.gene.by.site=1, max.tol=.Machine$double.eps^0.5, max.tol.edges=.Machine$double.eps^0.5, max.evals=1000000, max.restarts=3, user.optimal.aa=NULL, fasta.rows.to.keep=NULL, recalculate.starting.brlen=TRUE, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, tol.step=1, optimizer.algorithm="NLOPT_LN_SBPLX") {
+  
   if(!data.type == "codon"){
     stop("Check that your data type input is correct. Options currently are codon only", call.=FALSE)
   }
@@ -4964,21 +4708,21 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
   if(!gamma.type == "quadrature" & !gamma.type == "median"){
     stop("Check that you have a supported gamma type. Options are quadrature after Felsenstein 2001 or median after Yang 1994.", call.=FALSE)
   }
-
+  
   cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
-
+  
   cat("Initializing data and model parameters...", "\n")
-
+  
   partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
-
+  
   estimate.importance <- estimate.aa.importance
-
+  
   if(is.null(n.partitions)){
     n.partitions <- length(partitions)
   }else{
     n.partitions = n.partitions
   }
-
+  
   site.pattern.data.list <- as.list(numeric(n.partitions))
   site.pattern.count.list <- as.list(numeric(n.partitions))
   nsites.vector <- c()
@@ -5002,10 +4746,10 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     site.pattern.data.list[[partition.index]] = codon.data$unique.site.patterns
     site.pattern.count.list[[partition.index]] = codon.data$site.pattern.counts
   }
-
+  
   opts <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol)
   opts.edge <- list("algorithm" = optimizer.algorithm, "maxeval" = max.evals, "ftol_rel" = max.tol.edges)
-
+  
   results.final <- c()
   if(nuc.model == "JC"){
     nuc.ip = NULL
@@ -5022,14 +4766,14 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     max.par.model.count = 11
     parameter.column.names <- c("C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T", "sel.reg")
   }
-
+  
   codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
   cpv.starting.parameters <- GetAADistanceStartingParameters(aa.properties=aa.properties)
-  if(max.initial.cond > 1){
-    selac.starting.vals <- matrix(0, max.initial.cond+1, 3)
-    selac.starting.vals[,1] <- runif(n = max.initial.cond+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
-    selac.starting.vals[,2] <- runif(n = max.initial.cond+1, min = 0.01, max = 3)
-    selac.starting.vals[,3] <- runif(n = max.initial.cond+1, min = 0.01, max = 1)
+  if(max.restarts > 1){
+    selac.starting.vals <- matrix(0, max.restarts+1, 3)
+    selac.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-5)*5e6)
+    selac.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 3)
+    selac.starting.vals[,3] <- runif(n = max.restarts+1, min = 0.01, max = 1)
   }else{
     if(is.null(user.supplied.starting.param.vals)){
       selac.starting.vals <- matrix(c(2, 1.8292716544, 0.1017990371), 1, 3)
@@ -5343,7 +5087,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
       }
     }
   }
-
+  
   #THIS IS FOR THERE IS A SEPARATE GAMMA PER GENE:
   if(estimate.importance == TRUE){
     index.matrix.red <- t(matrix(1:(n.partitions*3), 3, n.partitions))
@@ -5352,10 +5096,10 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
   }
   #This is so we can break out alpha, beta, GTR, and gamma which are shared among ALL genes:
   #index.matrix.red <- t(matrix(1:n.partitions, 1, n.partitions))
-
+  
   number.of.current.restarts <- 1
   best.lik <- 1000000
-  while(number.of.current.restarts < (max.initial.cond+1)){
+  while(number.of.current.restarts < (max.restarts+1)){
     cat(paste("Finished. Performing random restart ", number.of.current.restarts," ...", sep=""), "\n")
     mle.pars.mat <- index.matrix
     mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
@@ -5375,7 +5119,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
       phy$edge.length <- exp(results.edge.final$solution)
     }
     cat("              Optimizing model parameters", "\n")
-
+    
     if(estimate.importance == TRUE){
       alpha.beta.gtr <- mle.pars.mat[1,c(2:(max.par.model.count-2))]
       upper.bounds.shared <- upper[c(2:(max.par.model.count-2))]
@@ -5385,7 +5129,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
       upper.bounds.shared <- upper[c(2:(max.par.model.count-1))]
       lower.bounds.shared <- lower[c(2:(max.par.model.count-1))]
     }
-
+    
     ParallelizedOptimizedByGene <- function(n.partition){
       if(estimate.importance == TRUE){
         # make sure this is always a vector no matter the number of partitions
@@ -5409,7 +5153,7 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
       #The number of columns is 2: [1] log-likelihood, [2] C.q.phi.Ne [3] aa transition:
       parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
     }
-
+    
     results.final <- NULL
     results.final$objective <- sum(parallelized.parameters[,1])
     results.final$solution <- c(t(parallelized.parameters[,-1]))
@@ -5432,26 +5176,24 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
     }
     print(results.final$objective)
     print(mle.pars.mat)
-
+    
     current.likelihood <- results.final$objective
-    cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), "\n")
-    lik.storage <- rep(NA, max.iterations)
-    continue.restarts <- TRUE
+    cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
+    lik.diff <- 10
     iteration.number <- 1
-    while(continue.restarts & iteration.number <= max.iterations)
-    {
+    while(lik.diff != 0 & iteration.number < 7){
       cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
       if(edge.length == "optimize"){
         cat("              Optimizing edge lengths", "\n")
         #opts.edge <- opts
-        opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
+        opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^(7-iteration.number)))
         results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=estimate.importance, neglnl=TRUE, HMM=TRUE)
         print(results.edge.final$objective)
         print(exp(results.edge.final$solution))
         phy$edge.length <- exp(results.edge.final$solution)
       }
       cat("              Optimizing model parameters", "\n")
-
+      
       ParallelizedOptimizedByGene <- function(n.partition){
         if(estimate.importance == TRUE){
           tmp.par.mat <- mle.pars.mat[n.partition,c(1, max.par.model.count-1, max.par.model.count)]
@@ -5474,13 +5216,13 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
         #The number of columns is 2: [1] log-likelihood, [2] C.q.phi.Ne [3] aa transition:
         parallelized.parameters <- t(matrix(unlist(results.set), 3, n.partitions))
       }
-
+      
       results.final <- NULL
       results.final$objective <- sum(parallelized.parameters[,1])
       results.final$solution <- c(t(parallelized.parameters[,-1]))
       mle.pars.mat.red <- index.matrix.red
       mle.pars.mat.red[] <- c(exp(results.final$solution), 0)[index.matrix.red]
-
+      
       print(mle.pars.mat.red)
       optim.alpha.beta.gtr.all.genes <- nloptr(x0=log(alpha.beta.gtr), eval_f = OptimizeAlphaBetaGtrOnly, ub=upper.bounds.shared, lb=lower.bounds.shared, opts=opts, fixed.pars=mle.pars.mat.red, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix.red, phy=phy, aa.optim_array=NULL, codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=estimate.importance, neglnl=TRUE, HMM=TRUE)
       results.final$objective <- optim.alpha.beta.gtr.all.genes$objective
@@ -5498,21 +5240,9 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
       }
       print(results.final$objective)
       print(mle.pars.mat)
-      
-      lik.diff <- abs(current.likelihood-results.final$objective)
+      lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
       current.likelihood <- results.final$objective
-      lik.storage[iteration.number] <- current.likelihood
-      if(iteration.number > convergence.step) ## is the lik a few steps back only conv.crit bigger that the current lik
-        continue.restarts <- (lik.storage[iteration.number - convergence.step] - lik.storage[iteration.number]) > conv.crit
-      
-      cat(paste("Current negative log-likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
-      if(!continue.restarts)
-      {
-        cat("##################################################################################################\n")  
-        cat("difference in log-likelihood is smaller than the convergence criterium set, ending current fitting\n")
-        cat("##################################################################################################\n")  
-      }
-      
+      cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
       iteration.number <- iteration.number + 1
     }
     #Output for use in sims#
@@ -5541,20 +5271,20 @@ SelacHMMOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type=
   mle.pars.mat <- best.solution
   codon.freq.by.aa.list <- best.codon.freq.by.aa
   codon.freq.by.gene.list <- best.codon.freq.by.gene
-
+  
   if(edge.length == "optimize"){
     phy$edge.length <- best.edge.lengths
   }
-
+  
   cat("Finished. Summarizing results...", "\n")
   colnames(mle.pars.mat) <- parameter.column.names
-
+  
   if(edge.length == "optimize"){
     np <- max(index.matrix) + length(phy$edge.length)
   }else{
     np <- max(index.matrix)
   }
-
+  
   #Counting parameters: Do we count the nsites too? Yup.
   obj = list(np=np, loglik = loglik, AIC = -2*loglik+2*np, mle.pars=mle.pars.mat, index.matrix=index.matrix, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, data.type=data.type, codon.model=codon.model, aa.optim=NULL, aa.optim.type=NULL, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=cpv.starting.parameters[3], codon.freq.by.aa=NULL, codon.freq.by.gene=codon.freq.by.gene.list, max.tol=max.tol, max.evals=max.evals, selac.starting.vals=selac.starting.vals)
   class(obj) = "selac"
@@ -5653,7 +5383,7 @@ GetFunctionality <- function(gene.length, aa.data, optimal.aa, alpha, beta, gamm
 #' @details
 #' The purpose of this function is to provide the site likelihoods across genes. It is also flexible in that it allows different hypotheses about optimal acids across genes and/or site. The output is a list object, with each list entry designating 1) the tot.likelihood for that gene, and 2) the site likelihoods for that gene.
 GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL) {
-
+  
   codon.index.matrix = CreateCodonMutationMatrixIndex()
   phy <- selac.obj$phy
   partitions <- selac.obj$partitions
@@ -5669,7 +5399,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
   n.cores <- NULL
   obj.final <- as.list(1:length(partitions))
   n.cores.by.gene.by.site <- selac.obj$n.cores.by.gene.by.site
-
+  
   for(partition.index in 1:length(partitions)){
     x <- c(selac.obj$mle.pars[partition.index,])
     gene.tmp <- read.dna(partitions[partition.index], format='fasta')
@@ -5684,19 +5414,19 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     codon.data$unique.site.patterns = codon.data.tmp
     nsites <- dim(codon.data$unique.site.patterns)[2]-1
     codon.data$site.pattern.counts = rep(1, nsites)
-
+    
     codon.freq.by.aa=selac.obj$codon.freq.by.aa[[partition.index]]
     codon.freq.by.gene=selac.obj$codon.freq.by.gene[[partition.index]]
-
+    
     if(is.null(aa.optim.input)){
       aa.optim_array <- selac.obj$aa.optim[[partition.index]]
     }
-
+    
     if(include.gamma == TRUE){
       shape = x[length(x)]
       x = x[-length(x)]
     }
-
+    
     C.Phi.q.Ne <- x[1]
     C <- 4
     q <- 4e-7
@@ -5706,7 +5436,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
     Phi <- Phi.Ne / Ne
     alpha <- x[2]
     beta <- x[3]
-
+    
     if(k.levels > 0){
       if(nuc.model == "JC") {
         base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -5732,10 +5462,10 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model)
       }
     }
-
+    
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
     codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-
+    
     if(include.gamma==TRUE){
       if(gamma.type == "median"){
         rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -5795,7 +5525,7 @@ GetSelacSiteLikelihoods <- function(selac.obj, codon.data.path, aa.optim.input=N
 #' @details
 #' The purpose of this function is to determine which rate category best fits each site across genes. The output is a list object, with each list entry designating the optimal rate category across sites for that gene.
 GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fasta.rows.to.keep=NULL, n.cores.by.gene.by.site=1) {
-
+  
   codon.index.matrix = CreateCodonMutationMatrixIndex()
   phy <- selac.obj$phy
   partitions <- selac.obj$partitions
@@ -5812,7 +5542,7 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
   volume.fixed.value <- selac.obj$volume.fixed.value
   n.cores <- NULL
   obj.final <- as.list(1:length(partitions))
-
+  
   for(partition.index in 1:length(partitions)){
     x <- c(selac.obj$mle.pars[partition.index,])
     if(include.gamma == TRUE){
@@ -5846,10 +5576,10 @@ GetSelacPhiCat <- function(selac.obj, codon.data.path, aa.optim.input=NULL, fast
     codon.data$unique.site.patterns = codon.data.tmp
     nsites <- dim(codon.data$unique.site.patterns)[2]-1
     codon.data$site.pattern.counts = rep(1, nsites)
-
+    
     codon.freq.by.aa=selac.obj$codon.freq.by.aa[[partition.index]]
     codon.freq.by.gene=selac.obj$codon.freq.by.gene[[partition.index]]
-
+    
     if(is.null(aa.optim.input)){
       aa.optim_array <- selac.obj$aa.optim[[partition.index]]
     }
@@ -5905,7 +5635,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
     shape = x[length(x)]
     x = x[-length(x)]
   }
-
+  
   C.Phi.q.Ne <- x[1]
   C <- 4
   q <- 4e-7
@@ -5916,7 +5646,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
   alpha <- x[2]
   beta <- x[3]
   gamma <- volume.fixed.value
-
+  
   if(k.levels > 0){
     if(nuc.model == "JC") {
       base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -5945,7 +5675,7 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
       nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=NULL)
     }
   }
-
+  
   if(!is.null(codon.data$unique.site.patterns)){
     codon.data.list <- codon.data
     nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
@@ -5956,15 +5686,15 @@ GetAALikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, codo
     codon.data.list$site.pattern.counts <- rep(1, nsites.unique)
   }
   nsites <- sum(codon.data$site.pattern.counts)
-
+  
   #codon_mutation_matrix = c(as.vector(nuc.mutation.rates), 0)[codon.index.matrix]
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
-
+  
   optimal.vector.by.site <- rep(NA, nsites.unique)
   #unique.aa <- GetMatrixAANames(numcode)
   optimal.aa.likelihood.mat <- matrix(0, nrow=length(.unique.aa), ncol=nsites.unique)
-
+  
   for(i in 1:length(.unique.aa)){
     if(.unique.aa[i]=="*"){
       optimal.aa.likelihood.mat[i,] <- rep(-1000000, nsites.unique)
@@ -6024,7 +5754,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
     shape = x[length(x)]
     x = x[-length(x)]
   }
-
+  
   C.Phi.q.Ne <- x[1]
   C <- 4
   q <- 4e-7
@@ -6035,7 +5765,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
   alpha <- x[2]
   beta <- x[3]
   gamma <- volume.fixed.value
-
+  
   if(k.levels > 0){
     if(nuc.model == "JC") {
       base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -6086,7 +5816,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   nsites <- sum(codon.data$site.pattern.counts)
-
+  
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
       rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -6123,7 +5853,7 @@ GetPhiLikelihoodPerSite <- function(x, codon.data, phy, aa.optim_array=NULL, cod
     final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySite(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, aa.optim_array=aa.optim_array, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     #likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
   }
-
+  
   return(final.likelihood)
 }
 
@@ -6149,9 +5879,9 @@ GetGeneSiteInfo <- function(selac.obj, partition.number=1){
   n.cores.by.gene.by.site <- selac.obj$n.cores.by.gene.by.site
   pars.to.do <- selac.obj$mle.pars[partition.number,]
   selac.all.sites.amino.acid <- GetAALikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
-
+  
   selac.all.sites.phi <- GetPhiLikelihoodPerSite(x=log(pars.to.do), codon.data, phy, aa.optim_array=aa.optim, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, numcode=1, diploid=TRUE, aa.properties=NULL, volume.fixed.value=0.0003990333, nuc.model="UNREST", codon.index.matrix, include.gamma=TRUE, gamma.type="quadrature", ncats=4, k.levels=0, logspace=TRUE, verbose=FALSE, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
-
+  
   obj <- NULL
   quadl <- LaguerreQuad(selac.obj$mle.pars[1,length(selac.obj$mle.pars[1,])],4)
   obj$phi <- selac.obj$mle.pars[partition.number,1] * quadl[1:4]
@@ -6217,7 +5947,7 @@ print.selac <- function(x,...){
       #}
       print(output)
       cat("\n")
-
+      
     }
   }
 }

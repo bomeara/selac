@@ -1,0 +1,45 @@
+
+R version 3.4.1 (2017-06-30) -- "Single Candle"
+Copyright (C) 2017 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> test_check("selac")
+Loading required package: selac
+Loading required package: ape
+Loading required package: deSolve
+Loading required package: nloptr
+Loading required package: nnet
+── 1. Failure: selac_likelihood_gtr (@test_likelihood.R#78)  ───────────────────
+`comparison` isn't true.
+
+── 2. Failure: selac_likelihood_unrest (@test_likelihood.R#103)  ───────────────
+`comparison` isn't true.
+
+── 3. Failure: selac+GAMMA_likelihood_median (@test_likelihood.R#128)  ─────────
+`comparison` isn't true.
+
+── 4. Failure: selac+GAMMA_likelihood_quad (@test_likelihood.R#153)  ───────────
+`comparison` isn't true.
+
+══ testthat results  ═══════════════════════════════════════════════════════════
+OK: 28 SKIPPED: 0 FAILED: 4
+1. Failure: selac_likelihood_gtr (@test_likelihood.R#78) 
+2. Failure: selac_likelihood_unrest (@test_likelihood.R#103) 
+3. Failure: selac+GAMMA_likelihood_median (@test_likelihood.R#128) 
+4. Failure: selac+GAMMA_likelihood_quad (@test_likelihood.R#153) 
+
+Error: testthat unit tests failed
+Execution halted

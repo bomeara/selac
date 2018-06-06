@@ -1,0 +1,14 @@
+* installing *source* package ‘selac’ ...
+** libs
+gcc -I/opt/R/3.4.1/lib/R/include -DNDEBUG   -I/usr/local/include   -fpic  -g -O2  -c registerDynamicSymbol.c -o registerDynamicSymbol.o
+gcc -I/opt/R/3.4.1/lib/R/include -DNDEBUG   -I/usr/local/include   -fpic  -g -O2  -c selacHMM.c -o selacHMM.o
+gcc -shared -L/opt/R/3.4.1/lib/R/lib -L/usr/local/lib -o selac.so registerDynamicSymbol.o selacHMM.o -L/opt/R/3.4.1/lib/R/lib -lR
+installing to /home/clandere/SELAC/selac/selac.Rcheck/selac/libs
+** R
+** data
+** byte-compile and prepare package for lazy loading
+** help
+*** installing help indices
+** building package indices
+** testing if installed package can be loaded
+* DONE (selac)

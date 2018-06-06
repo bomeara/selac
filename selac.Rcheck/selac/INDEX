@@ -1,0 +1,21 @@
+GetAdequateManyReps     Parallel model adequacy test
+GetAdequateSelac        Model adequacy simulation
+GetFunctionality        Calculate functionality
+GetMarginalAllGenes     Get marginal reconstruction all genes
+GetPartitionOrder       Get data partiion order
+GetSelacPhiCat          Phi rate category information under SELAC+gamma
+GetSelacSiteLikelihoods
+                        Calculate site likelihoods under SelAC
+NucSimulator            Simulate DNA under General-Time Reversible
+                        model
+SelacHMMOptimize        Efficient optimization of a Hidden Markov SELAC
+                        model
+SelacOptimize           Efficient optimization of the SELAC model
+SelacSimulator          Simulate DNA under the SELAC model
+SelacSimulatorEvolvingRates
+                        Simulate DNA under the SELAC model and evolving
+                        rates
+SelonHMMOptimize        Optimize parameters under the HMM SELON model
+SelonOptimize           Optimize parameters under the SELON model
+SelonSimulator          Simulate DNA under the SELON model
+yeast                   Example datasets
