@@ -1,3 +1,4 @@
+#ifdef BLA
 #define USE_OPENCL
 #ifdef USE_OPENCL
 #include <vector>
@@ -365,4 +366,5 @@ std::vector<double>& expm(std::vector<double>& H, double t, const unsigned p) {
 
 	return H;
 }
+#endif
 #endif
