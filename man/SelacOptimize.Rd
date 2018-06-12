@@ -95,7 +95,7 @@ Efficient optimization of model parameters under the SELAC model
 Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
 }
 \examples{
-\dontrun {
+\dontrun{
 phy <- ape::read.tree(file=system.file("extdata", "rokasYeast.tre", package="selac"))
 result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'), n.partitions=1, phy=phy, max.evals=10)
 print(result)
