@@ -1013,8 +1013,8 @@ GetAdequateSelac <- function(model.to.reconstruct.under, model.to.simulate.under
             }
             if(selac.obj.to.simulate$include.gamma == TRUE){
                 if(model.to.simulate.under == "selac"){
-                rates.cat <- LaguerreQuad(selac.obj.to.simulate$mle.pars[1,length(selac.obj.to.simulate$mle.pars[1,])], ncats=4)[1:4]
-                functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=rates.cat[simulated.across.intervals.and.sites$site.gamma.indicator], aa.properties=selac.obj.to.reconstruct$aa.properties)
+                    rates.cat <- LaguerreQuad(selac.obj.to.simulate$mle.pars[1,length(selac.obj.to.simulate$mle.pars[1,])], ncats=4)[1:4]
+                    functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=rates.cat[simulated.across.intervals.and.sites$site.gamma.indicator], aa.properties=selac.obj.to.reconstruct$aa.properties)
                 }else{
                     functionality.taxon.interval <- GetFunctionalityModelAdequacy(gene.length=length(reconstructed.sequence), aa.data=reconstructed.sequence, optimal.aa=selac.obj.to.reconstruct$aa.optim[[partition.number]], alpha=selac.obj.to.reconstruct$mle.pars[1,2], beta=selac.obj.to.reconstruct$mle.pars[1,3], gamma=selac.obj.to.reconstruct$volume.fixed.value, gp=NULL, aa.properties=selac.obj.to.reconstruct$aa.properties)
                 }
