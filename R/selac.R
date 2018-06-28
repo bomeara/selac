@@ -3332,7 +3332,7 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
     desRows <- which(phy$edge[,1]==focal)
     desNodes <- phy$edge[desRows,2]
     for (desIndex in sequence(length(desRows))){
-      expQt[[desNodes[desIndex]]] <- internal_expm(Q.scaled * phy$edge.length[desRows[desIndex]], method="Ward77")
+      expQt[[desNodes[desIndex]]] <- internal_expm(Q.scaled * phy$edge.length[desRows[desIndex]])
     }
   }
   return(expQt)
