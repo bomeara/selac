@@ -3215,6 +3215,98 @@ GetMaxName <- function(x) {
 #return(Rcpp::wrap(m.exp()));"
 #eigenExpM <- cxxfunction(signature(a="numeric"), code, plugin="RcppEigen")
 
+#Use specialized expm, copied from package expm
+internal_expm <- function (x, order = 8, 
+                           trySym = TRUE, tol = .Machine$double.eps)
+{
+  stopifnot(is.numeric(x) || (isM <- inherits(x, "dMatrix")) || 
+              inherits(x, "mpfrMatrix"))
+  if (length(d <- dim(x)) != 2) 
+    stop("argument is not a matrix")
+  if (d[1] != d[2]) 
+    stop("matrix not square")
+  method <- "Ward77"
+  preconditioning = "2bal"
+  checkSparse <- !nzchar(Sys.getenv("R_EXPM_NO_DENSE_COERCION"))
+  isM <- !is.numeric(x) && isM
+  if (isM && checkSparse) {
+    if (is(x, "sparseMatrix")) {
+      x <- as(x, "denseMatrix")
+    }
+  }
+  stopifnot(is.matrix(x))
+  res <- .Call(expm:::do_expm, x, "Ward77")
+         # Higham08.b = expm.Higham08(x, balancing = TRUE), 
+         # Ward77 = {
+         #   stopifnot(is.matrix(x))
+         #   switch(match.arg(preconditioning), `2bal` = .Call(do_expm, 
+         #                                                     x, "Ward77"), `1bal` = .Call(do_expm, x, "Ward77_1"), 
+         #          buggy = .Call(do_expm, x, "buggy_Ward77"), stop("invalid 'preconditioning'"))
+         # }, 
+         # R_Eigen = {
+         #   isSym <- if (trySym) isSymmetric.matrix(x) else FALSE
+         #   z <- eigen(x, symmetric = isSym)
+         #   V <- z$vectors
+         #   Vi <- if (isSym) t(V) else solve(V)
+         #   Re(V %*% (exp(z$values) * Vi))
+         # },  
+         # R_Pade = {
+         #   stopifnot(order >= 2)
+         #   expm.s.Pade.s(x, order, n = d[1])
+         # }, 
+         # R_Ward77 = {
+         #   stopifnot(order >= 2)
+         #   n <- d[1]
+         #   trShift <- sum(d.x <- diag(x))
+         #   if (trShift) {
+         #     trShift <- trShift/n
+         #     diag(x) <- d.x - trShift
+         #   }
+         #   baP <- balance(x, "P")
+         #   baS <- balance(baP$z, "S")
+         #   x <- expm.s.Pade.s(baS$z, order)
+         #   d <- baS$scale
+         #   x <- x * (d * rep(1/d, each = n))
+         #   pp <- as.integer(baP$scale)
+         #   if (baP$i1 > 1) {
+         #     for (i in (baP$i1 - 1):1) {
+         #       tt <- x[, i]
+         #       x[, i] <- x[, pp[i]]
+         #       x[, pp[i]] <- tt
+         #       tt <- x[i, ]
+         #       x[i, ] <- x[pp[i], ]
+         #       x[pp[i], ] <- tt
+         #     }
+         #   }
+         #   if (baP$i2 < n) {
+         #     for (i in (baP$i2 + 1):n) {
+         #       tt <- x[, i]
+         #       x[, i] <- x[, pp[i]]
+         #       x[, pp[i]] <- tt
+         #       tt <- x[i, ]
+         #       x[i, ] <- x[pp[i], ]
+         #       x[pp[i], ] <- tt
+         #     }
+         #   }
+         #   if (trShift) {
+         #     exp(trShift) * x
+         #   } else x
+         # }, 
+         # {
+         #   stopifnot(is.matrix(x))
+         #   storage.mode(x) <- "double"
+         #   order <- as.integer(order)
+         #   ntaylor <- npade <- 0L
+         #   if (substr(method, 1, 4) == "Pade") npade <- order else ntaylor <- order
+         #   res <- if (identical(grep("O$", method), 1L)) 
+         #     .Fortran(matrexpO,  X = x, size = d[1], ntaylor, npade, accuracy = double(1))[c("X", "accuracy")] 
+         #   else .Fortran(matrexp, X = x, size = d[1],  ntaylor, npade, accuracy = double(1))[c("X",  "accuracy")]
+         #   structure(res$X, accuracy = res$accuracy)
+         # })
+  return(res)
+}
+
+
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
 
   if(!is.null(scale.factor)){
@@ -3240,7 +3332,7 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
     desRows <- which(phy$edge[,1]==focal)
     desNodes <- phy$edge[desRows,2]
     for (desIndex in sequence(length(desRows))){
-      expQt[[desNodes[desIndex]]] <- expm(Q.scaled * phy$edge.length[desRows[desIndex]], method="Ward77")
+      expQt[[desNodes[desIndex]]] <- internal_expm(Q.scaled * phy$edge.length[desRows[desIndex]], method="Ward77")
     }
   }
   return(expQt)
