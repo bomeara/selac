@@ -1214,27 +1214,44 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
   phy <- reorder(phy, "pruningwise")
 
   ## This is obviously not very elegant, but not sure how else to code it to store this stuff in this way -- WORK IN PROGRESS:
+  tempGetAAExpQt <- local({
+    p0=phy
+    Qca=Q_codon_array
+    r0=rates
+    function(aa) {
+      GetExpQt(phy=p0, Q=Qca[,,aa], scale.factor=NULL, rates=r0)
+    } })
   expQt <- NULL
-  expQt$K <- GetExpQt(phy=phy, Q=Q_codon_array[,,"K"], scale.factor=NULL, rates=rates)
-  expQt$N <- GetExpQt(phy=phy, Q=Q_codon_array[,,"N"], scale.factor=NULL, rates=rates)
-  expQt$T <- GetExpQt(phy=phy, Q=Q_codon_array[,,"T"], scale.factor=NULL, rates=rates)
-  expQt$R <- GetExpQt(phy=phy, Q=Q_codon_array[,,"R"], scale.factor=NULL, rates=rates)
-  expQt$S <- GetExpQt(phy=phy, Q=Q_codon_array[,,"S"], scale.factor=NULL, rates=rates)
-  expQt$I <- GetExpQt(phy=phy, Q=Q_codon_array[,,"I"], scale.factor=NULL, rates=rates)
-  expQt$M <- GetExpQt(phy=phy, Q=Q_codon_array[,,"M"], scale.factor=NULL, rates=rates)
-  expQt$Q <- GetExpQt(phy=phy, Q=Q_codon_array[,,"Q"], scale.factor=NULL, rates=rates)
-  expQt$H <- GetExpQt(phy=phy, Q=Q_codon_array[,,"H"], scale.factor=NULL, rates=rates)
-  expQt$P <- GetExpQt(phy=phy, Q=Q_codon_array[,,"P"], scale.factor=NULL, rates=rates)
-  expQt$L <- GetExpQt(phy=phy, Q=Q_codon_array[,,"L"], scale.factor=NULL, rates=rates)
-  expQt$E <- GetExpQt(phy=phy, Q=Q_codon_array[,,"E"], scale.factor=NULL, rates=rates)
-  expQt$D <- GetExpQt(phy=phy, Q=Q_codon_array[,,"D"], scale.factor=NULL, rates=rates)
-  expQt$A <- GetExpQt(phy=phy, Q=Q_codon_array[,,"A"], scale.factor=NULL, rates=rates)
-  expQt$G <- GetExpQt(phy=phy, Q=Q_codon_array[,,"G"], scale.factor=NULL, rates=rates)
-  expQt$V <- GetExpQt(phy=phy, Q=Q_codon_array[,,"V"], scale.factor=NULL, rates=rates)
-  expQt$Y <- GetExpQt(phy=phy, Q=Q_codon_array[,,"Y"], scale.factor=NULL, rates=rates)
-  expQt$C <- GetExpQt(phy=phy, Q=Q_codon_array[,,"C"], scale.factor=NULL, rates=rates)
-  expQt$W <- GetExpQt(phy=phy, Q=Q_codon_array[,,"W"], scale.factor=NULL, rates=rates)
-  expQt$F <- GetExpQt(phy=phy, Q=Q_codon_array[,,"F"], scale.factor=NULL, rates=rates)
+  expQt <- mclapply(c("K", "N", "T", "R", "S", 
+                      "I", "M", "Q", "H", "P", 
+                      "L", "E",  "D", "A", "G", 
+                      "V", "Y", "C", "W", "F"),
+                    FUN=tempGetAAExpQt, 
+                    mc.cores=n.cores.by.gene.by.site)
+  names(expQt) <- c("K", "N", "T", "R", "S", 
+                    "I", "M", "Q", "H", "P", 
+                    "L", "E",  "D", "A", "G", 
+                    "V", "Y", "C", "W", "F")
+  # expQt$K <- GetExpQt(phy=phy, Q=Q_codon_array[,,"K"], scale.factor=NULL, rates=rates)
+  # expQt$N <- GetExpQt(phy=phy, Q=Q_codon_array[,,"N"], scale.factor=NULL, rates=rates)
+  # expQt$T <- GetExpQt(phy=phy, Q=Q_codon_array[,,"T"], scale.factor=NULL, rates=rates)
+  # expQt$R <- GetExpQt(phy=phy, Q=Q_codon_array[,,"R"], scale.factor=NULL, rates=rates)
+  # expQt$S <- GetExpQt(phy=phy, Q=Q_codon_array[,,"S"], scale.factor=NULL, rates=rates)
+  # expQt$I <- GetExpQt(phy=phy, Q=Q_codon_array[,,"I"], scale.factor=NULL, rates=rates)
+  # expQt$M <- GetExpQt(phy=phy, Q=Q_codon_array[,,"M"], scale.factor=NULL, rates=rates)
+  # expQt$Q <- GetExpQt(phy=phy, Q=Q_codon_array[,,"Q"], scale.factor=NULL, rates=rates)
+  # expQt$H <- GetExpQt(phy=phy, Q=Q_codon_array[,,"H"], scale.factor=NULL, rates=rates)
+  # expQt$P <- GetExpQt(phy=phy, Q=Q_codon_array[,,"P"], scale.factor=NULL, rates=rates)
+  # expQt$L <- GetExpQt(phy=phy, Q=Q_codon_array[,,"L"], scale.factor=NULL, rates=rates)
+  # expQt$E <- GetExpQt(phy=phy, Q=Q_codon_array[,,"E"], scale.factor=NULL, rates=rates)
+  # expQt$D <- GetExpQt(phy=phy, Q=Q_codon_array[,,"D"], scale.factor=NULL, rates=rates)
+  # expQt$A <- GetExpQt(phy=phy, Q=Q_codon_array[,,"A"], scale.factor=NULL, rates=rates)
+  # expQt$G <- GetExpQt(phy=phy, Q=Q_codon_array[,,"G"], scale.factor=NULL, rates=rates)
+  # expQt$V <- GetExpQt(phy=phy, Q=Q_codon_array[,,"V"], scale.factor=NULL, rates=rates)
+  # expQt$Y <- GetExpQt(phy=phy, Q=Q_codon_array[,,"Y"], scale.factor=NULL, rates=rates)
+  # expQt$C <- GetExpQt(phy=phy, Q=Q_codon_array[,,"C"], scale.factor=NULL, rates=rates)
+  # expQt$W <- GetExpQt(phy=phy, Q=Q_codon_array[,,"W"], scale.factor=NULL, rates=rates)
+  # expQt$F <- GetExpQt(phy=phy, Q=Q_codon_array[,,"F"], scale.factor=NULL, rates=rates)
 
   #Generate matrix of root frequencies for each optimal AA:
   root.p_array <- matrix(codon.freq.by.aa, nrow=dim(Q_codon_array)[2], ncol=21)
