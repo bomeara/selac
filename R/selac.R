@@ -1120,21 +1120,18 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.dat
   nl <- nrow(Q_codon[[1]])
   #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
   liks <- matrix(0, nb.tip + nb.node, nl)
-  #Now loop through the tips.
-  for(i in 1:nb.tip){
-    #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
-    #Note: We add charnum+1, because the first column in the data is the species labels:
-    if(codon.data[i,charnum+1] < 65){
-      liks[i,codon.data[i,charnum+1]] <- 1
-    }else{
-      #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
-      liks[i,] <- 1
-      #This is to deal with stop codons, which are effectively removed from the model at this point. Someday they might be allowed back in. If so, the following line needs to be dealt with.
-      if(nl > 4){
-        liks[i,c(49, 51, 57)] <- 0
-      }
+  if(all(codon.data[,charnum+1] < 65)){
+    #no need to subset
+    liks[cbind(1:nb.tip,codon.data[,charnum+1])] <- 1
+  } else {
+    key<-codon.data[,charnum+1] < 65
+    liks[cbind(which(key),codon.data[which(key),charnum+1])] <- 1
+    liks[which(!key),] <- 1
+    if(nl > 4){
+      liks[which(!key),c(49, 51, 57)] <- 0
     }
   }
+  
   #The result here is just the likelihood:
   result <- -FinishLikelihoodCalculation(phy=phy, liks=liks, Q=Q_codon, root.p=root.p, anc=anc.indices)
   ifelse(return.all, stop("return all not currently implemented"), return(result))
