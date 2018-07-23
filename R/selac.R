@@ -1134,7 +1134,8 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.dat
   
   #The result here is just the likelihood:
   result <- -FinishLikelihoodCalculation(phy=phy, liks=liks, Q=Q_codon, root.p=root.p, anc=anc.indices)
-  ifelse(return.all, stop("return all not currently implemented"), return(result))
+  if(return.all) stop("return all not currently implemented");
+  return(result)
 }
 
 
@@ -3239,7 +3240,7 @@ internal_expm <- function (x, order = 8,
     stop("argument is not a matrix")
   if (d[1] != d[2]) 
     stop("matrix not square")
-  method <- "Ward77"
+  method <- "Higham08.b"
   preconditioning = "2bal"
   checkSparse <- !nzchar(Sys.getenv("R_EXPM_NO_DENSE_COERCION"))
   isM <- !is.numeric(x) && isM
@@ -3249,7 +3250,7 @@ internal_expm <- function (x, order = 8,
     }
   }
   stopifnot(is.matrix(x))
-  res <- .Call(expm:::do_expm, x, "Ward77")
+  res <- expm.Higham08(x, balancing = TRUE)
          # Higham08.b = expm.Higham08(x, balancing = TRUE), 
          # Ward77 = {
          #   stopifnot(is.matrix(x))
