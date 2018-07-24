@@ -3240,7 +3240,7 @@ internal_expm <- function (x, order = 8,
     stop("argument is not a matrix")
   if (d[1] != d[2]) 
     stop("matrix not square")
-  method <- "Higham08.b"
+  method <- "AlMohy-Hi09"
   preconditioning = "2bal"
   checkSparse <- !nzchar(Sys.getenv("R_EXPM_NO_DENSE_COERCION"))
   isM <- !is.numeric(x) && isM
@@ -3250,7 +3250,7 @@ internal_expm <- function (x, order = 8,
     }
   }
   stopifnot(is.matrix(x))
-  res <- expm::expm.Higham08(x, balancing = TRUE)
+  res <- .Call(expm:::R_matexp_MH09, x, order)
          # Higham08.b = expm.Higham08(x, balancing = TRUE), 
          # Ward77 = {
          #   stopifnot(is.matrix(x))
