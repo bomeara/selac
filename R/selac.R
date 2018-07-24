@@ -3250,7 +3250,7 @@ internal_expm <- function (x, order = 8,
     }
   }
   stopifnot(is.matrix(x))
-  res <- expm.Higham08(x, balancing = TRUE)
+  res <- expm::expm.Higham08(x, balancing = TRUE)
          # Higham08.b = expm.Higham08(x, balancing = TRUE), 
          # Ward77 = {
          #   stopifnot(is.matrix(x))
