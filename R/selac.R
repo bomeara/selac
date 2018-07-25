@@ -3356,6 +3356,10 @@ internal_expmt <- function (A, t_vec) {
   t <- c(0.015, 0.25, 0.95, 2.1)
   sA <- log2(nA/5.4)
   A2_base <- A %*% A
+  if(any(nA * abs(t_i) > 2.1)){
+    A4_base <- A2_base %*% A2_base
+    A6_base <- A2_base %*% A4_base
+  }
   for(res_i in seq_len(length(t_vec))){
     t_i=t_vec[res_i]
     if (nA * abs(t_i) <= 2.1) {
@@ -3379,11 +3383,13 @@ internal_expmt <- function (A, t_vec) {
         s <- ceiling(s)
         B <- B/(2^s)
         B2 <- A2_base * t_i * t_i / (4^s)
+        B4 <- A4_base * t_i ^ 4 / (16^s)
+        B6 <- A6_base * t_i ^ 6 / (64^s)
       } else {
         B2 <- A2_base * t_i * t_i
+        B4 <- A4_base * t_i ^ 4 
+        B6 <- A6_base * t_i ^ 6 
       }
-      B4 <- B2 %*% B2
-      B6 <- B2 %*% B4
       U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) + 
                     c.[8] * B6 + c.[6] * B4 + c.[4] * B2 + c.[2] * I)
       V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) + 
