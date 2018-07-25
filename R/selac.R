@@ -3231,93 +3231,194 @@ GetMaxName <- function(x) {
 #eigenExpM <- cxxfunction(signature(a="numeric"), code, plugin="RcppEigen")
 
 #Use specialized expm, copied from package expm
-internal_expm <- function (x, order = 8, 
-                           trySym = TRUE, tol = .Machine$double.eps)
-{
+internal_expm <- function (x) {
   stopifnot(is.numeric(x) || (isM <- inherits(x, "dMatrix")) || 
               inherits(x, "mpfrMatrix"))
   if (length(d <- dim(x)) != 2) 
     stop("argument is not a matrix")
   if (d[1] != d[2]) 
     stop("matrix not square")
-  method <- "AlMohy-Hi09"
+  method <- "Higham08"
   preconditioning = "2bal"
-  checkSparse <- !nzchar(Sys.getenv("R_EXPM_NO_DENSE_COERCION"))
-  isM <- !is.numeric(x) && isM
-  if (isM && checkSparse) {
-    if (is(x, "sparseMatrix")) {
-      x <- as(x, "denseMatrix")
+  A<-x
+  n <- d[1]
+  if (n <= 1) 
+    return(exp(A))
+  # if (balancing) {
+  baP <- expm::balance(A, "P")
+  baS <- expm::balance(baP$z, "S")
+  A <- baS$z
+  # }
+  nA <- Matrix::norm(A, "1")
+  I <- if (is(A, "Matrix")) 
+    Matrix::Diagonal(n)
+  else diag(n)
+  if (nA <= 2.1) {
+    t <- c(0.015, 0.25, 0.95, 2.1)
+    l <- which.max(nA <= t)
+    C <- rbind(c(120, 60, 12, 1, 0, 0, 0, 0, 0, 0), 
+               c(30240, 15120, 3360, 420, 30, 1, 0, 0, 0, 0), 
+               c(17297280, 8648640, 1995840, 277200, 25200, 1512, 56, 1, 0,  0), 
+               c(17643225600, 8821612800, 2075673600, 302702400, 30270240, 2162160, 110880, 3960, 90, 1))
+    A2 <- A %*% A
+    P <- I
+    U <- C[l, 2] * I
+    V <- C[l, 1] * I
+    for (k in 1:l) {
+      P <- P %*% A2
+      U <- U + C[l, (2 * k) + 2] * P
+      V <- V + C[l, (2 * k) + 1] * P
+    }
+    U <- A %*% U
+    X <- solve(V - U, V + U)
+  }
+  else {
+    s <- log2(nA/5.4)
+    B <- A
+    if (s > 0) {
+      s <- ceiling(s)
+      B <- B/(2^s)
+    }
+    c. <- c(64764752532480000, 32382376266240000, 7771770303897600, 
+            1187353796428800, 129060195264000, 10559470521600, 
+            670442572800, 33522128640, 1323241920, 40840800, 
+            960960, 16380, 182, 1)
+    B2 <- B %*% B
+    B4 <- B2 %*% B2
+    B6 <- B2 %*% B4
+    U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) + 
+                  c.[8] * B6 + c.[6] * B4 + c.[4] * B2 + c.[2] * I)
+    V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) + 
+      c.[7] * B6 + c.[5] * B4 + c.[3] * B2 + c.[1] * I
+    X <- solve(V - U, V + U)
+    if (s > 0) 
+      for (t in 1:s) X <- X %*% X
+  }
+  # if (balancing) {
+  d <- baS$scale
+  X <- X * (d * rep(1/d, each = n))
+  pp <- as.integer(baP$scale)
+  if (baP$i1 > 1) {
+    for (i in (baP$i1 - 1):1) {
+      tt <- X[, i]
+      X[, i] <- X[, pp[i]]
+      X[, pp[i]] <- tt
+      tt <- X[i, ]
+      X[i, ] <- X[pp[i], ]
+      X[pp[i], ] <- tt
     }
   }
-  stopifnot(is.matrix(x))
-  res <- .Call(expm:::R_matexp_MH09, x, as.integer(order))
-         # Higham08.b = expm.Higham08(x, balancing = TRUE), 
-         # Ward77 = {
-         #   stopifnot(is.matrix(x))
-         #   switch(match.arg(preconditioning), `2bal` = .Call(do_expm, 
-         #                                                     x, "Ward77"), `1bal` = .Call(do_expm, x, "Ward77_1"), 
-         #          buggy = .Call(do_expm, x, "buggy_Ward77"), stop("invalid 'preconditioning'"))
-         # }, 
-         # R_Eigen = {
-         #   isSym <- if (trySym) isSymmetric.matrix(x) else FALSE
-         #   z <- eigen(x, symmetric = isSym)
-         #   V <- z$vectors
-         #   Vi <- if (isSym) t(V) else solve(V)
-         #   Re(V %*% (exp(z$values) * Vi))
-         # },  
-         # R_Pade = {
-         #   stopifnot(order >= 2)
-         #   expm.s.Pade.s(x, order, n = d[1])
-         # }, 
-         # R_Ward77 = {
-         #   stopifnot(order >= 2)
-         #   n <- d[1]
-         #   trShift <- sum(d.x <- diag(x))
-         #   if (trShift) {
-         #     trShift <- trShift/n
-         #     diag(x) <- d.x - trShift
-         #   }
-         #   baP <- balance(x, "P")
-         #   baS <- balance(baP$z, "S")
-         #   x <- expm.s.Pade.s(baS$z, order)
-         #   d <- baS$scale
-         #   x <- x * (d * rep(1/d, each = n))
-         #   pp <- as.integer(baP$scale)
-         #   if (baP$i1 > 1) {
-         #     for (i in (baP$i1 - 1):1) {
-         #       tt <- x[, i]
-         #       x[, i] <- x[, pp[i]]
-         #       x[, pp[i]] <- tt
-         #       tt <- x[i, ]
-         #       x[i, ] <- x[pp[i], ]
-         #       x[pp[i], ] <- tt
-         #     }
-         #   }
-         #   if (baP$i2 < n) {
-         #     for (i in (baP$i2 + 1):n) {
-         #       tt <- x[, i]
-         #       x[, i] <- x[, pp[i]]
-         #       x[, pp[i]] <- tt
-         #       tt <- x[i, ]
-         #       x[i, ] <- x[pp[i], ]
-         #       x[pp[i], ] <- tt
-         #     }
-         #   }
-         #   if (trShift) {
-         #     exp(trShift) * x
-         #   } else x
-         # }, 
-         # {
-         #   stopifnot(is.matrix(x))
-         #   storage.mode(x) <- "double"
-         #   order <- as.integer(order)
-         #   ntaylor <- npade <- 0L
-         #   if (substr(method, 1, 4) == "Pade") npade <- order else ntaylor <- order
-         #   res <- if (identical(grep("O$", method), 1L)) 
-         #     .Fortran(matrexpO,  X = x, size = d[1], ntaylor, npade, accuracy = double(1))[c("X", "accuracy")] 
-         #   else .Fortran(matrexp, X = x, size = d[1],  ntaylor, npade, accuracy = double(1))[c("X",  "accuracy")]
-         #   structure(res$X, accuracy = res$accuracy)
-         # })
+  if (baP$i2 < n) {
+    for (i in (baP$i2 + 1):n) {
+      tt <- X[, i]
+      X[, i] <- X[, pp[i]]
+      X[, pp[i]] <- tt
+      tt <- X[i, ]
+      X[i, ] <- X[pp[i], ]
+      X[pp[i], ] <- tt
+    }
+  }
+  # }
+  return(X)
+}
+internal_expmt <- function (A, t_vec) {
+  stopifnot(is.numeric(A) || (isM <- inherits(A, "dMatrix")) || 
+              inherits(A, "mpfrMatrix"))
+  if (length(d <- dim(A)) != 2) 
+    stop("argument is not a matrix")
+  if (d[1] != d[2]) 
+    stop("matrix not square")
+  method <- "Higham08"
+  preconditioning = "2bal"
+  n <- d[1]
+  if (n <= 1) 
+    return(as.list(exp(A*t_vec)))  # force a list format return
+  # if (balancing) {
+  baP <- expm::balance(A, "P")
+  baS <- expm::balance(baP$z, "S")
+  A <- baS$z
+  # }
+  nA <- Matrix::norm(A, "1")
+  I <- if (is(A, "Matrix")) 
+    Matrix::Diagonal(n)
+  else diag(n)
+  res <- as.list(numeric(length(t_vec)))
+  
+  C <- rbind(c(120, 60, 12, 1, 0, 0, 0, 0, 0, 0), 
+             c(30240, 15120, 3360, 420, 30, 1, 0, 0, 0, 0), 
+             c(17297280, 8648640, 1995840, 277200, 25200, 1512, 56, 1, 0,  0), 
+             c(17643225600, 8821612800, 2075673600, 302702400, 30270240, 2162160, 110880, 3960, 90, 1))
+  
+  c. <- c(64764752532480000, 32382376266240000, 7771770303897600, 
+          1187353796428800, 129060195264000, 10559470521600, 
+          670442572800, 33522128640, 1323241920, 40840800, 
+          960960, 16380, 182, 1)
+  t <- c(0.015, 0.25, 0.95, 2.1)
+  sA <- log2(nA/5.4)
+  A2_base <- A %*% A
+  for(res_i in seq_len(length(t_vec))){
+    t_i=t_vec[res_i]
+    if (nA * abs(t_i) <= 2.1) {
+      l <- which.max(nA * abs(t_i)  <= t)
+      A2 <- A2_base * t_i * t_i
+      P <- I
+      U <- C[l, 2] * I
+      V <- C[l, 1] * I
+      for (k in 1:l) {
+        P <- P %*% A2
+        U <- U + C[l, (2 * k) + 2] * P
+        V <- V + C[l, (2 * k) + 1] * P
+      }
+      U <- A %*% U * t_i
+      X <- solve(V - U, V + U)
+    }
+    else {
+      s <- sA + log2(abs(t_i))
+      B <- A * t_i
+      if (s > 0) {
+        s <- ceiling(s)
+        B <- B/(2^s)
+        B2 <- A2_base * t_i * t_i / (4^s)
+      } else {
+        B2 <- A2_base * t_i * t_i
+      }
+      B4 <- B2 %*% B2
+      B6 <- B2 %*% B4
+      U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) + 
+                    c.[8] * B6 + c.[6] * B4 + c.[4] * B2 + c.[2] * I)
+      V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) + 
+        c.[7] * B6 + c.[5] * B4 + c.[3] * B2 + c.[1] * I
+      X <- solve(V - U, V + U)
+      if (s > 0) 
+        for (t in 1:s) X <- X %*% X
+    }
+    # if (balancing) {
+    d <- baS$scale
+    X <- X * (d * rep(1/d, each = n))
+    pp <- as.integer(baP$scale)
+    if (baP$i1 > 1) {
+      for (i in (baP$i1 - 1):1) {
+        tt <- X[, i]
+        X[, i] <- X[, pp[i]]
+        X[, pp[i]] <- tt
+        tt <- X[i, ]
+        X[i, ] <- X[pp[i], ]
+        X[pp[i], ] <- tt
+      }
+    }
+    if (baP$i2 < n) {
+      for (i in (baP$i2 + 1):n) {
+        tt <- X[, i]
+        X[, i] <- X[, pp[i]]
+        X[, pp[i]] <- tt
+        tt <- X[i, ]
+        X[i, ] <- X[pp[i], ]
+        X[pp[i], ] <- tt
+      }
+    }
+    # }
+    res[[res_i]]<-X
+  }
   return(res)
 }
 
