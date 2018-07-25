@@ -3441,16 +3441,14 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
   #phy <- reorder(phy, "pruningwise")
   #Obtain an object of all the unique ancestors
   anc <- unique(phy$edge[,1])
-  for (i  in seq(from = 1, length.out = nb.node)) {
-    #the ancestral node at row i is called focal
-    focal <- anc[i]
-    #Get descendant information of focal
-    desRows <- which(phy$edge[,1]==focal)
-    desNodes <- phy$edge[desRows,2]
-    for (desIndex in sequence(length(desRows))){
-      expQt[[desNodes[desIndex]]] <- internal_expm(Q.scaled * phy$edge.length[desRows[desIndex]])
-    }
-  }
+  desRows <- do.call(c,lapply(anc,
+                              function(focal){
+                                which(phy$edge[,1]==focal)
+                              }))
+  
+  desNodes <- phy$edge[desRows,2]
+  expQt[desNodes] <-  internal_expmt(Q.scaled,phy$edge.length[desRows])
+  
   return(expQt)
 }
 
