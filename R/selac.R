@@ -3356,7 +3356,7 @@ internal_expmt <- function (A, t_vec) {
   t <- c(0.015, 0.25, 0.95, 2.1)
   sA <- log2(nA/5.4)
   A2_base <- A %*% A
-  if(any(nA * abs(t_i) > 2.1)){
+  if(any(nA * abs(as.numeric(t_vec)) > 2.1)){
     A4_base <- A2_base %*% A2_base
     A6_base <- A2_base %*% A4_base
   }
