@@ -1144,7 +1144,7 @@ GetLikelihoodSAC_CodonForManyCharGivenFixedOptimumAndQAndRoot <- function(codon.
 }
 
 
-GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, n.cores.by.gene.by.site=1){
+GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data, phy, Q_codon_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, aa.optim_array, codon_mutation_matrix, Ne, rates, numcode, diploid, n.cores.by.gene.by.site=1, verbose=FALSE){
 
   nsites.unique <- dim(codon.data$unique.site.patterns)[2]-1
   final.likelihood.vector <- rep(NA, nsites.unique)
@@ -1176,11 +1176,24 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   Q_codon_array_vectored <- c(t(Q_codon_array)) # has to be transposed
   Q_codon_array_vectored <- Q_codon_array_vectored[.non_zero_pos]
   anc.indices <- unique(phy.sort$edge[,1])
+  if(verbose){ 
+    MultiCoreLikelihoodBySite <- function(nsite.index){
+      tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, 
+                                                                       phy=phy.sort, Q_codon_array_vectored=Q_codon_array_vectored, 
+                                                                       root.p=root.p_array, scale.factor=scale.factor, 
+                                                                       anc.indices=anc.indices, return.all=FALSE)
+      cat(".")
+      return(tmp)
+    }
+    
+  } else {
   MultiCoreLikelihoodBySite <- function(nsite.index){
     tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon_array_vectored=Q_codon_array_vectored, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
+  }
   final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site))
+  if(verbose) cat("|\n")
   return(final.likelihood.vector)
 }
 
@@ -1428,7 +1441,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
         aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
       }
       Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[k.cat], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999, importance.of.aa.dist.in.selective.environment.change) #Cedric: added importance
-      final.likelihood.mat[k.cat,] = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+      final.likelihood.mat[k.cat,] = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site, verbose=verbose)
     }
     likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * codon.data$site.pattern.counts)
   }else{
@@ -1438,7 +1451,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
       aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
     }
     Q_codon_array <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999, importance.of.aa.dist.in.selective.environment.change) #Cedric: added importance
-    final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
+    final.likelihood = GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA(codon.data, phy, Q_codon_array, codon.freq.by.aa=codon.freq.by.aa, codon.freq.by.gene=codon.freq.by.gene, codon_mutation_matrix=codon_mutation_matrix, Ne=Ne, rates=NULL, numcode=numcode, diploid=diploid, n.cores.by.gene.by.site=n.cores.by.gene.by.site, verbose=verbose)
     likelihood <- sum(final.likelihood * codon.data$site.pattern.counts)
   }
 
