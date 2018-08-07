@@ -1451,10 +1451,15 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
-  if(verbose) {
+  if(verbose > 1) {
     results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne, ape::write.tree(phy))
     names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne", "phy")
     print(results.vector)
+  }else if(verbose){
+    results.vector <- c(likelihood, alpha, beta, gamma)
+    names(results.vector) <- c("likelihood", "alpha", "beta", "gamma")
+    print(results.vector)
+    
   }
   if(is.na(likelihood) || is.nan(likelihood)){
     return(1000000)
@@ -1576,10 +1581,15 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
-  if(verbose) {
+  if(verbose > 1) {
     results.vector <- c(likelihood, C*Phi*q, alpha, beta, gamma, Ne, ape::write.tree(phy))
     names(results.vector) <- c("likelihood", "C.Phi.q.Ne", "alpha", "beta", "gamma", "Ne", "phy")
     print(results.vector)
+  }else if(verbose){
+    results.vector <- c(likelihood, alpha, beta, gamma)
+    names(results.vector) <- c("likelihood", "alpha", "beta", "gamma")
+    print(results.vector)
+    
   }
   if(is.na(likelihood) || is.nan(likelihood)){
     return(1000000)
@@ -1650,10 +1660,15 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
   if(neglnl) {
     likelihood <- -1 * likelihood
   }
-  if(verbose) {
+  if(verbose > 1) {
     results.vector <- c(likelihood, x, ape::write.tree(phy))
     names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))), "phy")
     print(results.vector)
+  } else if(verbose){
+    results.vector <- c(likelihood, x)
+    names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))))
+    print(results.vector)
+    
   }
   return(likelihood)
 }
@@ -1685,10 +1700,15 @@ GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data,
     if(neglnl) {
         likelihood <- -1 * likelihood
     }
-    if(verbose) {
+    if(verbose > 1) {
       results.vector <- c(likelihood, x, ape::write.tree(phy))
       names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))), "phy")
       print(results.vector)
+    }else if(verbose){
+      results.vector <- c(likelihood, x)
+      names(results.vector) <- c("likelihood", paste0("param",seq_along(x)))
+      print(results.vector)
+      
     }
     return(likelihood)
 }
@@ -1741,10 +1761,15 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
   if(is.na(likelihood)){
     return(1000000)
   }
-  if(verbose) {
+  if(verbose > 1) {
     results.vector <- c(likelihood, x, ape::write.tree(phy))
     names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))), "phy")
     print(results.vector)
+  }else if(verbose){
+    results.vector <- c(likelihood, x)
+    names(results.vector) <- c("likelihood", paste0("param", seq_along(x)))
+    print(results.vector)
+    
   }
   return(likelihood)
 }
