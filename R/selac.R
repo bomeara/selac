@@ -1075,7 +1075,7 @@ GetLikelihoodSAC_AAForSingleCharGivenOptimum <- function(aa.data, phy, Q_aa, cha
 }
 
 
-GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1, codon.data, phy, Q_codon_array_vectored, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
+GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1, codon.data, phy, Q_codon_array, root.p=NULL, scale.factor, anc.indices, return.all=FALSE) {
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
 
@@ -1100,9 +1100,47 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
                     liks,liks,liks,liks,
                     matrix(0, nb.tip + nb.node, nl),
                     liks,liks,liks,liks)
+  TIPS <- 1:nb.tip
+  comp <- numeric(nb.tip + nb.node)
+  
+  if(any(root.p < 0) | any(is.na(root.p))){
+    return(1000000)
+  }
+  #Obtain an object of all the unique ancestors
+  for (focal in anc.indices) {
+    #the ancestral node at row i is called focal
+    #focal <- anc[i]
+    #Get descendant information of focal
+    desRows<-which(phy$edge[,1]==focal)
+    # desNodes<-phy$edge[desRows,2]
+    v <- 1
+    for (rowIndex in desRows){
+      if(phy$edge[rowIndex,2] <= nb.tip){
+        if(sum(liks.HMM[desIndex,]) < 65){
+          v <- v * expm::expAtv(A=Q_codon_array ,t=phy$edge.length[rowIndex], v=liks.HMM[phy$edge[rowIndex,2],])
+        }
+      }else{
+        v <- v * expm::expAtv(A=Q_codon_array ,t=phy$edge.length[rowIndex], v=liks.HMM[phy$edge[rowIndex,2],])
+      }
+    }
+    comp[focal] <- sum(v)
+    liks.HMM[focal,] <- v/comp[focal]
+  }
+  #Specifies the root:
+  root <- nb.tip + 1L
+  #If any of the logs have NAs restart search:
+  if(is.nan(sum(log(comp[-TIPS]))) || is.na(sum(log(comp[-TIPS])))){
+    return(1000000)
+  }else{
+    loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root,])))
+    if(is.infinite(loglik)){return(1000000)}
+  }
+  return(loglik)
+  
+  
   #The result here is just the likelihood:
-  result <- -TreeTraversalODE(phy=phy, Q_codon_array_vectored=Q_codon_array_vectored, liks.HMM=liks.HMM, bad.likelihood=-100000, root.p=root.p)
-  ifelse(return.all, stop("return all not currently implemented"), return(result))
+  # result <- -TreeTraversalODE(phy=phy, Q_codon_array_vectored=Q_codon_array_vectored, liks.HMM=liks.HMM, bad.likelihood=-100000, root.p=root.p)
+  # ifelse(return.all, stop("return all not currently implemented"), return(result))
 }
 
 
@@ -1166,13 +1204,13 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   #root.p_array <- root.p_array / rowSums(root.p_array)
   #rownames(root.p_array) <- .unique.aa
   phy.sort <- reorder(phy, "pruningwise")
-  Q_codon_array_vectored <- c(t(Q_codon_array)) # has to be transposed
-  Q_codon_array_vectored <- Q_codon_array_vectored[.non_zero_pos]
+  # Q_codon_array_vectored <- c(t(Q_codon_array)) # has to be transposed
+  # Q_codon_array_vectored <- Q_codon_array_vectored[.non_zero_pos]
   anc.indices <- unique(phy.sort$edge[,1])
   if(verbose){ 
     MultiCoreLikelihoodBySite <- function(nsite.index){
       tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, 
-                                                                       phy=phy.sort, Q_codon_array_vectored=Q_codon_array_vectored, 
+                                                                       phy=phy.sort, Q_codon_array=Q_codon_array, 
                                                                        root.p=root.p_array, scale.factor=scale.factor, 
                                                                        anc.indices=anc.indices, return.all=FALSE)
       cat(".")
