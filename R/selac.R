@@ -1132,7 +1132,7 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
   if(is.nan(sum(log(comp[-TIPS]))) || is.na(sum(log(comp[-TIPS])))){
     return(1000000)
   }else{
-    loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root,])))
+    loglik<- (sum(log(comp[-TIPS])) + log(sum(root.p * liks.HMM[root,])))
     if(is.infinite(loglik)){return(1000000)}
   }
   return(loglik)
