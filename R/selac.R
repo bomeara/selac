@@ -1219,7 +1219,9 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
     
   } else {
   MultiCoreLikelihoodBySite <- function(nsite.index){
-    tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, Q_codon_array_vectored=Q_codon_array_vectored, root.p=root.p_array, scale.factor=scale.factor, anc.indices=anc.indices, return.all=FALSE)
+    tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, 
+                                                                     Q_codon_array=Q_codon_array, root.p=root.p_array, scale.factor=scale.factor, 
+                                                                     anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
   }
