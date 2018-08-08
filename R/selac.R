@@ -1116,7 +1116,7 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
     v <- 1
     for (rowIndex in desRows){
       if(phy$edge[rowIndex,2] <= nb.tip){
-        if(sum(liks.HMM[desIndex,]) < 65){
+        if(sum(liks.HMM[phy$edge[rowIndex,2],]) < 65){
           v <- v * expm::expAtv(A=Q_codon_array ,t=phy$edge.length[rowIndex], v=liks.HMM[phy$edge[rowIndex,2],])
         }
       }else{
