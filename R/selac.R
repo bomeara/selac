@@ -1225,7 +1225,13 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
     return(tmp)
   }
   }
-  final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site, mc.preschedule=FALSE))
+  if(n.cores.by.gene.by.site == 1    ){
+    final.likelihood.vector <- unlist(lapply(1:nsites.unique, MultiCoreLikelihoodBySite))
+  } else if(n.sites.unique > n.cores.by.gene.by.site &&  n.sites.unique %/% n.cores.by.gene.by.site < 10 ) {
+    final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site, mc.preschedule=FALSE))
+  } else {
+    final.likelihood.vector <- unlist(mclapply(1:nsites.unique, MultiCoreLikelihoodBySite, mc.cores=n.cores.by.gene.by.site, mc.preschedule=T))
+  }
   if(verbose) cat("|\n")
   return(final.likelihood.vector)
 }
