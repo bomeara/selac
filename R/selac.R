@@ -1080,25 +1080,21 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
   nb.node <- phy$Nnode
 
   nl <- 64
-  #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
-  liks <- matrix(0, nb.tip + nb.node, nl)
+  #Now we need to build the matrix of likelihoods to store node and tip state:
   if(all(codon.data[,charnum+1] < 65)){
     #no need to subset
-    liks[cbind(1:nb.tip,codon.data[,charnum+1])] <- 1
+    liks <- sparseMatrix(i=1:nb.tip,j=codon.data[,charnum+1],x=1,dims=c(nb.tip + nb.node, nl))
   } else {
     key<-codon.data[,charnum+1] < 65
-    liks[cbind(which(key),codon.data[which(key),charnum+1])] <- 1
-    liks[which(!key),] <- 1
-    if(nl > 4){
-      liks[which(!key),c(49, 51, 57)] <- 0
-    }
+    liks <- sparseMatrix(i=which(key),j=codon.data[which(key),charnum+1],x=1,dims=c(nb.tip + nb.node, nl))
+    liks[which(!key),-c(49, 51, 57)] <- 1
   }
   ## Now HMM this matrix by pasting these together:
   liks.HMM <- cbind(liks,liks,liks,liks,
                     liks,liks,liks,liks,
                     liks,liks,liks,liks,
                     liks,liks,liks,liks,
-                    matrix(0, nb.tip + nb.node, nl),
+                    Matrix(0, nb.tip + nb.node, nl),
                     liks,liks,liks,liks)
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
@@ -1193,6 +1189,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   }
   diag(Q_codon_array) = 0
   diag(Q_codon_array) = -rowSums(Q_codon_array)
+  Q_codon_array <- Matrix::Matrix(Q_codon_array)
   #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
   #scale.factor <- -sum(Q_codon_array[DiagArray(dim(Q_codon_array))] * equilibrium.codon.freq, na.rm=TRUE)
 
@@ -3512,9 +3509,9 @@ internal_expAtv <- function(A, v, t=1)
   tol=1e-7; btol = 1e-7; m.max = 30; mxrej = 10 #constant
   ## R translation:  Ravi Varadhan, Johns Hopkins University
   ##		   "cosmetic", apply to sparse A: Martin Maechler, ETH Zurich
-  if(length(d <- dim(A)) != 2) stop("'A' is not a matrix") # <- also for sparseMatrix
+  d <- dim(A)
   # HMM constant: m <- c(1344,1344)
-  stopifnot(length(v) == (n <- d[1]), m.max >= 2)
+  n <- d[1]
   # HMM constant: n <- 1344
   if(n <= 1) {
     if(n == 1) return(exp(A*t)*v)
@@ -3556,8 +3553,8 @@ internal_expAtv <- function(A, v, t=1)
   # alt constant for HMM tips, varies with Q
   # t_new <- myRound( (nA)^(-31/30)*7.12126158103164 )
   
-  V <- matrix(0, n, m+1)    #HMM init: V <- matrix(0,1344,31)
-  H <- matrix(0, m+2, m+2)  #HMM initt: H <- matrix(0,32,32)
+  V <- Matrix::Matrix(0, n, m+1,sparse=F)    #HMM init: V <- matrix(0,1344,31)
+  H <- Matrix::Matrix(0, m+2, m+2,sparse=F)  #HMM initt: H <- matrix(0,32,32)
   # nstep <- n.rej <- 0L      #irrelevant
   w <- v
   # updated in loop:
