@@ -1083,10 +1083,10 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
   #Now we need to build the matrix of likelihoods to store node and tip state:
   if(all(codon.data[,charnum+1] < 65)){
     #no need to subset
-    liks <- sparseMatrix(i=1:nb.tip,j=codon.data[,charnum+1],x=1,dims=c(nb.tip + nb.node, nl))
+    liks <- Matrix::sparseMatrix(i=1:nb.tip,j=codon.data[,charnum+1],x=1,dims=c(nb.tip + nb.node, nl))
   } else {
     key<-codon.data[,charnum+1] < 65
-    liks <- sparseMatrix(i=which(key),j=codon.data[which(key),charnum+1],x=1,dims=c(nb.tip + nb.node, nl))
+    liks <- Matrix::sparseMatrix(i=which(key),j=codon.data[which(key),charnum+1],x=1,dims=c(nb.tip + nb.node, nl))
     liks[which(!key),-c(49, 51, 57)] <- 1
   }
   ## Now HMM this matrix by pasting these together:
@@ -1094,7 +1094,7 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
                     liks,liks,liks,liks,
                     liks,liks,liks,liks,
                     liks,liks,liks,liks,
-                    Matrix(0, nb.tip + nb.node, nl),
+                    Matrix::Matrix(0, nb.tip + nb.node, nl),
                     liks,liks,liks,liks)
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
@@ -3521,7 +3521,7 @@ internal_expAtv <- function(A, v, t=1)
   # HMM constant: m <- 30
   gamma <- 0.9        # constant
   delta <- 1.2        # constant
-  nA <- norm(A, "I")  # varies with Q
+  nA <- Matrix::norm(A, "I")  # varies with Q
   # Next line varies with Q and phy
   if(nA <  1e-6) { ## rescaling, by MMaechler, needed for small norms
     A <- A/nA
@@ -3593,7 +3593,7 @@ internal_expAtv <- function(A, v, t=1)
       mx <- mb + k1; imx <- seq_len(mx) # = 1:mx
       # if(verbose) cat(sprintf("	inner while: k1=%d -> mx=%d\n",
       #                         k1, mx))
-      F <- internal_expm(sgn * t_step * H[imx,imx, drop=FALSE])
+      F <- Matrix::Matrix(internal_expm(as.matrix(sgn * t_step * H[imx,imx, drop=FALSE])))
       if (k1 == 0) {
         err_loc <- btol
         break

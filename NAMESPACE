@@ -4,6 +4,7 @@ export(SelacOptimize, SelonOptimize, SelacHMMOptimize, SelonHMMOptimize, SelacSi
 import(ape, deSolve, nloptr, nnet)
 importFrom(seqinr, a, aaa, AAstat, acnucopen, al2bp, alllistranks, amb, as.matrix.alignment, autosocket, baselineabif, bma, c2s, cai, choosebank, circle, closebank, col2alpha, comp, computePI, count, countfreelists, countsubseqs, crelistfromclientdata, dia.bactgensize, dist.alignment, dotchart.uco, dotPlot, draw.oriloc, draw.rearranged.oriloc, draw.recstat, extract.breakpoints, extractseqs, fastacc, gb2fasta, gbk2g2, gbk2g2.euk, get.db.growth, get.ncbi, getAnnot, getFrag, getKeyword, getLength, getlistrank, getliststate, getLocation, getName, getSequence, getTrans, getType, gfrag, ghelp, isenum, kaks, knowndbs, lseqinr, modifylist, move, n2s, oriloc, parser.socket, peakabif, permutation, plot.SeqAcnucWeb, plotabif, plotladder, plotPanels, pmw, prepgetannots, prettyseq, print.qaw, print.SeqAcnucWeb, query, read.abif, read.alignment, read.fasta, readBins, readfirstrec, readPanels, readsmj, rearranged.oriloc, recstat, residuecount, reverse.align, rot13, s2c, s2n, savelist, setlistname, splitseq, stresc, stutterabif, swap, syncodons, synsequence, tablecode, test.co.recstat, test.li.recstat, translate, trimSpace, uco, ucoweight, where.is.this.acc, words, words.pos, write.fasta)
 importFrom(expm, expm)
+importFrom("methods", "is")
 importFrom(phangorn, parsimony, phyDat, acctran)
 importFrom(MASS, Null)
 importFrom(parallel, mclapply)
