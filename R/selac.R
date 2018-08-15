@@ -3553,8 +3553,9 @@ internal_expAtv <- function(A, v, t=1)
   # alt constant for HMM tips, varies with Q
   # t_new <- myRound( (nA)^(-31/30)*7.12126158103164 )
   
-  V <- Matrix::Matrix(0, n, m+1,sparse=F)    #HMM init: V <- matrix(0,1344,31)
-  H <- Matrix::Matrix(0, m+2, m+2,sparse=F)  #HMM initt: H <- matrix(0,32,32)
+  V <- matrix(0, n, m+1)    #HMM init: V <- matrix(0,1344,31)
+  H <- matrix(0, m+2, m+2)  #HMM initt: H <- matrix(0,32,32) 
+  # use  Matrix(V[,j],nrow =n, ncol=1 ) later on?
   # nstep <- n.rej <- 0L      #irrelevant
   w <- v
   # updated in loop:
@@ -3593,7 +3594,7 @@ internal_expAtv <- function(A, v, t=1)
       mx <- mb + k1; imx <- seq_len(mx) # = 1:mx
       # if(verbose) cat(sprintf("	inner while: k1=%d -> mx=%d\n",
       #                         k1, mx))
-      F <- Matrix::Matrix(internal_expm(as.matrix(sgn * t_step * H[imx,imx, drop=FALSE])))
+      F <- internal_expm(sgn * t_step * H[imx,imx, drop=FALSE])
       if (k1 == 0) {
         err_loc <- btol
         break
