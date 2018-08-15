@@ -3569,7 +3569,7 @@ internal_expAtv <- function(A, v, t=1)
     #                         t_now, nstep, t_step))
     V[,1] <- (1/beta)*w
     for (j in 1:m) {
-      p <- as.vector(A %*% V[,j])  ## as of commit ab3e84e, this %*% is ~82% of all work!
+      p <- as.vector(A %*% Matrix::Matrix(V[,j],nrow=n, ncol=1 ))  ## as of commit ab3e84e, this %*% is ~82% of all work!
       for (i in 1:j) {
         H[i,j] <- s <- sum(V[,i] *  p)
         p <- p - s * V[,i]
