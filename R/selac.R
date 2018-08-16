@@ -3774,7 +3774,8 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
   # mb
   while (t_now < t_1) {
     # nstep <- nstep + 1L
-    t_step <- min(t_1 - t_now, t_new)  # interval length to evaluate over
+    subset = t_1_vec > t_now
+    t_step <- min(t_1_vec[subset] - t_now, t_new)  # interval length to evaluate over
     V[,1] <- (1/beta)*w
     for (j in 1:m) {
       p <- as.vector(A %*% V[,j]) 
@@ -3840,10 +3841,12 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
     #mx <- mb + max(0, k1-1); imx <- seq_len(mx) # = 1:mx
     # Check to see if tvec falls in this interval
     if(any(t_1_vec < t_now+t_step & t_1_vec > t_now)){
-      
+      # Due to errors in estimates, code rewritten.
+      # It should never enter this block any more
+      stop("Interval should never surround any tvec point, tvec should only include endpoints.")
       ivec = which(t_1_vec < t_now+t_step & t_1_vec > t_now)
       F_list <- internal_expmt(A = H[imx1,imx1,drop=F],t_vec = tvec[ivec])
-      res[ivec] <- lapply(F_list, function(F_mat) (beta * V[,imx2] %*% F_mat[imx2,1]) )
+      res[ivec] <- lapply(F_list, function(F_mat) as.vector(V[,imx2] %*% (beta * F_mat[imx2,1,drop=F])) )
     }
     
     # Move on to next interval 
