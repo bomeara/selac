@@ -10,8 +10,8 @@ SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
   include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
   numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
   verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
-  max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 3,
-  user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
+  max.tol = 0.001, max.tol.edges = 0.001, max.evals = 1e+06,
+  max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
   user.supplied.starting.param.vals = NULL, tol.step = 1,
@@ -57,6 +57,8 @@ SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{n.cores.by.gene.by.site}{The number of cores to decidate to parallelize analyses by site WITHIN a gene. Note n.cores.by.gene*n.cores.by.gene.by.site is the total number of cores dedicated to the analysis.}
 
 \item{max.tol}{Supplies the relative optimization tolerance.}
+
+\item{max.tol.edges}{Supplies the relative optimization tolerance for branch lengths only. Default is that is the same as the max.tol.}
 
 \item{max.evals}{Supplies the max number of iterations tried during optimization.}
 
