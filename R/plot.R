@@ -1,4 +1,4 @@
-#' Function to plot frequency of distribution of different Wi given selac parameters
+# Function to plot frequency of distribution of different Wi given selac parameters
 
 ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
 #To test: nuc.model="JC"; base.freqs=rep(0.25, 4); nsites=1; C=4; Phi=0.5; q=4e-7; Ne=5e6; alpha=1.83; beta=0.10; gamma=0.0003990333; include.stop.codon=TRUE; numcode=1; diploid=TRUE; flee.stop.codon.rate=0.9999999
@@ -362,7 +362,7 @@ PlotMutationFitnessSpectra <- function(mutation.fitness.object.list, values, opt
 
 #' Function to plot info by site in a gene
 #'
-#' @param info.by.site The output of GetGeneSiteInfo
+#' @param all.info The output of GetGeneSiteInfo
 #' @param aa.properties The aa.properties you want to use; if NULL, uses Grantham
 #' @param mean.width Sliding window width
 PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {

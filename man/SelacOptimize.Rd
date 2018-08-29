@@ -2,6 +2,7 @@
 % Please edit documentation in R/selac.R
 \name{SelacOptimize}
 \alias{SelacOptimize}
+\alias{selac}
 \title{Efficient optimization of the SELAC model}
 \usage{
 SelacOptimize(codon.data.path, n.partitions = NULL, phy,
@@ -10,13 +11,13 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
   numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
   verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
-  max.tol = .Machine$double.eps^0.5, max.evals = 1e+06, max.restarts = 3,
-  user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
+  max.tol = 0.001, max.tol.edges = 0.001, max.evals = 1e+06,
+  max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
   recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
   output.restart.filename = "restartResult",
   user.supplied.starting.param.vals = NULL, tol.step = 1,
   optimizer.algorithm = "NLOPT_LN_SBPLX", start.from.mle = FALSE,
-  mle.matrix = NULL, partition.order = NULL)
+  mle.matrix = NULL, partition.order = NULL, max.iterations = 6)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -27,7 +28,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{data.type}{The data type being tested. Options are "codon" or "nucleotide".}
 
-\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "FMutSel0", "selac".}
+\item{codon.model}{The type of codon model to use. There are four options: "none", "GY94", "YN98", "FMutSel0", "FMutSel", "selac".}
 
 \item{edge.length}{Indicates whether or not edge lengths should be optimized. By default it is set to "optimize", other option is "fixed", which is the user-supplied branch lengths.}
 
@@ -39,7 +40,7 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 
 \item{include.gamma}{A logical indicating whether or not to include a discrete gamma model.}
 
-\item{gamma.type}{Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994.}
+\item{gamma.type}{Indicates what type of gamma distribution to use. Options are "quadrature" after the Laguerre quadrature approach of Felsenstein 2001 or median approach of Yang 1994 or "lognormal" after a lognormal quadrature approach.}
 
 \item{ncats}{The number of discrete categories.}
 
@@ -58,6 +59,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{n.cores.by.gene.by.site}{The number of cores to decidate to parallelize analyses by site WITHIN a gene. Note n.cores.by.gene*n.cores.by.gene.by.site is the total number of cores dedicated to the analysis.}
 
 \item{max.tol}{Supplies the relative optimization tolerance.}
+
+\item{max.tol.edges}{Supplies the relative optimization tolerance for branch lengths only. Default is that is the same as the max.tol.}
 
 \item{max.evals}{Supplies the max number of iterations tried during optimization.}
 
@@ -90,4 +93,11 @@ Efficient optimization of model parameters under the SELAC model
 }
 \details{
 Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
+}
+\examples{
+\dontrun{
+phy <- ape::read.tree(file=system.file("extdata", "rokasYeast.tre", package="selac"))
+result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'), n.partitions=1, phy=phy, max.evals=10)
+print(result)
+}
 }
