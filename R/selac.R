@@ -1024,19 +1024,6 @@ CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites,
 }
 
 
-CreateAAFixationMatrix <- function(aa_op,s,aa.distances,C=4, Psi=0.5, q=4e-7, Ne=5e6){
-  m = 20
-  mat <- matrix(0,nrow=m,ncol=m)#set diagonal entries to be 0 at first
-  for(i in 1:(m-1)){
-    for(j in (i+1):m){
-      mat[i,j] <- GetPairwiseProteinFixationProbabilityArbitraryLength(i,j,aa_op,s,aa.distances,C,Psi,q,Ne) #fixation prob -> transition rate
-      mat[j,i] <- GetPairwiseProteinFixationProbabilityArbitraryLength(j,i,aa_op,s,aa.distances,C,Psi,q,Ne) #symmetric entry (not the same rate!)
-    }#end for j
-  }#end for i
-  return(mat)
-}
-
-
 CreateCodonSets <- function() {
   codon.sets <- expand.grid(0:3, 0:3, 0:3)
   codon.sets[,c(3,2,1)] <- codon.sets[,c(1,2,3)] #re-ordering as in the original one
@@ -6792,7 +6779,7 @@ GetGeneSiteInfo <- function(selac.obj, partition.number=1){
   obj$psi.<- selac.obj$mle.pars[partition.number,1] * quadl[1:4]
   obj$psi.weights <- quadl[5:8]
   obj$site.aa.information <- selac.all.sites.amino.acid
-  obj$site.psi.information <- selac.all.sites.phi
+  obj$site.psi.information <- selac.all.sites.psi
   return(obj)
 }
 
