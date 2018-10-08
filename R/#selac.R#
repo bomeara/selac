@@ -6792,7 +6792,7 @@ GetGeneSiteInfo <- function(selac.obj, partition.number=1){
   obj$psi.<- selac.obj$mle.pars[partition.number,1] * quadl[1:4]
   obj$psi.weights <- quadl[5:8]
   obj$site.aa.information <- selac.all.sites.amino.acid
-  obj$site.psi.information <- selac.all.sites.phi
+  obj$site.psi.information <- selac.all.sites.psi
   return(obj)
 }
 

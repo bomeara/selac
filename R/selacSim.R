@@ -73,7 +73,7 @@ SingleSiteUpPassHMM <- function(phy, Q_codon, root.p){
 }
 
 
-SingleSiteUpPassEvolvingRates <- function(phy, root.value, aa.distances, codon_mutation_matrix, aa.optim, nsites, C, Phi, q, Ne, numcode, diploid, pars.to.evolve="phi"){
+SingleSiteUpPassEvolvingRates <- function(phy, root.value, aa.distances, codon_mutation_matrix, aa.optim, nsites, C, Psi, q, Ne, numcode, diploid, pars.to.evolve="psi"){
     #Randomly choose starting state at root using the root.values as the probability:
     root.value = sample.int(dim(codon_mutation_matrix)[2], 1, FALSE, prob=root.value)
     #Reorder the phy:
@@ -89,9 +89,9 @@ SingleSiteUpPassEvolvingRates <- function(phy, root.value, aa.distances, codon_m
     des <- phy$edge[, 2]
     edge.length <- phy$edge.length
     for (i in N:1) {
-        if(pars.to.evolve=="phi"){
-            Phi.current <- Phi[des[i]]
-            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi.current, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        if(pars.to.evolve=="psi"){
+            Psi.current <- Psi[des[i]]
+            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi.current, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
             for(k in 1:21){
                 if(diploid == TRUE){
                     Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
@@ -104,7 +104,7 @@ SingleSiteUpPassEvolvingRates <- function(phy, root.value, aa.distances, codon_m
         }
         if(pars.to.evolve=="Ne"){
             Ne.current <- Ne[des[i]]
-            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne.current, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne.current, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
             for(k in 1:21){
                 if(diploid == TRUE){
                     Q_codon_array[,,unique.aa[k]] = 2 * Ne.current * (codon_mutation_matrix * Q_codon_array[,,unique.aa[k]])
@@ -172,7 +172,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' Simulates nucleotide data based on parameters under the SELAC model
 #'
 #' @param phy The phylogenetic tree with branch lengths.
-#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
+#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.psi, alpha, beta, Ne, base.freqs for A C G, and the rates for the nucleotide model.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
 #' @param codon.freq.by.aa A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
 #' @param codon.freq.by.gene A matrix of codon frequencies for each gene.
@@ -184,7 +184,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' @param ncats The number of discrete categories.
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
-#' @param site.cats.vector A vector designating the rate category for phi when include.gamma=TRUE.
+#' @param site.cats.vector A vector designating the rate category for psi when include.gamma=TRUE.
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
@@ -192,13 +192,13 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
     nsites <- length(aa.optim_array)
 
     #Start organizing the user input parameters:
-    C.q.phi.Ne <- pars[1]
+    C.q.psi.Ne <- pars[1]
     C=4
     q=4e-7
     Ne <- 5e6
-    Phi.q.Ne <- C.q.phi.Ne / C
-    Phi.Ne <- Phi.q.Ne / q
-    Phi <- Phi.Ne / Ne
+    Psi.q.Ne <- C.q.psi.Ne / C
+    Psi.Ne <- Psi.q.Ne / q
+    Psi <- Psi.Ne / Ne
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
@@ -267,7 +267,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
-            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
         }
         for(cat.index in 1:ncats){
             Q_codon_array <- rate.Q_codon.list[[cat.index]]
@@ -289,7 +289,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
         }else{
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
         }
-        Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+        Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
         for(k in 1:21){
             if(diploid == TRUE){
                 Q_codon_array[,,unique.aa[k]] = 2 * Ne * (codon_mutation_matrix_scaled * Q_codon_array[,,unique.aa[k]])
@@ -467,10 +467,10 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
 #' @title Simulate DNA under the SELAC model and evolving rates
 #'
 #' @description
-#' Simulates nucleotide data based on parameters under the SELAC model but assumes either Phi or Ne evolves along the tree.
+#' Simulates nucleotide data based on parameters under the SELAC model but assumes either Psi or Ne evolves along the tree.
 #'
 #' @param phy The phylogenetic tree with branch lengths.
-#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.phi, alpha, beta, and Ne.
+#' @param pars A vector of parameters used for the simulation. They are ordered as follows: C.q.psi, alpha, beta, and Ne.
 #' @param aa.optim_array A vector of optimal amino acids for each site to be simulated.
 #' @param root.codon.frequencies A vector of codon frequencies for each possible optimal amino acid. Thus, the vector is of length 64x64.
 #' @param numcode The The ncbi genetic code number for translation. By default the standard (numcode=1) genetic code is used.
@@ -478,33 +478,33 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
-#' @param pars.to.evolve Indicates which parameters to assume evolve along the tree. Only two options: "phi" or "Ne".
+#' @param pars.to.evolve Indicates which parameters to assume evolve along the tree. Only two options: "psi" or "Ne".
 #' @param evolve.type The process by which the focal parameter evovles. There are two options: Brownian motion ("BM") or Ornstein-Uhlenbeck ("OU").
 #' @param evolve.pars The process parameters used to simulate focal parameter evolution. Under "BM", the order is root.state, rate; under "OU", the order is alpha, sigma.sq, and the mean.
 #' @param Ne.vals.evolved Under selac we assume a global Ne for all genes. Thus, when the focal parameter to evolve is "Ne", then a user specified vector of simulated Ne values are provided here.
 #'
 #' @details
-#' Simulates a nucleotide matrix using parameters under the SELAC model, but allows either Phi or Ne to evolve along the tree. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE, pars.to.evolve="phi", evolve.type="BM", evolve.pars=c(1,0), Ne.vals.evolved=NULL){
+#' Simulates a nucleotide matrix using parameters under the SELAC model, but allows either Psi or Ne to evolve along the tree. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
+SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.frequencies, numcode=1, aa.properties=NULL, nuc.model, k.levels=0, diploid=TRUE, pars.to.evolve="psi", evolve.type="BM", evolve.pars=c(1,0), Ne.vals.evolved=NULL){
     nsites <- length(aa.optim_array)
     # Start organizing the user input parameters:
-    C.q.phi <- pars[1]
+    C.q.psi <- pars[1]
     C=4
     q=4e-7
-    Phi.q <- C.q.phi / C
-    Phi.values <- Phi.q / q
+    Psi.q <- C.q.psi / C
+    Psi.values <- Psi.q / q
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
     Ne.values <- pars[4]
-    if(pars.to.evolve == "phi"){
+    if(pars.to.evolve == "psi"){
         if(evolve.type == "BM"){
-            Phi.values <- BrownianEvolveParameters(phy=phy, start.value = evolve.pars[1], rate=evolve.pars[2])
-            print(Phi.values)
+            Psi.values <- BrownianEvolveParameters(phy=phy, start.value = evolve.pars[1], rate=evolve.pars[2])
+            print(Psi.values)
         }
         if(evolve.type == "OU"){
-            Phi.values <- OUEvolveParameters(phy=phy, alpha=evolve.pars[1], sigma.sq=evolve.pars[2], mean=evolve.pars[3])
-            print(Phi.values)
+            Psi.values <- OUEvolveParameters(phy=phy, alpha=evolve.pars[1], sigma.sq=evolve.pars[2], mean=evolve.pars[3])
+            print(Psi.values)
         }
     }
     if(pars.to.evolve == "Ne"){
@@ -553,7 +553,7 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
     #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
     sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
     for(site in 1:nsites){
-        sim.codon.data[,site] = SingleSiteUpPassEvolvingRates(phy, root.value=root.p_array[aa.optim_array[site],], aa.distances=aa.distances, codon_mutation_matrix=codon_mutation_matrix, aa.optim=aa.optim_array[site], nsites=nsites, C=C, Phi=Phi.values, q=q, Ne=Ne.values, numcode=numcode, diploid=diploid, pars.to.evolve=pars.to.evolve)
+        sim.codon.data[,site] = SingleSiteUpPassEvolvingRates(phy, root.value=root.p_array[aa.optim_array[site],], aa.distances=aa.distances, codon_mutation_matrix=codon_mutation_matrix, aa.optim=aa.optim_array[site], nsites=nsites, C=C, Psi=Psi.values, q=q, Ne=Ne.values, numcode=numcode, diploid=diploid, pars.to.evolve=pars.to.evolve)
     }
     codon.names <- rownames(codon.index.matrix)
     #Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
@@ -575,7 +575,7 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
 #'
 #' @param phy The phylogenetic tree with branch lengths.
 #' @param pars A vector of parameters used for the simulation.
-#' They are ordered as follows: C.q.phi, alpha, beta, Ne, base.freqs for A C G,
+#' They are ordered as follows: C.q.psi, alpha, beta, Ne, base.freqs for A C G,
 #' and the rates for the nucleotide model the very last parameter is always the switching rate of the optimal AA.
 #' @param nsites Length of the alignment to be simulated
 #' @param codon.freq.by.aa A matrix of codon frequencies for each possible optimal amino acid. Rows are aa (including stop codon), cols are codons.
@@ -589,7 +589,7 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
 #' @param ncats The number of discrete categories.
 #' @param k.levels Provides how many levels in the polynomial. By default we assume a single level (i.e., linear).
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
-#' @param site.cats.vector A vector designating the rate category for phi when include.gamma=TRUE.
+#' @param site.cats.vector A vector designating the rate category for psi when include.gamma=TRUE.
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELAC model.
@@ -604,13 +604,13 @@ SelacHMMSimulator <- function(phy, pars, nsites, codon.freq.by.aa=NULL, codon.fr
   pars = pars[-( (length(pars) - 1):length(pars) )]
 
   #Start organizing the user input parameters:
-  C.q.phi.Ne <- pars[1]
+  C.q.psi.Ne <- pars[1]
   C=4
   q=4e-7
   Ne <- 5e6
-  Phi.q.Ne <- C.q.phi.Ne / C
-  Phi.Ne <- Phi.q.Ne / q
-  Phi <- Phi.Ne / Ne
+  Psi.q.Ne <- C.q.psi.Ne / C
+  Psi.Ne <- Psi.q.Ne / q
+  Psi <- Psi.Ne / Ne
   alpha <- pars[2]
   beta <- pars[3]
   gamma <- GetAADistanceStartingParameters(aa.properties)[3]
@@ -690,7 +690,7 @@ SelacHMMSimulator <- function(phy, pars, nsites, codon.freq.by.aa=NULL, codon.fr
                                                poly.params=NULL, k=k.levels)
       }
       Q_codon <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances,
-                                                                  nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne,
+                                                                  nsites=nsites, C=C, Psi=Psi*rates.k[cat.index], q=q, Ne=Ne,
                                                                   include.stop.codon=TRUE, numcode=numcode, diploid=diploid,
                                                                   flee.stop.codon.rate=0.9999999,
                                                                   importance = importance.of.aa.dist.in.selective.environment.change)
@@ -717,7 +717,7 @@ SelacHMMSimulator <- function(phy, pars, nsites, codon.freq.by.aa=NULL, codon.fr
                                              poly.params=NULL, k=k.levels)
     }
     Q_codon <- FastCreateEvolveAACodonFixationProbabilityMatrix(aa.distances=aa.distances,
-                                                                nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne,
+                                                                nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne,
                                                                 include.stop.codon=TRUE, numcode=numcode, diploid=diploid,
                                                                 flee.stop.codon.rate=0.9999999,
                                                                 importance = importance.of.aa.dist.in.selective.environment.change)
