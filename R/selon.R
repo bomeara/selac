@@ -754,6 +754,43 @@ FindBranchGenerations <- function(phy) {
 }
 
 
+#Generates a DataArray for all sites
+MakeDataArray <- function(site.pattern.data.list, nuc.optim.list, phy, nstates, nsites.vector) {
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    nl <- nstates
+    #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
+    liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
+    site.pattern.data.frame <- site.pattern.data.list[[1]]
+    #Now loop through the tips.
+    for(partition.index in 2:length(site.pattern.data.list)){
+        site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
+    }
+    for(site.index in 1:(dim(site.pattern.data.frame)[2]-1)) {
+        for(i in 1:nb.tip){
+            #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
+            #Note: We add charnum+1, because the first column in the data is the species labels:
+            if(site.pattern.data.frame[i,site.index+1] < 65){
+                liks.array[i,site.pattern.data.frame[i,site.index+1],site.index] <- 1
+            }else{
+                #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
+                liks.array[i,,site.index] <- 1
+            }
+        }
+    }
+    return(liks.array)
+}
+
+
+MakeNucOptimArray <- function(nuc.optim.list) {
+    nuc.optim.data.frame <- nuc.optim.list[[1]]
+    for(partition.index in 2:length(nuc.optim.list)){
+        nuc.optim.data.frame <- c(nuc.optim.data.frame, nuc.optim.list[[partition.index]])
+    }
+    return(nuc.optim.data.frame)
+}
+
+
 SingleBranchCalculation <- function(pars, Q, init.cond, edge.length) {
     BranchProbs <- expm(Q * edge.length, method="Ward77") %*% init.cond
     if(is.nan(BranchProbs) || is.na(BranchProbs)){
@@ -791,7 +828,6 @@ GetEdgeLengthBranchLikSite <- function() {
     
     
 }
-
 
 
 OptimizeEdgeLengthsUCEAcrossGenes <- function() {
@@ -846,37 +882,6 @@ MaximizeEdgeLengths <- function(nsites.vector) {
     
 }
 
-
-MakeDataArray <- function(site.pattern.data.list, phy, nstates, nsites.vector) {
-    
-    nb.tip <- length(phy$tip.label)
-    nb.node <- phy$Nnode
-    nl <- nstates
-    #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
-    liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
-    site.pattern.data.frame <- site.pattern.data.list[[1]]
-    #Now loop through the tips.
-    for(partition.index in 2:length(site.pattern.data.list)){
-        site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:nsites.vector[partition.index]])
-    }
-    
-    
-    for(site.index in 1:dim(site.pattern.data.list[[partition.index]])){
-            for(i in 1:nb.tip){
-                #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
-                #Note: We add charnum+1, because the first column in the data is the species labels:
-                if(site.pattern.data.list[[partition.index]][i,charnum+1] < 65){
-                    liks.array[i,site.pattern.data.list[[partition.index],site.index][i,]] <- 1
-                }else{
-                    #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
-                    liks.array[i,,] <- 1
-                }
-            }
-            data.array <- array(liks, sum(nsites.vector))
-        }
-    }
-    return(data.array)
-}
 
 
 OptimizeEdgeLengthsUCENew <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, hmm=FALSE, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
@@ -1193,15 +1198,15 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }else{
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
         }
-        starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna",recalculate.starting.brlen=TRUE)$edge.length
-        nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
+        starting.branch.lengths[partition.index,] <- selac:::ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna",recalculate.starting.brlen=TRUE)$edge.length
+        nucleotide.data <- selac:::DNAbinToNucleotideNumeric(gene.tmp)
         nucleotide.data <- nucleotide.data[phy$tip.label,]
         site.pattern.data.list[[partition.index]] = nucleotide.data
         nsites.vector = c(nsites.vector, dim(nucleotide.data)[2] - 1)
         empirical.base.freq <- as.matrix(nucleotide.data[,-1])
         empirical.base.freq <- table(empirical.base.freq, deparse.level = 0) / sum(table(empirical.base.freq, deparse.level = 0))
         empirical.base.freq.list[[partition.index]] <- as.vector(empirical.base.freq[1:4])
-        nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, GetMaxNameUCE)) #starting values for all, final values for majrule
+        nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, selac:::GetMaxNameUCE)) #starting values for all, final values for majrule
         nuc.optim.list[[partition.index]] <- nuc.optim
     }
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
@@ -1534,8 +1539,8 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
         }else{
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
         }
-        starting.branch.lengths[partition.index,] <- selac:::ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna",recalculate.starting.brlen=TRUE)$edge.length
-        nucleotide.data <- selac:::DNAbinToNucleotideNumeric(gene.tmp)
+        starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna",recalculate.starting.brlen=TRUE)$edge.length
+        nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
         nucleotide.data <- nucleotide.data[phy$tip.label,]
         site.pattern.data.list[[partition.index]] = nucleotide.data
         nsites.vector = c(nsites.vector, dim(nucleotide.data)[2] - 1)
