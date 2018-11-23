@@ -742,7 +742,6 @@ FindBranchGenerations <- function(phy) {
         knowable <- unknown[needed %in% known]
         knowable <- knowable[duplicated(knowable)]
         generation[[i]] <- phy$edge[which(phy$edge[,1] %in% knowable),2]
-        
         known <- c(known, knowable)
         needed <- needed[!unknown %in% knowable]
         unknown <- unknown[!unknown %in% knowable]
@@ -783,15 +782,15 @@ MakeDataArray <- function(site.pattern.data.list, phy, nstates, nsites.vector) {
 
 
 #Goal is to make a list with all the things I need for a site.
-MakeParameterArray <- function(nuc.optim.list, par.mat, nsites.vector) {
+MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
     Ne <- 5e6
     pars.array <- c()
     for(partition.index in 1:length(nsites.vector)){
         pars.site.tmp <- as.list(1:nsites.vector[partition.index])
         site.index <- 1:nsites.vector[partition.index]
-        position.multiplier.vector <- selac:::PositionSensitivityMultiplierNormal(par.mat[partition.index,1]/Ne, par.mat[partition.index,2], par.mat[partition.index,3], site.index)
+        position.multiplier.vector <- selac:::PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
         for(site.index in 1:nsites.vector[partition.index]) {
-            pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], par.mat[partition.index,4:dim(par.mat)[2]])
+            pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], pars.mat[partition.index,4:dim(pars.mat)[2]])
         }
         pars.array <- append(pars.array, pars.site.tmp)
     }
@@ -809,32 +808,6 @@ SingleBranchCalculation <- function(Q, init.cond, edge.length) {
 }
 
 
-##Do not need this.
-#GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, scale.factor, return.all=FALSE) {
-#    nb.tip <- length(phy$tip.label)
-#    nb.node <- phy$Nnode
-#    nl <- nrow(Q_position)
-#    #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
-#    liks <- matrix(0, nb.tip + nb.node, nl)
-#    #Now loop through the tips.
-#    for(i in 1:nb.tip){
-#        #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
-#        #Note: We add charnum+1, because the first column in the data is the species labels:
-#        if(nuc.data[i,charnum+1] < 65){
-#            liks[i,nuc.data[i,charnum+1]] <- 1
-#        }else{
-#            #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
-#            liks[i,] <- 1
-#        }
-#    }
-#    #The result here is just the likelihood:
-#    result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
-#    #ODE way is commented out
-#    #Q_position_vectored <- c(t(Q_position)) # has to be transposed
-#    #result <- -TreeTraversalSelonODE(phy=phy, Q_codon_array_vectored=Q_position_vectored, liks.HMM=liks, bad.likelihood=-100000, root.p=root.p)
-#    ifelse(return.all, stop("return all not currently implemented"), return(result))
-#}
-
 
 GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid=TRUE, return.likelihood=TRUE) {
     
@@ -845,6 +818,9 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         ploidy <- 1
         Ne <- 5e6
     }
+    print(p)
+    p <- exp(p)
+    print(p)
     
     MultiCoreLikelihood <- function(site.index, edge.number, phy, edge.length.try){
 
@@ -855,11 +831,11 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
             desNodes <- phy$edge[desRows,2]
             v <- 1
             for (desIndex in sequence(length(desRows))){
-                v <- v * data.array[[site.number]][desNodes[des.index],]
+                v <- v * data.array[desNodes[des.index],,site.index]
             }
             init.cond <- v
         }else{
-            init.cond <- data.array[[site.number]][edge.number,]
+            init.cond <- data.array[edge.number,,site.index]
         }
         #######################################################
         
@@ -872,32 +848,32 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         ####################
         
         if(nuc.model == "JC") {
-            base.freqs=c(x[4:6], 1-sum(x[4:6]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(x[1:3], 1-sum(x[1:3]))
+            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(x[4:6], 1-sum(x[4:6]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
+            base.freqs=c(x[1:3], 1-sum(x[1:3]))
+            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+            tmp <- selac:::CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
             base.freqs <- tmp$base.freqs
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
-        
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
-        weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
+        weight.matrix <- selac:::GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
-        branchLikPerSite <- SingleBranchCalculation(Q=Q_position, init.cond=init.cond, edge.length=edge.length.try)
+        branchLikPerSite <- SingleBranchCalculation(Q=Q_position, init.cond=init.cond, edge.length=p)
+        return(branchLikPerSite)
     }
-
     site.order <- 1:dim(data.array)[3]
-    branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, edge.number, phy=phy, mc.cores=n.cores)))
+    branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, edge.number=edge.number, phy=phy, mc.cores=n.cores)))
+    print(branchLikAllSites)
     if(return.likelihood) {
         return(sum(branchLikAllSites))
     }else{
@@ -905,102 +881,58 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     }
 }
 
+out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, return.likelihood=TRUE, lower=log(1e-8), upper=log(10), maximum=FALSE, tol = .Machine$double.eps^0.25)
 
 
-OptimizeEdgeLengthsUCENew <- function(phy, par.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
 
+OptimizeEdgeLengthsUCENew <- function(phy, par.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, root.diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+    nb.tip <- Ntip(phy)
+    nb.node <- Nnode(phy)
+    TIPS <- 1:nb.tip
     generations <- FindBranchGenerations(phy)
-    data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=n.states, nsites.vector=nsites.vector)
-    pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, par.mat=par.mat, nsites.vector=nsites.vector)
+    data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=4, nsites.vector=nsites.vector)
+    pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
+    comp.array <- array(data=0, dim=c(nb.tip+nb.node, 1, sum(nsites.vector)))
     for(gen.index in 1:length(generations)){
         ##Call a function? -- Need to replace ML edge estimate in tree and write over the probs for that site by combining at nodes.
         ##Loop over generation branches? Optimizing as we go? Yes. For now. Apply is weird.
         for(index in 1:length(generations[[gen.index]])){
-            out <- optimize(GetBranchLikeAcrossAllSites, edge.number=edge.number, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, return.likelihood=TRUE, lower=log(1e-8), upper=log(10), maximize=FALSE, tol = .Machine$double.eps^0.25)
+            out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, return.likelihood=TRUE, lower=1e-8, upper=10, maximum=FALSE, tol = .Machine$double.eps^0.25)
             phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
-            out <- optimize(GetBranchLikeAcrossAllSites, edge.number=edge.number, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, return.likelihood=FALSE, lower=log(1e-8), upper=log(10)
-            data.array[
-            
-        }
-    
-    }
-    
-}
-
-
-
-
-
-
-
-
-
-
-
-OptimizeEdgeLengthsUCENew <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, hmm=FALSE, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
-    
-    
-    gens <- FindBranchGenerations(phy)
-    
-    #Step 1: Calculate tip branch likelihoods across ALL genes
-    for(gen.index in 1:length(gens)){
-        #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
-        if(nuc.model == "JC"){
-            max.par = 3 + 3 + 0
-        }
-        if(nuc.model == "GTR"){
-            max.par = 3 + 3 + 5
-        }
-        if(nuc.model == "UNREST"){
-            max.par = 3 + 11
-        }
-        
-        if(is.null(n.cores)){
-            likelihood.vector <- c()
-            for(partition.index in sequence(n.partitions)){
-                nuc.data = NULL
-                nuc.data = site.pattern.data.list[[partition.index]]
-                likelihood.vector = c(likelihood.vector, GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl))
+            out.final <- GetBranchLikeAcrossAllSites(edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, return.likelihood=FALSE)
+            for(site.index in 1:sum(nsites.vector)){
+                data.array[generations[[gen.index]][index],,site.index]
+                comp.array[generations[[gen.index]][index],,site.index] <- data.array[generations[[gen.index]][index],,site.index]/sum(data.array[generations[[gen.index]][index],,site.index])
             }
-            likelihood = sum(likelihood.vector)
-        }else{
-            MultiCoreLikelihood <- function(partition.index){
-                nuc.data = NULL
-                nuc.data = site.pattern.data.list[[partition.index]]
-                likelihood.tmp = GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
-                return(likelihood.tmp)
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
         }
-        
-        #Step 2: Modify each branch such that it maximizes their total likelihood across ALL GENES
-        
-        
-        
-        
-        #Step 3: Go to next set of nodes, repeat 1 and 2.
-        
-        
-        
-        optimize <-
-        #Step 4: Obtain total likelihood with each branch optimized.
-        
-        
-        
-        
-        #Step 5: Start at 1 again. Stop when branch lengths have stabilized.
-        
-        
-        
-        
-        
     }
-    
+    #Now finish up root calculation:
+    ## Maybe check edgenumber here and if >Ntip, combine ##
+    final.likelihood <- numeric(sum(nsites.vector))
+    for(site.index in 1:sum(nsites.vector)){
+        root <- nb.tip + 1L
+        root.p <- c(pars.array[[site.index]][3:5], 1 - sum(pars.array[[site.index]][3:5]))
+        v <- 1
+        desRows <- which(phy$edge[,1]==root)
+        desNodes <- phy$edge[desRows,2]
+        v <- 1
+        for (desIndex in sequence(length(desRows))){
+            v <- v * data.array[[site.number]][desNodes[des.index],]
+        }
+        comp <- comp.array[[site.index]]
+        if(is.nan(sum(log(comp[-TIPS]))) || is.na(sum(log(comp[-TIPS])))){
+            return(1000000)
+        }
+        else{
+            final.likelihood[site.index] <- -(sum(log(comp[-TIPS])) + log(sum(root.p * v)))
+            if(is.infinite(final.likelihood[site.index])){
+                return(1000000)
+            }
+        }
+        #######################################################
+    }
+    return(sum(final.likelihood))
 }
-
-
 
 
 
@@ -1021,8 +953,8 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         # The ancestral node at row i is called focal
         focal <- anc[i]
         # Get descendant information of focal
-        desRows<-which(phy$edge[,1]==focal)
-        desNodes<-phy$edge[desRows,2]
+        desRows <- which(phy$edge[,1]==focal)
+        desNodes <- phy$edge[desRows,2]
         v <- 1
         for (desIndex in sequence(length(desRows))){
             v <- v * expm(Q * phy$edge.length[desRows[desIndex]], method="Ward77") %*% liks[desNodes[desIndex],]
