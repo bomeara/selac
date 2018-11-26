@@ -808,7 +808,6 @@ SingleBranchCalculation <- function(Q, init.cond, edge.length, root.p) {
 }
 
 
-
 GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid=TRUE, logspace=FALSE) {
     
     if(diploid == TRUE){
@@ -835,6 +834,10 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         x <- x[-1]
         ####################
         
+        ###### Combine Probabilities ######
+        ######    if nec             ######
+        ###################################
+        
         if(nuc.model == "JC") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
             nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -848,6 +851,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
             base.freqs <- tmp$base.freqs
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
+        
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
@@ -864,7 +868,6 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     print(branchLikAllSites)
     return(sum(branchLikAllSites))
 }
-
 #out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, lower=log(1e-8), upper=log(10), maximum=FALSE, tol = .Machine$double.eps^0.25)
 
 
@@ -884,7 +887,6 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
         }
         ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
-        
         ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
         branches_completed <- c(branches_completed, generations[[gen.index]])
     }
@@ -897,7 +899,6 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     tree_and_likelihood$phy <- phy
     return(tree_and_likelihood)
 }
-
 #ppp <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=TRUE, neglnl=TRUE)
 
 ######################################################################################################################################
