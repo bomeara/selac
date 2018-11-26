@@ -808,7 +808,7 @@ SingleBranchCalculation <- function(Q, init.cond, edge.length, root.p) {
 }
 
 
-GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid=TRUE, logspace=FALSE) {
+GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid=TRUE, n.cores, logspace=FALSE) {
     
     if(diploid == TRUE){
         ploidy <- 2
@@ -821,10 +821,12 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     if(logspace == TRUE){
         p <- exp(p)
     }
-    phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
+    if(!is.null(edge.number)){
+        phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
+    }
     phy <- reorder(phy, "pruningwise")
 
-    MultiCoreLikelihood <- function(site.index, edge.number, phy){
+    MultiCoreLikelihood <- function(site.index, phy){
         
         # Parse parameters #
         x <- pars.array[[site.index]]
@@ -833,10 +835,6 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         position.multiplier <- x[1]
         x <- x[-1]
         ####################
-        
-        ###### Combine Probabilities ######
-        ######    if nec             ######
-        ###################################
         
         if(nuc.model == "JC") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
@@ -864,7 +862,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         return(branchLikPerSite)
     }
     site.order <- 1:dim(data.array)[3]
-    branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, edge.number=edge.number, phy=phy, mc.cores=n.cores)))
+    branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
     print(branchLikAllSites)
     return(sum(branchLikAllSites))
 }
@@ -872,25 +870,42 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
 
 
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
-OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, root.diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
+## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
+OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, diploid=TRUE, logspace=FALSE, n.cores=1, neglnl=FALSE) {
+    
+    maxit <- 11
+    tol <- .Machine$double.eps^0.25
     nb.tip <- Ntip(phy)
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
-    branches_completed <- c()
     generations <- FindBranchGenerations(phy)
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=4, nsites.vector=nsites.vector)
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
-    for(gen.index in 1:length(generations)){
-        for(index in 1:length(generations[[gen.index]])){
-            cat("              Optimizing edge number",  generations[[gen.index]][index],"\n")
-            out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, lower=1e-8, upper=10, maximum=FALSE, tol = .Machine$double.eps^0.25)
-            phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+    are_we_there_yet <- 1
+    iteration <- 1
+    old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
+    while (are_we_there_yet > tol && iteration < maxit) {
+        cat("         Round number",  iteration, "\n")
+
+        for(gen.index in 1:length(generations)){
+            for(index in 1:length(generations[[gen.index]])){
+                cat("              Optimizing edge number",  generations[[gen.index]][index],"\n")
+                out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol = tol)
+                phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+            }
         }
-        ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
-        ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
-        branches_completed <- c(branches_completed, generations[[gen.index]])
+        new.likelihood <- out$objective
+        iteration <- iteration + 1
+        are_we_there_yet <- (old.likelihood - new.likelihood ) / new.likelihood
+        print(paste("old likelihood", old.likelihood))
+        old.likelihood <- new.likelihood
+        print(paste("new likelihood", new.likelihood))
+        print(paste("%diff", are_we_there_yet))
     }
+    
     final.likelihood <- out$objective
+    print(final.likelihood)
     if(neglnl) {
         final.likelihood <- -1 * final.likelihood
     }
@@ -899,7 +914,9 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     tree_and_likelihood$phy <- phy
     return(tree_and_likelihood)
 }
-#ppp <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=TRUE, neglnl=TRUE)
+ppp <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=TRUE, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+
+
 
 ######################################################################################################################################
 ######################################################################################################################################
@@ -1267,11 +1284,10 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             cat("              Optimizing edge lengths", "\n")
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
-            opts.edge <- opts
-            upper.edge <- rep(log(50), length(phy$edge.length))
-            lower.edge <- rep(log(1e-8), length(phy$edge.length))
-            results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
-            phy$edge.length <- exp(results.edge.final$solution)
+            phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
+            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
+            #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
+            phy <- results.edge.final$phy
         }
         if(global.nucleotide.model == TRUE) {
             cat("              Optimizing model parameters", "\n")
