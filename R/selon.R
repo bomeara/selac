@@ -1144,7 +1144,7 @@ GetMaxNameUCE <- function(x) {
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.5, max.evals=1000000, cycle.stage=12, max.restarts=3, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -1343,8 +1343,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         current.likelihood <- results.final$objective
         cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
         lik.diff <- 10
+        are_we_there_yet <- 1
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number < (cycle.stage+1)){
+        while(are_we_there_yet > max.tol && iteration.number < (cycle.stage+1)){
             cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
             
             if(optimal.nuc == "optimize"){
@@ -1357,8 +1358,11 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             }
             if(edge.length == "optimize"){
                 cat("              Optimizing edge lengths", "\n")
-                results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
-                phy$edge.length <- exp(results.edge.final$solution)
+                phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
+                results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
+                phy <- results.edge.final$phy
+                #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
+                #phy$edge.length <- exp(results.edge.final$solution)
             }
             if(global.nucleotide.model == TRUE) {
                 cat("              Optimizing model parameters", "\n")
@@ -1409,9 +1413,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 results.final$solution <- c(t(parallelized.parameters[,-1]))
                 mle.pars.mat <- index.matrix
                 mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
-                lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+                are_we_there_yet <- (current.likelihood - results.final$objective ) / results.final$objective
                 current.likelihood <- results.final$objective
-                cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+                cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("% difference from previous round", are_we_there_yet, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }
         }
