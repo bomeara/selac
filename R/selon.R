@@ -914,7 +914,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     tree_and_likelihood$phy <- phy
     return(tree_and_likelihood)
 }
-ppp <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=TRUE, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+#ppp <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=TRUE, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
 
 
 
