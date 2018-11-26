@@ -525,83 +525,84 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
 ######################################################################################################################################
 
 
-OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, hmm=FALSE, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
+#OptimizeEdgeLengthsUCE <- function(x, par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, hmm=FALSE, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
     
-    if(logspace) {
-        x <- exp(x)
-    }
-    
-    phy$edge.length = x
-    if(hmm==TRUE){
-        #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, 1 for transition rate among hidden nucleotides, and finally, the transition rates.
-        if(nuc.model == "JC"){
-            max.par = 3 + 3 + 1 + 0
-        }
-        if(nuc.model == "GTR"){
-            max.par = 3 + 3 + 1 + 5
-        }
-        if(nuc.model == "UNREST"){
-            max.par = 3 + 1 + 11
-        }
-        #print("here")
-        if(is.null(n.cores)){
-            likelihood.vector <- c()
-            for(partition.index in sequence(n.partitions)){
-                nuc.data = NULL
-                nuc.data = site.pattern.data.list[[partition.index]]
-                likelihood.vector = c(likelihood.vector, GetLikelihoodUCEHMMForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl))
-            }
-            likelihood = sum(likelihood.vector)
-        }else{
-            MultiCoreLikelihood <- function(partition.index){
-                nuc.data = NULL
-                nuc.data = site.pattern.data.list[[partition.index]]
-                likelihood.tmp = GetLikelihoodUCEHMMForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
-                return(likelihood.tmp)
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
-        }
-        return(likelihood)
-
-    }else{
-        #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
-        if(nuc.model == "JC"){
-            max.par = 3 + 3 + 0
-        }
-        if(nuc.model == "GTR"){
-            max.par = 3 + 3 + 5
-        }
-        if(nuc.model == "UNREST"){
-            max.par = 3 + 11
-        }
-        
-        if(is.null(n.cores)){
-            likelihood.vector <- c()
-            for(partition.index in sequence(n.partitions)){
-                nuc.data = NULL
-                nuc.data = site.pattern.data.list[[partition.index]]
-                likelihood.vector = c(likelihood.vector, GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl))
-            }
-            likelihood = sum(likelihood.vector)
-        }else{
-            MultiCoreLikelihood <- function(partition.index){
-                nuc.data = NULL
-                nuc.data = site.pattern.data.list[[partition.index]]
-                likelihood.tmp = GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
-                return(likelihood.tmp)
-            }
-            #This orders the nsites per partition in decreasing order (to increase efficiency):
-            partition.order <- 1:n.partitions
-            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
-        }
-        return(likelihood)
-    }
-}
+#    if(logspace) {
+#        x <- exp(x)
+#    }
+#
+#    phy$edge.length = x
+#    if(hmm==TRUE){
+#        #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, 1 for transition rate among hidden nucleotides, and finally, the transition rates.
+#        if(nuc.model == "JC"){
+#            max.par = 3 + 3 + 1 + 0
+#        }
+#        if(nuc.model == "GTR"){
+#            max.par = 3 + 3 + 1 + 5
+#        }
+#        if(nuc.model == "UNREST"){
+#            max.par = 3 + 1 + 11
+#        }
+#        #print("here")
+#        if(is.null(n.cores)){
+#            likelihood.vector <- c()
+#            for(partition.index in sequence(n.partitions)){
+#                nuc.data = NULL
+#                nuc.data = site.pattern.data.list[[partition.index]]
+#                likelihood.vector = c(likelihood.vector, GetLikelihoodUCEHMMForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl))
+#            }
+#            likelihood = sum(likelihood.vector)
+#        }else{
+#            MultiCoreLikelihood <- function(partition.index){
+#                nuc.data = NULL
+#                nuc.data = site.pattern.data.list[[partition.index]]
+#                likelihood.tmp = GetLikelihoodUCEHMMForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
+#                return(likelihood.tmp)
+#            }
+#            #This orders the nsites per partition in decreasing order (to increase efficiency):
+#            partition.order <- 1:n.partitions
+#            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+#        }
+#        return(likelihood)
+#
+#    }else{
+#        #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
+#        if(nuc.model == "JC"){
+#            max.par = 3 + 3 + 0
+#        }
+#        if(nuc.model == "GTR"){
+#            max.par = 3 + 3 + 5
+#        }
+#        if(nuc.model == "UNREST"){
+#            max.par = 3 + 11
+#        }
+#
+#        if(is.null(n.cores)){
+#            likelihood.vector <- c()
+#            for(partition.index in sequence(n.partitions)){
+#                nuc.data = NULL
+#                nuc.data = site.pattern.data.list[[partition.index]]
+#                likelihood.vector = c(likelihood.vector, GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl))
+#            }
+#            likelihood = sum(likelihood.vector)
+#        }else{
+#            MultiCoreLikelihood <- function(partition.index){
+#                nuc.data = NULL
+#                nuc.data = site.pattern.data.list[[partition.index]]
+#                likelihood.tmp = GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,1:max.par]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
+#                return(likelihood.tmp)
+#            }
+#            #This orders the nsites per partition in decreasing order (to increase efficiency):
+#            partition.order <- 1:n.partitions
+#            likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+#        }
+#        return(likelihood)
+#    }
+#}
 
 
 OptimizeModelParsUCE <- function(x, fixed.pars, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, hmm=FALSE, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE, all.pars=FALSE) {
+    
     if(logspace) {
         x <- exp(x)
     }
@@ -883,7 +884,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=4, nsites.vector=nsites.vector)
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
     are_we_there_yet <- 1
-    iteration <- 1
+    iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration < maxit) {
         cat("         Round number",  iteration, "\n")
@@ -896,16 +897,16 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             }
         }
         new.likelihood <- out$objective
-        iteration <- iteration + 1
+        iteration.number <- iteration.number + 1
         are_we_there_yet <- (old.likelihood - new.likelihood ) / new.likelihood
-        print(paste("old likelihood", old.likelihood))
+        #print(paste("old likelihood", old.likelihood))
         old.likelihood <- new.likelihood
-        print(paste("new likelihood", new.likelihood))
-        print(paste("%diff", are_we_there_yet))
+        #print(paste("new likelihood", new.likelihood))
+        #print(paste("%diff", are_we_there_yet))
     }
     
     final.likelihood <- out$objective
-    print(final.likelihood)
+    #print(final.likelihood)
     if(neglnl) {
         final.likelihood <- -1 * final.likelihood
     }
