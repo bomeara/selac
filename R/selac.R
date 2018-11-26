@@ -3439,6 +3439,8 @@ internal_expm <- function (x) {
   # }
   return(X)
 }
+
+
 internal_expmt <- function (A, t_vec) {
   stopifnot(is.numeric(A) || (isM <- inherits(A, "dMatrix")) || 
               inherits(A, "mpfrMatrix"))
