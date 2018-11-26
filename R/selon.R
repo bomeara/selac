@@ -825,7 +825,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
     phy <- reorder(phy, "pruningwise")
 
-    MultiCoreLikelihood <- function(site.index, edge.number, phy, edge.length.try){
+    MultiCoreLikelihood <- function(site.index, edge.number, phy){
         
         # Parse parameters #
         x <- pars.array[[site.index]]
@@ -873,6 +873,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     nb.tip <- Ntip(phy)
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
+    branches_completed <- c()
     generations <- FindBranchGenerations(phy)
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=4, nsites.vector=nsites.vector)
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
@@ -883,7 +884,9 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
         }
         ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
+        
         ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
+        branches_completed <- c(branches_completed, generations[[gen.index]])
     }
     final.likelihood <- out$objective
     if(neglnl) {
@@ -914,7 +917,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         # The ancestral node at row i is called focal
         focal <- anc[i]
         # Get descendant information of focal
-        desRows <- which(phy$edge[,1]==focal)
+        desRows <- which(phy$edge[,1] == focal)
         desNodes <- phy$edge[desRows,2]
         v <- 1
         for (desIndex in sequence(length(desRows))){
@@ -922,7 +925,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
             #v <- v * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
-        liks[focal, ] <- v/comp[focal]
+        liks[focal,] <- v/comp[focal]
     }
     # Specifies the root:
     root <- nb.tip + 1L

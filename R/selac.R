@@ -3951,13 +3951,13 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
     desNodes <- phy$edge[desRows,2]
     v <- 1
     for (desIndex in desNodes){
-      if(desIndex <= nb.tip){
-        if(sum(liks[desIndex,]) < 2){
-          v <- v * (Q[[desIndex]] %*% liks[desIndex,])
+        if(desIndex <= nb.tip){
+            if(sum(liks[desIndex,]) < 2){
+                v <- v * (Q[[desIndex]] %*% liks[desIndex,])
+            }
+        }else{
+            v <- v * (Q[[desIndex]] %*% liks[desIndex,])
         }
-      }else{
-        v <- v * (Q[[desIndex]] %*% liks[desIndex,])
-      }
     }
     comp[focal] <- sum(v)
     liks[focal,] <- v/comp[focal]
