@@ -846,7 +846,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+            tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             base.freqs <- tmp$base.freqs
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
