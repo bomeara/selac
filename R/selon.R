@@ -882,6 +882,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     generations <- FindBranchGenerations(phy)
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=4, nsites.vector=nsites.vector)
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
+    print(pars.array[[1]])
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
