@@ -886,8 +886,8 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
-    while (are_we_there_yet > tol && iteration < maxit) {
-        cat("         Round number",  iteration, "\n")
+    while (are_we_there_yet > tol && iteration.number < maxit) {
+        cat("         Round number",  iteration.number, "\n")
 
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
