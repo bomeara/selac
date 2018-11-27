@@ -886,10 +886,10 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration.number < maxit) {
-        cat("                 Round number",  iteration.number, "\n")
+        cat("                   Round number",  iteration.number, "\n")
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
-                cat("                   Optimizing edge number",  generations[[gen.index]][index],"\n")
+                cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol = tol)
                 phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
             }
