@@ -884,15 +884,9 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
     are_we_there_yet <- 1
     iteration.number <- 1
-    old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
-<<<<<<< HEAD
-    while (are_we_there_yet > tol && iteration < maxit) {
-        cat("         Round number",  iteration, "\n")
-=======
+    old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("         Round number",  iteration.number, "\n")
-
->>>>>>> c80bf9b33b8601653792137ad92bce5759e1ec0a
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("              Optimizing edge number",  generations[[gen.index]][index],"\n")
@@ -1365,7 +1359,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat("              Optimizing edge lengths", "\n")
                 phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
                 results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
-                print(results.edge.final$final.likelihood)
                 phy <- results.edge.final$phy
                 #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
                 #phy$edge.length <- exp(results.edge.final$solution)
