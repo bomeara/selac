@@ -1278,7 +1278,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             phy$edge.length <- colMeans(starting.branch.lengths)
         }
         nuc.optim.list <- nuc.optim.list
-        cat("       Doing first pass using majority rule optimal amino acid...", "\n")
+        cat("       Doing first pass using majority rule optimal nucleotide...", "\n")
         if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             mle.pars.mat <- index.matrix
