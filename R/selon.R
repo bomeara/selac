@@ -789,7 +789,7 @@ MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
     for(partition.index in 1:length(nsites.vector)){
         pars.site.tmp <- as.list(1:nsites.vector[partition.index])
         site.index <- 1:nsites.vector[partition.index]
-        position.multiplier.vector <- selac:::PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
+        position.multiplier.vector <- PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
         for(site.index in 1:nsites.vector[partition.index]) {
             pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], pars.mat[partition.index,4:dim(pars.mat)[2]])
         }
@@ -839,14 +839,14 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         
         if(nuc.model == "JC") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            tmp <- selac:::CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+            tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
             base.freqs <- tmp$base.freqs
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
@@ -855,7 +855,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
-        weight.matrix <- selac:::GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
+        weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
@@ -864,7 +864,6 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     }
     site.order <- 1:dim(data.array)[3]
     branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
-    print(branchLikAllSites)
     return(sum(branchLikAllSites))
 }
 #out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, lower=log(1e-8), upper=log(10), maximum=FALSE, tol = .Machine$double.eps^0.25)
@@ -888,7 +887,6 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration < maxit) {
         cat("         Round number",  iteration, "\n")
-
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("              Optimizing edge number",  generations[[gen.index]][index],"\n")
@@ -940,7 +938,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         desNodes <- phy$edge[desRows,2]
         v <- 1
         for (desIndex in sequence(length(desRows))){
-            v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+            v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
             #v <- v * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
@@ -1167,15 +1165,15 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }else{
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
         }
-        starting.branch.lengths[partition.index,] <- selac:::ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna",recalculate.starting.brlen=TRUE)$edge.length
-        nucleotide.data <- selac:::DNAbinToNucleotideNumeric(gene.tmp)
+        starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna",recalculate.starting.brlen=TRUE)$edge.length
+        nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
         nucleotide.data <- nucleotide.data[phy$tip.label,]
         site.pattern.data.list[[partition.index]] = nucleotide.data
         nsites.vector = c(nsites.vector, dim(nucleotide.data)[2] - 1)
         empirical.base.freq <- as.matrix(nucleotide.data[,-1])
         empirical.base.freq <- table(empirical.base.freq, deparse.level = 0) / sum(table(empirical.base.freq, deparse.level = 0))
         empirical.base.freq.list[[partition.index]] <- as.vector(empirical.base.freq[1:4])
-        nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, selac:::GetMaxNameUCE)) #starting values for all, final values for majrule
+        nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, GetMaxNameUCE)) #starting values for all, final values for majrule
         nuc.optim.list[[partition.index]] <- nuc.optim
     }
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
