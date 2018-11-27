@@ -1344,7 +1344,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         
         current.likelihood <- results.final$objective
         cat(paste("       Current likelihood", current.likelihood, sep=" "), "\n")
-        lik.diff <- 10
         are_we_there_yet <- 1
         iteration.number <- 1
         while(are_we_there_yet > max.tol && iteration.number < (cycle.stage+1)){
@@ -1396,9 +1395,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 for(row.index in 1:dim(mle.pars.mat.red)[1]){
                     mle.pars.mat <- rbind(mle.pars.mat, c(mle.pars.mat.red[row.index,1:3], substitution.pars))
                 }
-                lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+                are_we_there_yet <- (current.likelihood - results.final$objective ) / results.final$objective
                 current.likelihood <- results.final$objective
-                cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+                cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("% difference from previous round", are_we_there_yet, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }else{
                 cat("              Optimizing model parameters", "\n")
