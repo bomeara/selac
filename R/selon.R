@@ -809,7 +809,7 @@ SingleBranchCalculation <- function(Q, init.cond, edge.length, root.p) {
 }
 
 
-GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid=TRUE, n.cores, logspace=FALSE) {
+GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid, n.cores, logspace) {
     
     if(diploid == TRUE){
         ploidy <- 2
@@ -872,7 +872,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
-OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, diploid=TRUE, logspace=FALSE, n.cores=1, neglnl=FALSE) {
+OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, diploid, logspace, n.cores, neglnl=FALSE) {
     
     maxit <- 11
     tol <- .Machine$double.eps^0.25
@@ -1148,6 +1148,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     cat("Initializing data and model parameters...", "\n")
     
     partitions <- system(paste("ls -1 ", nuc.data.path, "*.fasta", sep=""), intern=TRUE)
+    
     if(is.null(n.partitions)){
         n.partitions <- length(partitions)
     }else{
