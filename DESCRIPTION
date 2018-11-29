@@ -19,7 +19,8 @@ Depends:
     ape,
     deSolve,
     nloptr,
-    nnet
+    nnet,
+    data.table
 Imports:
     expm,
     MASS,

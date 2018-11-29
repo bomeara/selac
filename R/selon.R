@@ -754,31 +754,21 @@ FindBranchGenerations <- function(phy) {
 }
 
 
-#Generates a DataArray for all sites
-MakeDataArray <- function(site.pattern.data.list, phy, nstates, nsites.vector) {
+#Generates a DataArray for all sites -- slow but no prohibitively so. Unclear if data.table is necessary.
+MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
-    nl <- nstates
     #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
-    liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
+    #liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
     site.pattern.data.frame <- site.pattern.data.list[[1]]
     #Now loop through the tips.
     for(partition.index in 2:length(site.pattern.data.list)){
         site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
     }
-    for(site.index in 1:(dim(site.pattern.data.frame)[2] - 1)) {
-        for(i in 1:nb.tip){
-            #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
-            #Note: We add charnum+1, because the first column in the data is the species labels:
-            if(site.pattern.data.frame[i,site.index+1] < 65){
-                liks.array[i,site.pattern.data.frame[i,site.index+1],site.index] <- 1
-            }else{
-                #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
-                liks.array[i,,site.index] <- 1
-            }
-        }
-    }
-    return(liks.array)
+    site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
+    site.pattern.data.table <- t(site.pattern.data.table)
+    colnames(site.pattern.data.table) <- phy$tip.label
+    return(site.pattern.data.table)
 }
 
 
@@ -828,7 +818,6 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     phy <- reorder(phy, "pruningwise")
 
     MultiCoreLikelihood <- function(site.index, phy){
-        
         # Parse parameters #
         x <- pars.array[[site.index]]
         optim.nuc <- x[1]
@@ -839,14 +828,14 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         
         if(nuc.model == "JC") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
+            tmp <- selac:::CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             base.freqs <- tmp$base.freq
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
@@ -855,14 +844,25 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
-        weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
+        weight.matrix <- selac:::GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
-        branchLikPerSite <- GetLikelihood(phy=phy, liks=data.array[,,site.index], Q=Q_position, root.p=base.freqs)
+        
+        liks <- matrix(0, nb.tip + nb.node, dim(Q_position)[1])
+        for(i in 1:Ntip(phy)){
+            state <- data.array[site.index,phy$tip.label[i]]
+            if(state < 65){
+                liks[i,state] <- 1
+            }else{
+                #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
+                liks[i,] <- 1
+            }
+        }
+        branchLikPerSite <- selac:::GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
         return(branchLikPerSite)
     }
-    site.order <- 1:dim(data.array)[3]
+    site.order <- 1:10000
     branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
     return(sum(branchLikAllSites))
 }
@@ -880,7 +880,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
     generations <- FindBranchGenerations(phy)
-    data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nstates=4, nsites.vector=nsites.vector)
+    data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nsites.vector=nsites.vector)
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
     are_we_there_yet <- 1
     iteration.number <- 1
