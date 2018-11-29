@@ -2878,36 +2878,35 @@ OptimizeModelParsLarge <- function(x, codon.site.data, codon.site.counts, data.t
 
 
 ComputeStartingBranchLengths <- function(phy, data, data.type="codon", recalculate.starting.brlen){
-  if(recalculate.starting.brlen || is.null(phy$edge.length)) {
-    if(is.null(phy$edge.length)){
-      phy$edge.length = rep(1, length(phy$edge[,1]))
+    if(recalculate.starting.brlen || is.null(phy$edge.length)) {
+        if(is.null(phy$edge.length)){
+            phy$edge.length = rep(1, length(phy$edge[,1]))
+        }
+        data.mat <- DNAbinToNucleotideCharacter(data)
+        new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON", edge.length=1, Nnode=1L)
+        class(new.tip) <- "phylo"
+        phy.with.outgroup <- bind.tree(phy, new.tip,where="root")
+        new.tip.data <- matrix(c("FAKEY_MCFAKERSON", rep("-", dim(data.mat)[2]-1)), dim(data.mat)[2], 1)
+        new.tip.df <- as.data.frame(t(new.tip.data))
+        rownames(new.tip.df) <- "FAKEY_MCFAKERSON"
+        colnames(new.tip.df) <- colnames(data.mat)
+        data.with.outgroup <- rbind(data.mat, new.tip.df)
+        dats.mat <- as.matrix(data.with.outgroup[,-1])
+        if(data.type=="codon"){
+            third.position <- seq(3,dim(dats.mat)[2], by=3)
+            dat <- phyDat(dats.mat[,third.position], type="DNA")
+            mpr.tre <- acctran(phy.with.outgroup, dat)
+            mpr.tre$edge.length <- mpr.tre$edge.length/dim(dats.mat[,third.position])[2]
+        }else{
+            dat <- phyDat(dats.mat, type="DNA")
+            mpr.tre <- phangorn:::nnls.phylo(phy.with.outgroup, dist.ml(dat))
+        }
+        mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
+        mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- 1e-7
+    } else {
+        mpr.tre.pruned <- phy
     }
-    data.mat <- DNAbinToNucleotideCharacter(data)
-    new.tip<-list(edge=matrix(c(2L,1L),1,2),tip.label="FAKEY_MCFAKERSON", edge.length=1, Nnode=1L)
-    class(new.tip) <- "phylo"
-    phy.with.outgroup <- bind.tree(phy, new.tip,where="root")
-    new.tip.data <- matrix(c("FAKEY_MCFAKERSON", rep("-", dim(data.mat)[2]-1)), dim(data.mat)[2], 1)
-    new.tip.df <- as.data.frame(t(new.tip.data))
-    rownames(new.tip.df) <- "FAKEY_MCFAKERSON"
-    colnames(new.tip.df) <- colnames(data.mat)
-    data.with.outgroup <- rbind(data.mat, new.tip.df)
-    dats.mat <- as.matrix(data.with.outgroup[,-1])
-    if(data.type=="codon"){
-      third.position <- seq(3,dim(dats.mat)[2], by=3)
-      dat <- phyDat(dats.mat[,third.position], type="DNA")
-      mpr.tre <- acctran(phy.with.outgroup, dat)
-      mpr.tre$edge.length <- mpr.tre$edge.length/dim(dats.mat[,third.position])[2]
-    }else{
-      dat <- phyDat(dats.mat, type="DNA")
-      mpr.tre <- acctran(phy.with.outgroup, dat)
-      mpr.tre$edge.length <- mpr.tre$edge.length/dim(dats.mat)[2]
-    }
-    mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
-    mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- 1e-7
-  } else {
-    mpr.tre.pruned <- phy
-  }
-  return(mpr.tre.pruned)
+    return(mpr.tre.pruned)
 }
 
 

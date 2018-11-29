@@ -117,8 +117,9 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
     for(i in 1:nb.tip){
         #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
         #Note: We add charnum+1, because the first column in the data is the species labels:
-        if(nuc.data[i,charnum+1] < 65){
-            liks[i,nuc.data[i,charnum+1]] <- 1
+        state <- nuc.data[i,charnum+1]
+        if(state < 65){
+            liks[i,state] <- 1
         }else{
             #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
             liks[i,] <- 1
@@ -828,14 +829,14 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         
         if(nuc.model == "JC") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
             base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- selac:::CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            tmp <- selac:::CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
+            tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             base.freqs <- tmp$base.freq
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
@@ -844,7 +845,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
-        weight.matrix <- selac:::GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
+        weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
@@ -859,13 +860,14 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
                 liks[i,] <- 1
             }
         }
-        branchLikPerSite <- selac:::GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
+        branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
         return(branchLikPerSite)
     }
     site.order <- 1:10000
     branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
     return(sum(branchLikAllSites))
 }
+
 #out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, lower=log(1e-8), upper=log(10), maximum=FALSE, tol = .Machine$double.eps^0.25)
 
 
@@ -890,21 +892,17 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
-                out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol = tol)
+                out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
                 phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
             }
         }
         new.likelihood <- out$objective
         iteration.number <- iteration.number + 1
         are_we_there_yet <- (old.likelihood - new.likelihood ) / new.likelihood
-        #print(paste("old likelihood", old.likelihood))
         old.likelihood <- new.likelihood
-        #print(paste("new likelihood", new.likelihood))
-        #print(paste("%diff", are_we_there_yet))
     }
     
     final.likelihood <- out$objective
-    #print(final.likelihood)
     if(neglnl) {
         final.likelihood <- -1 * final.likelihood
     }
@@ -913,6 +911,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     tree_and_likelihood$phy <- phy
     return(tree_and_likelihood)
 }
+
 #ppp <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=TRUE, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
 
 
@@ -1276,7 +1275,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     while(number.of.current.restarts < (max.restarts+1)){
         cat(paste("Finished. Performing random restart ", number.of.current.restarts,"...", sep=""), "\n")
         if(edge.length == "optimize"){
-            phy$edge.length <- colMeans(starting.branch.lengths)
+            phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
         }
         nuc.optim.list <- nuc.optim.list
         cat("       Doing first pass using majority rule optimal nucleotide...", "\n")
@@ -1327,7 +1326,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 tmp.pars <- c(optim.by.gene$objective, optim.by.gene$solution)
                 return(tmp.pars)
             }
-            
             results.set <- mclapply(1:n.partitions, ParallelizedOptimizedByGene, mc.cores=n.cores)
             parallelized.parameters <- t(matrix(unlist(results.set), 2, n.partitions))
             results.final <- NULL
