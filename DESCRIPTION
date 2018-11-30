@@ -20,7 +20,8 @@ Depends:
     deSolve,
     nloptr,
     nnet,
-    data.table
+    data.table,
+    phangorn
 Imports:
     expm,
     MASS,
