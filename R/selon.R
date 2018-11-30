@@ -816,7 +816,10 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     if(!is.null(edge.number)){
         phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
     }
+    
     phy <- reorder(phy, "pruningwise")
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
 
     MultiCoreLikelihood <- function(site.index, phy){
         # Parse parameters #
