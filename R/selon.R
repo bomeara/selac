@@ -863,7 +863,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
         return(branchLikPerSite)
     }
-    site.order <- 1:10000
+    site.order <- 1:dim(data.array)[1]
     branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
     return(sum(branchLikAllSites))
 }
@@ -886,6 +886,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
     are_we_there_yet <- 1
     iteration.number <- 1
+    print(diploid)
     old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
@@ -1284,7 +1285,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
             phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
             #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
             print(results.edge.final$final.likelihood)
             phy <- results.edge.final$phy
@@ -1357,7 +1358,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             if(edge.length == "optimize"){
                 cat("              Optimizing edge lengths", "\n")
                 phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-                results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+                results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
                 phy <- results.edge.final$phy
                 #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
                 #phy$edge.length <- exp(results.edge.final$solution)
