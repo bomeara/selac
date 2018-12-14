@@ -775,7 +775,7 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
 
 #Goal is to make a list with all the things I need for a site.
 MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector, selon.model=TRUE) {
-    if(selon.model=TRUE){
+    if(selon.model == TRUE){
         Ne <- 5e6
         pars.array <- c()
         for(partition.index in 1:length(nsites.vector)){
