@@ -774,17 +774,29 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
 
 
 #Goal is to make a list with all the things I need for a site.
-MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
-    Ne <- 5e6
-    pars.array <- c()
-    for(partition.index in 1:length(nsites.vector)){
-        pars.site.tmp <- as.list(1:nsites.vector[partition.index])
-        site.index <- 1:nsites.vector[partition.index]
-        position.multiplier.vector <- PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
-        for(site.index in 1:nsites.vector[partition.index]) {
-            pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], pars.mat[partition.index,4:dim(pars.mat)[2]])
+MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector, selon.model=TRUE) {
+    if(selon.model=TRUE){
+        Ne <- 5e6
+        pars.array <- c()
+        for(partition.index in 1:length(nsites.vector)){
+            pars.site.tmp <- as.list(1:nsites.vector[partition.index])
+            site.index <- 1:nsites.vector[partition.index]
+            position.multiplier.vector <- PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
+            for(site.index in 1:nsites.vector[partition.index]) {
+                pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], pars.mat[partition.index,4:dim(pars.mat)[2]])
+            }
+            pars.array <- append(pars.array, pars.site.tmp)
         }
-        pars.array <- append(pars.array, pars.site.tmp)
+    }else{
+        pars.array <- c()
+        for(partition.index in 1:length(nsites.vector)){
+            pars.site.tmp <- as.list(1:nsites.vector[partition.index])
+            site.index <- 1:nsites.vector[partition.index]
+            for(site.index in 1:nsites.vector[partition.index]) {
+                pars.site.tmp[[site.index]] <- c(pars.mat[partition.index,1:dim(pars.mat)[2]])
+            }
+            pars.array <- append(pars.array, pars.site.tmp)
+        }
     }
     return(pars.array)
 }
@@ -863,7 +875,92 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
                 liks[i,] <- 1
             }
         }
+        
         branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
+        return(branchLikPerSite)
+    }
+    site.order <- 1:dim(data.array)[1]
+    branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
+    return(sum(branchLikAllSites))
+}
+
+
+
+GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars.array, nuc.model, include.gamma, ncats, n.cores, logspace) {
+
+    if(logspace == TRUE){
+        p <- exp(p)
+    }
+    if(!is.null(edge.number)){
+        phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
+    }
+    
+    phy <- reorder(phy, "pruningwise")
+    nb.tip <- length(phy$tip.label)
+    nb.node <- phy$Nnode
+    
+    MultiCoreLikelihood <- function(site.index, phy){
+        # Parse parameters #
+        x <- pars.array[[site.index]]
+        optim.nuc <- x[1]
+        x <- x[-1]
+        position.multiplier <- x[1]
+        x <- x[-1]
+        ####################
+        
+        if(nuc.model == "JC") {
+            base.freqs=c(x[1:3], 1-sum(x[1:3]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "GTR") {
+            base.freqs=c(x[1:3], 1-sum(x[1:3]))
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
+        }
+        if(nuc.model == "UNREST") {
+            tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
+            base.freqs <- tmp$base.freq
+            nuc.mutation.rates <- tmp$nuc.mutation.rates
+        }
+        
+        diag(nuc.mutation.rates) <- 0
+        diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+        scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
+        nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
+        
+        liks <- matrix(0, nb.tip + nb.node, dim(Q_position)[1])
+        for(i in 1:Ntip(phy)){
+            state <- data.array[site.index,phy$tip.label[i]]
+            if(state < 65){
+                liks[i,state] <- 1
+            }else{
+                #If here, then the site has no data, so we treat it as ambiguous for all possible codons. Likely things might be more complicated, but this can be modified later:
+                liks[i,] <- 1
+            }
+        }
+        
+        if(include.gamma==TRUE){
+            if(gamma.type == "median"){
+                rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+                weights.k <- rep(1/ncats, ncats)
+            }
+            if(gamma.type == "quadrature"){
+                rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
+            if(gamma.type == "lognormal"){
+                rates.and.weights <- LogNormalQuad(shape=shape, ncats=ncats)
+                rates.k <- rates.and.weights[1:ncats]
+                weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            }
+            tmp <- c()
+            for(k in sequence(ncats)){
+                tmp <- c(tmp, GetLikelihood(phy=phy, liks=liks, Q=Q_position * rates.k[k] , root.p=base.freqs))
+            }
+            branchLikPerSite <- log(sum(exp(tmp) * weights.k))
+        }else{
+            branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
+        }
         return(branchLikPerSite)
     }
     site.order <- 1:dim(data.array)[1]
