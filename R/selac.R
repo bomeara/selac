@@ -4518,14 +4518,10 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
         if(edge.length == "optimize"){
           cat("       Optimizing edge lengths", "\n")
-          phy$edge.length <- colMeans(starting.branch.lengths)
-          #opts.edge <- opts
-          upper.edge <- rep(log(10), length(phy$edge.length))
-          lower.edge <- rep(log(1e-8), length(phy$edge.length))
-          results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
-          print(results.edge.final$objective)
-          print(exp(results.edge.final$solution))
-          phy$edge.length <- exp(results.edge.final$solution)
+          phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
+          results.edge.final <- OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+          print(results.edge.final$final.likelihood)
+          phy <- results.edge.final$phy
         }
         cat("       Optimizing model parameters", "\n")
         ParallelizedOptimizedByGene <- function(n.partition){
@@ -4551,13 +4547,10 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
-            #opts.edge <- opts
-            opts.edge$ftol_rel <- opts$ftol_rel * (max(1,tol.step^((max.iterations+1)-iteration.number)))
-
-            results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengths, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, codon.site.data=site.pattern.data.list, codon.site.counts=site.pattern.count.list, data.type=data.type, codon.model=codon.model, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, aa.optim_array=NULL, root.p_array=empirical.base.freq.list, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=numcode, diploid=diploid, aa.properties=aa.properties, volume.fixed.value=NULL, nuc.model=nuc.model, codon.index.matrix=codon.index.matrix, edge.length=edge.length, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, k.levels=k.levels, logspace=TRUE, verbose=verbose, n.cores.by.gene=n.cores.by.gene, n.cores.by.gene.by.site=n.cores.by.gene.by.site, estimate.importance=FALSE, neglnl=TRUE, HMM=FALSE)
-            print(results.edge.final$objective)
-            print(exp(results.edge.final$solution))
-            phy$edge.length <- exp(results.edge.final$solution)
+            phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
+            results.edge.final <- OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+            print(results.edge.final$final.likelihood)
+            phy <- results.edge.final$phy
           }
           cat("       Optimizing model parameters", "\n")
           opts.params <- opts
