@@ -4308,6 +4308,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   if(start.from.mle == TRUE){
     partitions <- partition.order
   }else{
+      print("here")
     partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
   }
 
