@@ -761,7 +761,7 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
     nb.node <- phy$Nnode
     #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
     #liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
-    site.pattern.data.frame <- site.pattern.data.list
+    site.pattern.data.frame <- site.pattern.data.list[[1]]
     #Now loop through the tips.
     #    for(partition.index in 2:length(site.pattern.data.list)){
     #    site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
