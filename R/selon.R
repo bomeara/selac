@@ -791,7 +791,7 @@ MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
 
 
 #Goal is to make a list with all the things I need for a site.
-MakeParameterArrayGTR <- function(site.pattern.count.list, empirical.base.freq.list, pars.mat, nsites.vector, selon.model=TRUE) {
+MakeParameterArrayGTR <- function(site.pattern.count.list, empirical.base.freq.list, pars.mat, nsites.vector) {
         pars.array <- c()
         for(partition.index in 1:length(nsites.vector)){
             pars.site.tmp <- as.list(1:nsites.vector[partition.index])
@@ -905,6 +905,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     
     MultiCoreLikelihood <- function(site.index, phy){
         
+        x <- pars.array[[site.index]]
         site.pattern.counts <- x[1]
         x <- x[-1]
         base.freqs <- x[1:4]
