@@ -791,13 +791,13 @@ MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
 
 
 #Goal is to make a list with all the things I need for a site.
-MakeParameterArrayGTR <- function(site.pattern.list, empirical.base.freq.list, pars.mat, nsites.vector, selon.model=TRUE) {
+MakeParameterArrayGTR <- function(site.pattern.count.list, empirical.base.freq.list, pars.mat, nsites.vector, selon.model=TRUE) {
         pars.array <- c()
         for(partition.index in 1:length(nsites.vector)){
             pars.site.tmp <- as.list(1:nsites.vector[partition.index])
             site.index <- 1:nsites.vector[partition.index]
             for(site.index in 1:nsites.vector[partition.index]) {
-                pars.site.tmp[[site.index]] <- c(site.pattern.list[[partition.index]][site.index], empirical.base.freq.list[[partition.index]][site.index], pars.mat[partition.index,1:dim(pars.mat)[2]])
+                pars.site.tmp[[site.index]] <- c(site.pattern.count.list,[[partition.index]][site.index], empirical.base.freq.list[[partition.index]][site.index], pars.mat[partition.index,1:dim(pars.mat)[2]])
             }
             pars.array <- append(pars.array, pars.site.tmp)
         }
@@ -1023,7 +1023,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
-OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, empirical.base.freq.list, nuc.model, nsites.vector, logspace, n.cores, neglnl=FALSE) {
+OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.listempirical.base.freq.list, nuc.model, nsites.vector, logspace, n.cores, neglnl=FALSE) {
     
     maxit <- 11
     tol <- .Machine$double.eps^0.25
@@ -1031,16 +1031,10 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, emp
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
     generations <- FindBranchGenerations(phy)
-    
-    site.pattern.list <- as.list(1:length(nsites.vector))
-    site.pattern.data.list <- as.list(1:length(nsites.vector))
-    for(partition.index in 1:length(nsites.vector)){
-        site.pattern.list[[partition.index]] <- site.pattern.data.list[[partition.index]]$unique.site.patterns
-        site.pattern.data.list[[partition.index]] <- site.pattern.data.list[[partition.index]]$site.pattern.counts
-    }
 
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nsites.vector=nsites.vector)
-    pars.array <- MakeParameterArrayGTR(site.pattern.list=site.pattern.list, empirical.base.freq.list=empirical.base.freq.list, pars.mat=pars.mat, nsites.vector=nsites.vector, selon.model=FALSE)
+    pars.array <- MakeParameterArrayGTR(site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, pars.mat=pars.mat, nsites.vector=nsites.vector, selon.model=FALSE)
+
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, n.cores=n.cores, logspace=logspace)
