@@ -797,7 +797,6 @@ MakeParameterArrayGTR <- function(site.pattern.count.list, empirical.base.freq.l
             pars.site.tmp <- as.list(1:nsites.vector[partition.index])
             site.index <- 1:nsites.vector[partition.index]
             for(site.index in 1:nsites.vector[partition.index]) {
-                print(t(empirical.base.freq.list[[partition.index]][site.index]))
                 pars.site.tmp[[site.index]] <- c(site.pattern.count.list[[partition.index]][site.index], empirical.base.freq.list[[partition.index]], pars.mat[partition.index,1:dim(pars.mat)[2]])
             }
             pars.array <- append(pars.array, pars.site.tmp)
@@ -907,7 +906,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     MultiCoreLikelihood <- function(site.index, phy){
         
         x <- pars.array[[site.index]]
-        print(x)
         site.pattern.counts <- x[1]
         x <- x[-1]
         base.freqs <- x[1:4]
@@ -935,8 +933,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         Q <- nuc.mutation.rates * (1/scale.factor)
-        print(base.freqs)
-        print(Q)
         
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
         for(i in 1:Ntip(phy)){
