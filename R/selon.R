@@ -1032,8 +1032,14 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
     TIPS <- 1:nb.tip
     generations <- FindBranchGenerations(phy)
 
-    data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nsites.vector=nsites.vector)
-    pars.array <- MakeParameterArrayGTR(site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, pars.mat=pars.mat, nsites.vector=nsites.vector, selon.model=FALSE)
+
+    nsites.vector.update <- c()
+    for(partition.index in 1:length(site.pattern.data.list)){
+        nsites.vector.update <- c(nsites.vector.update, length(site.pattern.count.list[[partition.index]]))
+    }
+    
+    data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nsites.vector=nsites.vector.update)
+    pars.array <- MakeParameterArrayGTR(site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, pars.mat=pars.mat, nsites.vector=nsites.vector.update, selon.model=FALSE)
 
     are_we_there_yet <- 1
     iteration.number <- 1
