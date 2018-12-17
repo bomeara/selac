@@ -1161,9 +1161,6 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.dat
       liks[which(!key),c(49, 51, 57)] <- 0
     }
   }
-  if(charnum == 1){
-      print(Q_codon)
-  }
   #The result here is just the likelihood:
   result <- -FinishLikelihoodCalculation(phy=phy, liks=liks, Q=Q_codon, root.p=root.p, anc=anc.indices)
   if(return.all) stop("return all not currently implemented");
@@ -1818,7 +1815,7 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
   }
   nsites.unique <- dim(nuc.data$unique.site.patterns)[2]-1
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(transition.rates, model=nuc.model)
-
+  print(nuc.mutation.rates)
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
       rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
