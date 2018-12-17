@@ -774,32 +774,36 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
 
 
 #Goal is to make a list with all the things I need for a site.
-MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector, selon.model=TRUE) {
-    if(selon.model == TRUE){
-        Ne <- 5e6
-        pars.array <- c()
-        for(partition.index in 1:length(nsites.vector)){
-            pars.site.tmp <- as.list(1:nsites.vector[partition.index])
-            site.index <- 1:nsites.vector[partition.index]
-            position.multiplier.vector <- PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
-            for(site.index in 1:nsites.vector[partition.index]) {
-                pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], pars.mat[partition.index,4:dim(pars.mat)[2]])
-            }
-            pars.array <- append(pars.array, pars.site.tmp)
+MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
+    Ne <- 5e6
+    pars.array <- c()
+    for(partition.index in 1:length(nsites.vector)){
+        pars.site.tmp <- as.list(1:nsites.vector[partition.index])
+        site.index <- 1:nsites.vector[partition.index]
+        position.multiplier.vector <- PositionSensitivityMultiplierNormal(pars.mat[partition.index,1]/Ne, pars.mat[partition.index,2], pars.mat[partition.index,3], site.index)
+        for(site.index in 1:nsites.vector[partition.index]) {
+            pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], position.multiplier.vector[site.index], pars.mat[partition.index,4:dim(pars.mat)[2]])
         }
-    }else{
-        pars.array <- c()
-        for(partition.index in 1:length(nsites.vector)){
-            pars.site.tmp <- as.list(1:nsites.vector[partition.index])
-            site.index <- 1:nsites.vector[partition.index]
-            for(site.index in 1:nsites.vector[partition.index]) {
-                pars.site.tmp[[site.index]] <- c(nuc.optim.list[[partition.index]][site.index], pars.mat[partition.index,1:dim(pars.mat)[2]])
-            }
-            pars.array <- append(pars.array, pars.site.tmp)
-        }
+        pars.array <- append(pars.array, pars.site.tmp)
     }
     return(pars.array)
 }
+
+
+#Goal is to make a list with all the things I need for a site.
+MakeParameterArrayGTR <- function(site.pattern.list, empirical.base.freq.list, pars.mat, nsites.vector, selon.model=TRUE) {
+        pars.array <- c()
+        for(partition.index in 1:length(nsites.vector)){
+            pars.site.tmp <- as.list(1:nsites.vector[partition.index])
+            site.index <- 1:nsites.vector[partition.index]
+            for(site.index in 1:nsites.vector[partition.index]) {
+                pars.site.tmp[[site.index]] <- c(site.pattern.list[[partition.index]][site.index], empirical.base.freq.list[[partition.index]][site.index], pars.mat[partition.index,1:dim(pars.mat)[2]])
+            }
+            pars.array <- append(pars.array, pars.site.tmp)
+        }
+    return(pars.array)
+}
+
 
 
 #Will conduct single branch calculations
@@ -903,6 +907,8 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         
         site.pattern.counts <- x[1]
         x <- x[-1]
+        base.freqs <- x[1:4]
+        x <- x[-c(1:4)]
         # Parse parameters #
         x <- pars.array[[site.index]]
         if(include.gamma == TRUE){
@@ -912,16 +918,13 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         ####################
         
         if(nuc.model == "JC") {
-            base.freqs=c(x[1:3], 1-sum(x[1:3]))
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "GTR") {
-            base.freqs=c(x[1:3], 1-sum(x[1:3]))
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[1:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
             tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
-            base.freqs <- tmp$base.freq
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
         
@@ -1020,7 +1023,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
-OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, nuc.model, nsites.vector, logspace, n.cores, neglnl=FALSE) {
+OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, empirical.base.freq.list, nuc.model, nsites.vector, logspace, n.cores, neglnl=FALSE) {
     
     maxit <- 11
     tol <- .Machine$double.eps^0.25
@@ -1037,7 +1040,7 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, nuc
     }
 
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nsites.vector=nsites.vector)
-    pars.array <- MakeParameterArray(nuc.optim.list=site.pattern.list, pars.mat=pars.mat, nsites.vector=nsites.vector, selon.model=FALSE)
+    pars.array <- MakeParameterArrayGTR(site.pattern.list=site.pattern.list, empirical.base.freq.list=empirical.base.freq.list, pars.mat=pars.mat, nsites.vector=nsites.vector, selon.model=FALSE)
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, n.cores=n.cores, logspace=logspace)
