@@ -905,13 +905,12 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     
     MultiCoreLikelihood <- function(site.index, phy){
         
+        # Parse parameters #
         x <- pars.array[[site.index]]
         site.pattern.counts <- x[1]
         x <- x[-1]
         base.freqs <- x[1:4]
         x <- x[-c(1:4)]
-        # Parse parameters #
-        x <- pars.array[[site.index]]
         if(include.gamma == TRUE){
             shape <- x[1]
             x <- x[-1]
@@ -933,7 +932,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         Q <- nuc.mutation.rates * (1/scale.factor)
-        
+
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
         for(i in 1:Ntip(phy)){
             state <- data.array[site.index,phy$tip.label[i]]
