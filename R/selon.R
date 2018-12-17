@@ -906,7 +906,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     MultiCoreLikelihood <- function(site.index, phy){
         
         x <- pars.array[[site.index]]
-        print(x)s
+        print(x)
         site.pattern.counts <- x[1]
         x <- x[-1]
         base.freqs <- x[1:4]
