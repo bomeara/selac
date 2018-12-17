@@ -907,7 +907,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         
         # Parse parameters #
         x <- pars.array[[site.index]]
-        site.pattern.counts <- x[1]
+        site.pattern.count <- x[1]
         x <- x[-1]
         base.freqs <- x[1:4]
         x <- x[-c(1:4)]
@@ -926,7 +926,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
-        print(base.freqs)
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
@@ -961,7 +960,8 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             for(k in sequence(ncats)){
                 tmp <- c(tmp, GetLikelihood(phy=phy, liks=liks, Q=(Q * rates.k[k]), root.p=base.freqs))
             }
-            branchLikPerSite <- log(sum(exp(tmp)*weights.k)) * site.pattern.counts
+            print(tmp)
+            branchLikPerSite <- log(sum(exp(tmp)*weights.k)) * site.pattern.count
         }else{
             branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q, root.p=base.freqs) * site.pattern.counts
         }
