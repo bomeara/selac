@@ -926,6 +926,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
+        print(nuc.mutation.rates)
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)

@@ -3868,7 +3868,6 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
   }else{
     Q.scaled = Q
   }
-  print(Q.scaled)
   if(!is.null(rates)){
     Q.scaled = Q.scaled * rates
   }
