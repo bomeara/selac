@@ -1394,6 +1394,7 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
     root.p_array <- rep(0.25, 4)
   }
   #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
+  print(root.p_array)
   diag(nuc.mutation.rates) = 0
   nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
   diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)

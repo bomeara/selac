@@ -929,7 +929,9 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         diag(nuc.mutation.rates) = 0
         diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
+        print(base.freqs)
         print(scale.factor)
+        
         Q <- nuc.mutation.rates * (1/scale.factor)
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
         for(i in 1:Ntip(phy)){
