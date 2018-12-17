@@ -4312,6 +4312,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     partitions <- system(paste("ls -1 ", codon.data.path, "*.fasta", sep=""), intern=TRUE)
   }
   print("but no here")
+  print(partitions)
   if(is.null(n.partitions)){
     n.partitions <- length(partitions)
   }else{
