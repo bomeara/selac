@@ -972,6 +972,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     }
     site.order <- 1:dim(data.array)[1]
     branchLikAllSites <- sum(unlist(mclapply(site.order, MultiCoreLikelihood, phy=phy, mc.cores=n.cores)))
+    print(branchLikAllSites)
     return(sum(branchLikAllSites))
 }
 
