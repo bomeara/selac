@@ -797,6 +797,7 @@ MakeParameterArrayGTR <- function(site.pattern.count.list, empirical.base.freq.l
             pars.site.tmp <- as.list(1:nsites.vector[partition.index])
             site.index <- 1:nsites.vector[partition.index]
             for(site.index in 1:nsites.vector[partition.index]) {
+                print(t(empirical.base.freq.list[[partition.index]][site.index]))
                 pars.site.tmp[[site.index]] <- c(site.pattern.count.list[[partition.index]][site.index], t(empirical.base.freq.list[[partition.index]][site.index]), pars.mat[partition.index,1:dim(pars.mat)[2]])
             }
             pars.array <- append(pars.array, pars.site.tmp)
