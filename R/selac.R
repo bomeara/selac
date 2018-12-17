@@ -1161,7 +1161,9 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimum <- function(charnum=1, codon.dat
       liks[which(!key),c(49, 51, 57)] <- 0
     }
   }
-  
+  if(charnum == 1){
+      print(Q_codon)
+  }
   #The result here is just the likelihood:
   result <- -FinishLikelihoodCalculation(phy=phy, liks=liks, Q=Q_codon, root.p=root.p, anc=anc.indices)
   if(return.all) stop("return all not currently implemented");

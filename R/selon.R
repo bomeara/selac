@@ -962,6 +962,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             }
             if(site.index == 1){
                 print(tmp)
+                print(Q)
             }
             branchLikPerSite <- -log(sum(exp(-tmp) * weights.k)) * site.pattern.count
         }else{
