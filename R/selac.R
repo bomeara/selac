@@ -4519,7 +4519,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         if(edge.length == "optimize"){
           cat("       Optimizing edge lengths", "\n")
           phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-          results.edge.final <- selac:::OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+          results.edge.final <- selac:::OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, nuc.model=nuc.model, include.gamma=include.gamma, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
           print(results.edge.final$final.likelihood)
           phy <- results.edge.final$phy
         }
@@ -4548,7 +4548,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
             phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-            results.edge.final <- OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, nuc.model=nuc.model, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+            results.edge.final <- OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, nuc.model=nuc.model, include.gamma=include.gamma, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
             print(results.edge.final$final.likelihood)
             phy <- results.edge.final$phy
           }

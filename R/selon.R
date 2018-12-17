@@ -1024,7 +1024,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
-OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.listempirical.base.freq.list, nuc.model, nsites.vector, logspace, n.cores, neglnl=FALSE) {
+OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.listempirical.base.freq.list, nuc.model, include.gamma, nsites.vector, logspace, n.cores, neglnl=FALSE) {
     
     maxit <- 11
     tol <- .Machine$double.eps^0.25
@@ -1032,7 +1032,6 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
     generations <- FindBranchGenerations(phy)
-
 
     nsites.vector.update <- c()
     for(partition.index in 1:length(site.pattern.data.list)){
@@ -1044,13 +1043,13 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
 
     are_we_there_yet <- 1
     iteration.number <- 1
-    old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, n.cores=n.cores, logspace=logspace)
+    old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
-                out <- optimize(GetBranchLikeAcrossAllSitesGTR, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
+                out <- optimize(GetBranchLikeAcrossAllSitesGTR, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
                 phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
             }
         }
