@@ -916,7 +916,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             x <- x[-1]
         }
         ####################
-        
+        print(shape)
         if(nuc.model == "JC") {
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
