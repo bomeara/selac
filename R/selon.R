@@ -932,9 +932,9 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
-        nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
+        Q <- nuc.mutation.rates * (1/scale.factor)
         
-        liks <- matrix(0, nb.tip + nb.node, dim(Q_position)[1])
+        liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
         for(i in 1:Ntip(phy)){
             state <- data.array[site.index,phy$tip.label[i]]
             if(state < 65){
@@ -962,11 +962,11 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             }
             tmp <- c()
             for(k in sequence(ncats)){
-                tmp <- c(tmp, GetLikelihood(phy=phy, liks=liks, Q=Q_position * rates.k[k], root.p=base.freqs))
+                tmp <- c(tmp, GetLikelihood(phy=phy, liks=liks, Q=(Q * rates.k[k]), root.p=base.freqs))
             }
             branchLikPerSite <- log(sum(exp(tmp)*weights.k)) * site.pattern.counts
         }else{
-            branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs) * site.pattern.counts
+            branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q, root.p=base.freqs) * site.pattern.counts
         }
         return(branchLikPerSite)
     }
