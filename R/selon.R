@@ -1024,7 +1024,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
-OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.listempirical.base.freq.list, nuc.model, include.gamma, nsites.vector, logspace, n.cores, neglnl=FALSE) {
+OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, site.pattern.count.list, empirical.base.freq.list, nuc.model, include.gamma, nsites.vector, logspace, n.cores, neglnl=FALSE) {
     
     maxit <- 11
     tol <- .Machine$double.eps^0.25
