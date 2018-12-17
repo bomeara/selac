@@ -1398,7 +1398,7 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
   nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
   diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
   scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
-
+  print(scale.factor)
   expQt <- GetExpQt(phy=phy, Q=nuc.mutation.rates, scale.factor=scale.factor, rates=rates.k)
   phy.sort <- reorder(phy, "pruningwise")
   anc.indices <- unique(phy.sort$edge[,1])
