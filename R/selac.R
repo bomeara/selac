@@ -1815,7 +1815,6 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
   }
   nsites.unique <- dim(nuc.data$unique.site.patterns)[2]-1
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(transition.rates, model=nuc.model)
-  print(nuc.mutation.rates)
   if(include.gamma==TRUE){
     if(gamma.type == "median"){
       rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -3864,12 +3863,12 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
 
 
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
-
   if(!is.null(scale.factor)){
     Q.scaled = Q * (1/scale.factor)
   }else{
     Q.scaled = Q
   }
+  print(Q.scaled)
   if(!is.null(rates)){
     Q.scaled = Q.scaled * rates
   }
