@@ -963,7 +963,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             if(site.index == 1){
                 print(tmp)
             }
-            branchLikPerSite <- log(sum(exp(tmp) * weights.k)) * site.pattern.count
+            branchLikPerSite <- log(sum(exp(-tmp) * weights.k)) * site.pattern.count
         }else{
             branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q, root.p=base.freqs) * site.pattern.count
         }
