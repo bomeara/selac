@@ -926,12 +926,11 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
-        
+        print(base.freqs)
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         Q <- nuc.mutation.rates * (1/scale.factor)
-        print(Q)
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
         for(i in 1:Ntip(phy)){
             state <- data.array[site.index,phy$tip.label[i]]
