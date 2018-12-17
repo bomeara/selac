@@ -4331,35 +4331,35 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   
   
 #check that the taxon names are correctly formatted in comparison to the tree (DE)
-{fastas=list.files(codon.data.path,pattern="*.fasta")
-  if (identical(sort(unlist(names(read.FASTA(fastas[1])))) , sort(unlist(phy[[4]])))
-  ) {
-    print("DATA CHECK: Taxa in first alignment identical to taxa in tree. Good.")
-    errorStatus<-"Safe"
-  } else {
-    print("Error: Taxa in alignment are not identical to taxa in tree. Check your input files. Exiting...")
-    errorStatus<-"exit"
-  }
-  stopifnot(errorStatus!="exit")
+#{fastas=list.files(codon.data.path,pattern="*.fasta")
+#  if (identical(sort(unlist(names(read.FASTA(fastas[1])))) , sort(unlist(phy[[4]])))
+#  ) {
+#    print("DATA CHECK: Taxa in first alignment identical to taxa in tree. Good.")
+#    errorStatus<-"Safe"
+#  } else {
+#    print("Error: Taxa in alignment are not identical to taxa in tree. Check your input files. Exiting...")
+#    errorStatus<-"exit"
+#  }
+#  stopifnot(errorStatus!="exit")
   
   #check that the taxon names are correctly formated within all alignment files (DE)
-  if(
-    all(unlist(foreach(j = 1:length(fastas))%do%{                               ##makes pairwise checks of all the alignments to see if the taxon names are identical. If they are ALL identical then no error is thrown. 
-      foreach(k = length(fastas):1)%do%{                                         
-        identical(                                                               
-          sort(names(read.FASTA(fastas[j]))), sort(names(read.FASTA(fastas[k])))
-        )
-      }
-    }))
-  ){
-    print("DATA CHECK: Taxa in alignments identical to each other. Good.")
-    errorStatus<-"Safe"
-  } else {
-    print("Error: Taxa in alignments are not identical each other. Check your input files. Exiting...")
-    errorStatus<-"exit"
-  }
-  stopifnot(errorStatus!="exit")
-} 
+  #  if(
+  #  all(unlist(foreach(j = 1:length(fastas))%do%{                               ##makes pairwise checks of all the alignments to see if the taxon names are identical. If they are ALL identical then no error is thrown.
+  #    foreach(k = length(fastas):1)%do%{
+  #      identical(
+  #        sort(names(read.FASTA(fastas[j]))), sort(names(read.FASTA(fastas[k])))
+  #      )
+  #    }
+  #  }))
+  #){
+  #  print("DATA CHECK: Taxa in alignments identical to each other. Good.")
+  #  errorStatus<-"Safe"
+  #} else {
+  #  print("Error: Taxa in alignments are not identical each other. Check your input files. Exiting...")
+  #  errorStatus<-"exit"
+  #}
+  #stopifnot(errorStatus!="exit")
+  #}
  
   
   #checks that the options being used make sense (DE)
