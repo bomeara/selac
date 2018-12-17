@@ -916,7 +916,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             x <- x[-1]
         }
         ####################
-        print(shape)
         if(nuc.model == "JC") {
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
         }
@@ -932,7 +931,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         Q <- nuc.mutation.rates * (1/scale.factor)
-
+        print(Q)
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
         for(i in 1:Ntip(phy)){
             state <- data.array[site.index,phy$tip.label[i]]
