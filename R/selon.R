@@ -917,18 +917,18 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         }
         ####################
         if(nuc.model == "JC") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=NULL)
         }
         if(nuc.model == "GTR") {
-            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[1:length(x)], model=nuc.model, base.freqs=base.freqs)
+            nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[1:length(x)], model=nuc.model, base.freqs=NULL)
         }
         if(nuc.model == "UNREST") {
             tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
             nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
-        print(nuc.mutation.rates)
-        diag(nuc.mutation.rates) <- 0
-        diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+        diag(nuc.mutation.rates) = 0
+        nuc.mutation.rates = t(nuc.mutation.rates * base.freqs)
+        diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         Q <- nuc.mutation.rates * (1/scale.factor)
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
