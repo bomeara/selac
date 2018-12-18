@@ -1394,12 +1394,10 @@ GetLikelihoodNucleotideForManyCharVaryingBySite <- function(nuc.data, phy, nuc.m
     root.p_array <- rep(0.25, 4)
   }
   #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
-  print(root.p_array)
   diag(nuc.mutation.rates) = 0
   nuc.mutation.rates = t(nuc.mutation.rates * root.p_array)
   diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
   scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
-  print(scale.factor)
   expQt <- GetExpQt(phy=phy, Q=nuc.mutation.rates, scale.factor=scale.factor, rates=rates.k)
   phy.sort <- reorder(phy, "pruningwise")
   anc.indices <- unique(phy.sort$edge[,1])
@@ -1835,7 +1833,6 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
     for(k in sequence(ncats)){
       final.likelihood.mat[k,] = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=rates.k[k], root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     }
-    print(final.likelihood.mat[,1])
     likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * nuc.data$site.pattern.counts)
   }else{
     final.likelihood = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=NULL, root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)

@@ -763,9 +763,9 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
     #liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
     site.pattern.data.frame <- site.pattern.data.list[[1]]
     #Now loop through the tips.
-    #    for(partition.index in 2:length(site.pattern.data.list)){
-    #    site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
-    #}
+    for(partition.index in 2:length(site.pattern.data.list)){
+        site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
+    }
     site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
     site.pattern.data.table <- t(site.pattern.data.table)
     colnames(site.pattern.data.table) <- phy$tip.label
@@ -929,8 +929,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
         diag(nuc.mutation.rates) = 0
         diag(nuc.mutation.rates) = -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
-        print(base.freqs)
-        print(scale.factor)
         
         Q <- nuc.mutation.rates * (1/scale.factor)
         liks <- matrix(0, nb.tip + nb.node, dim(Q)[1])
@@ -962,10 +960,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
             tmp <- c()
             for(k in sequence(ncats)){
                 tmp <- c(tmp, GetLikelihood(phy=phy, liks=liks, Q=(Q * rates.k[k]), root.p=base.freqs))
-            }
-            if(site.index == 1){
-                print(tmp)
-                print(Q)
             }
             branchLikPerSite <- -log(sum(exp(-tmp) * weights.k)) * site.pattern.count
         }else{
