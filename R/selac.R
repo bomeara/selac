@@ -4536,9 +4536,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 
         current.likelihood <- results.final$objective
         cat(paste("Current likelihood", current.likelihood, sep=" "), "\n")
-        lik.diff <- 10
+        are_we_there_yet <- 1
         iteration.number <- 1
-        while(lik.diff != 0 & iteration.number<=max.iterations){
+        while(are_we_there_yet > max.tol && iteration.number<=max.iterations){
           cat(paste("Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
           if(edge.length == "optimize"){
             cat("       Optimizing edge lengths", "\n")
@@ -4566,9 +4566,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
           print(results.final$objective)
           print(mle.pars.mat)
 
-          lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
+          are_we_there_yet <- (current.likelihood - results.final$objective ) / results.final$objective
           current.likelihood <- results.final$objective
-          cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
+          cat(paste("Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", are_we_there_yet, sep=" "), "\n")
           iteration.number <- iteration.number + 1
         }
         #Output for use in sims#

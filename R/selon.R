@@ -1485,10 +1485,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             results.final$solution <- c(t(parallelized.parameters[,-1]))
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(exp(results.final$solution), 0)[index.matrix]
-            lik.diff <- round(abs(current.likelihood-results.final$objective), 8)
-            current.likelihood <- results.final$objective
-            cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("difference from previous round", lik.diff, sep=" "), "\n")
-            iteration.number <- iteration.number + 1
         }
         
         current.likelihood <- results.final$objective
