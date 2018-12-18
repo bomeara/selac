@@ -4513,8 +4513,9 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
         mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
         if(edge.length == "optimize"){
           cat("       Optimizing edge lengths", "\n")
+          phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
           phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-          results.edge.final <- selac:::OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores.by.gene, neglnl=TRUE)
+          results.edge.final <- OptimizeEdgeLengthsGTRNew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, nsites.vector=nsites.vector, logspace=FALSE, n.cores=n.cores.by.gene, neglnl=TRUE)
           print(results.edge.final$final.likelihood)
           phy <- results.edge.final$phy
         }
