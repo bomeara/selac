@@ -379,8 +379,8 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        tmp <- CreateNucleotideMutationMatrixSpecial(pars[4:length(pars)])
-        base.freqs <- tmp$base.freqs
+        tmp <- selac:::CreateNucleotideMutationMatrixSpecial(pars[4:length(pars)])
+        base.freqs <- tmp$base.freq
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     if(diploid == TRUE){

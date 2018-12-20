@@ -208,7 +208,7 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     }
     if(nuc.model == "UNREST") {
         tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
-        base.freqs <- tmp$base.freqs
+        base.freqs <- tmp$base.freq
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     nsites <- dim(nuc.data)[2]-1
@@ -251,7 +251,7 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
     }
     if(nuc.model == "UNREST") {
         tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
-        base.freqs <- tmp$base.freqs
+        base.freqs <- tmp$base.freq
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     
