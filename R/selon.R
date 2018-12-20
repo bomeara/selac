@@ -1041,6 +1041,7 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace)
+    print(old.likelihood)
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         for(gen.index in 1:length(generations)){
