@@ -491,7 +491,7 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
     if(nuc.model == "UNREST") {
         opt.nucleotide.transition = x[4]
         tmp <- CreateHMMNucleotideMutationMatrix(model=nuc.model, rates=x[5:length(x)], base.freqs=NULL, opt.nucleotide.transition=opt.nucleotide.transition)
-        base.freqs <- tmp$base.freqs
+        base.freqs <- tmp$base.freq
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     
