@@ -1099,7 +1099,7 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
   liks.HMM <- Matrix::Matrix(0, nb.node, 21* nl)
   TIPS <- 1:nb.tip
   comp <- numeric(nb.tip + nb.node)
-  
+
   if(any(root.p < 0) | any(is.na(root.p))){
     return(1000000)
   }
@@ -1135,8 +1135,8 @@ GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring <- function(charnum=1,
     if(is.infinite(loglik)){return(1000000)}
   }
   return(loglik)
-  
-  
+
+
   #The result here is just the likelihood:
   # result <- -TreeTraversalODE(phy=phy, Q_codon_array_vectored=Q_codon_array_vectored, liks.HMM=liks.HMM, bad.likelihood=-100000, root.p=root.p)
   # ifelse(return.all, stop("return all not currently implemented"), return(result))
@@ -1194,7 +1194,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   Q_codon_array <- Matrix::Matrix(Q_codon_array)
   #Put the na.rm=TRUE bit here just in case -- when the amino acid is a stop codon, there is a bunch of NaNs. Should be fixed now.
   #scale.factor <- -sum(Q_codon_array[DiagArray(dim(Q_codon_array))] * equilibrium.codon.freq, na.rm=TRUE)
-  
+
   #Generate matrix of root frequencies for each optimal AA:
   root.p_array <- codon.freq.by.gene
   #root.p_array <- t(root.p_array)
@@ -1203,7 +1203,7 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   phy.sort <- reorder(phy, "pruningwise")
   # Q_codon_array_vectored <- c(t(Q_codon_array)) # has to be transposed
   # Q_codon_array_vectored <- Q_codon_array_vectored[.non_zero_pos]
-  
+
   ## This evaluates exp(Qt)*liks for all of the tip edges for all 64 codon arrangements.
   ## Evaluating multiple tips at once is cheaper than separate evaluation.
   ## In the future, perhaps reduce the number of evaluations for unused codons
@@ -1211,10 +1211,10 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
   edge.length.tip <- numeric(nb.tip)
   tip.edge=which(phy.sort$edge[,2]<=nb.tip)
   edge.length.tip[phy.sort$edge[tip.edge,2]] <- phy.sort$edge.length[tip.edge]
-  
+
   #Future: find all tips which contain a codon
   tip.codons <- lapply(seq_len(nb.tip), function(j) unique(codon.data$unique.site.patterns[j,-1]) )
-  codon.tips <- lapply(1:64,function(i) sapply(tip.codons,function(j) i%in% j ) )  
+  codon.tips <- lapply(1:64,function(i) sapply(tip.codons,function(j) i%in% j ) )
   if(!all(sapply(codon.tips,any))) {
     TipLikelihood_codon <- function(codon_number){
       # relevent lines:
@@ -1244,23 +1244,23 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySiteEvolvingAA <- function(codon.data,
     expQt.codon <- mclapply(1:64, TipLikelihood_codon, mc.cores=n.cores.by.gene.by.site, mc.preschedule=T)
   }
   anc.indices <- unique(phy.sort$edge[,1])
-  if(verbose){ 
+  if(verbose){
     MultiCoreLikelihoodBySite <- function(nsite.index){
-      tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, 
-                                                                       phy=phy.sort, Q_codon_array=Q_codon_array, 
+      tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns,
+                                                                       phy=phy.sort, Q_codon_array=Q_codon_array,
                                                                        expQt.codon=expQt.codon,
-                                                                       root.p=root.p_array, scale.factor=scale.factor, 
+                                                                       root.p=root.p_array, scale.factor=scale.factor,
                                                                        anc.indices=anc.indices, return.all=FALSE)
       cat(".")
       return(tmp)
     }
-    
+
   } else {
   MultiCoreLikelihoodBySite <- function(nsite.index){
-    tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort, 
-                                                                     Q_codon_array=Q_codon_array, 
+    tmp <- GetLikelihoodSAC_CodonForSingleCharGivenOptimumHMMScoring(charnum=nsite.index, codon.data=codon.data$unique.site.patterns, phy=phy.sort,
+                                                                     Q_codon_array=Q_codon_array,
                                                                      expQt.codon=expQt.codon,
-                                                                     root.p=root.p_array, scale.factor=scale.factor, 
+                                                                     root.p=root.p_array, scale.factor=scale.factor,
                                                                      anc.indices=anc.indices, return.all=FALSE)
     return(tmp)
   }
@@ -1312,15 +1312,15 @@ GetLikelihoodSAC_CodonForManyCharVaryingBySite <- function(codon.data, phy, Q_co
       GetExpQt(phy=p0, Q=Qca[,,aa], scale.factor=NULL, rates=r0)
     } })
   expQt <- NULL
-  expQt <- mclapply(c("K", "N", "T", "R", "S", 
-                      "I", "M", "Q", "H", "P", 
-                      "L", "E",  "D", "A", "G", 
+  expQt <- mclapply(c("K", "N", "T", "R", "S",
+                      "I", "M", "Q", "H", "P",
+                      "L", "E",  "D", "A", "G",
                       "V", "Y", "C", "W", "F"),
-                    FUN=tempGetAAExpQt, 
+                    FUN=tempGetAAExpQt,
                     mc.cores=n.cores.by.gene.by.site)
-  names(expQt) <- c("K", "N", "T", "R", "S", 
-                    "I", "M", "Q", "H", "P", 
-                    "L", "E",  "D", "A", "G", 
+  names(expQt) <- c("K", "N", "T", "R", "S",
+                    "I", "M", "Q", "H", "P",
+                    "L", "E",  "D", "A", "G",
                     "V", "Y", "C", "W", "F")
   # expQt$K <- GetExpQt(phy=phy, Q=Q_codon_array[,,"K"], scale.factor=NULL, rates=rates)
   # expQt$N <- GetExpQt(phy=phy, Q=Q_codon_array[,,"N"], scale.factor=NULL, rates=rates)
@@ -1544,7 +1544,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParamsEvolvingAA <- function(x, codon.d
     results.vector <- c(likelihood, alpha, beta, gamma)
     names(results.vector) <- c("likelihood", "alpha", "beta", "gamma")
     print(results.vector)
-    
+
   }
   if(is.na(likelihood) || is.nan(likelihood)){
     return(1000000)
@@ -1674,7 +1674,7 @@ GetLikelihoodSAC_CodonForManyCharGivenAllParams <- function(x, codon.data, phy, 
     results.vector <- c(likelihood, alpha, beta, gamma)
     names(results.vector) <- c("likelihood", "alpha", "beta", "gamma")
     print(results.vector)
-    
+
   }
   if(is.na(likelihood) || is.nan(likelihood)){
     return(1000000)
@@ -1753,7 +1753,7 @@ GetLikelihoodMutSel_CodonForManyCharGivenAllParams <- function(x, codon.data, ph
     results.vector <- c(likelihood, x)
     names(results.vector) <- c("likelihood", paste0("param", sequence(length(x))))
     print(results.vector)
-    
+
   }
   return(likelihood)
 }
@@ -1793,7 +1793,7 @@ GetLikelihoodGY94_YN98_CodonForManyCharGivenAllParams <- function(x, codon.data,
       results.vector <- c(likelihood, x)
       names(results.vector) <- c("likelihood", paste0("param",seq_along(x)))
       print(results.vector)
-      
+
     }
     return(likelihood)
 }
@@ -1853,7 +1853,7 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
     results.vector <- c(likelihood, x)
     names(results.vector) <- c("likelihood", paste0("param", seq_along(x)))
     print(results.vector)
-    
+
   }
   return(likelihood)
 }
@@ -2896,7 +2896,7 @@ ComputeStartingBranchLengths <- function(phy, data, data.type="codon", recalcula
             mpr.tre$edge.length <- mpr.tre$edge.length/dim(dats.mat[,third.position])[2]
         }else{
             dat <- phyDat(dats.mat, type="DNA")
-            mpr.tre <- phangorn:::nnls.phylo(phy.with.outgroup, dist.ml(dat))
+            mpr.tre <- phangorn::nnls.phylo(phy.with.outgroup, dist.ml(dat))
         }
         mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
         mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- 1e-7
@@ -3346,17 +3346,17 @@ GetMaxName <- function(x) {
 
 #Use specialized expm, copied from package expm
 internal_expm <- function (x) {
-  stopifnot(is.numeric(x) || (isM <- inherits(x, "dMatrix")) || 
+  stopifnot(is.numeric(x) || (isM <- inherits(x, "dMatrix")) ||
               inherits(x, "mpfrMatrix"))
-  if (length(d <- dim(x)) != 2) 
+  if (length(d <- dim(x)) != 2)
     stop("argument is not a matrix")
-  if (d[1] != d[2]) 
+  if (d[1] != d[2])
     stop("matrix not square")
   method <- "Higham08"
   preconditioning = "2bal"
   A<-x
   n <- d[1]
-  if (n <= 1) 
+  if (n <= 1)
     return(exp(A))
   # if (balancing) {
   baP <- expm::balance(A, "P")
@@ -3364,15 +3364,15 @@ internal_expm <- function (x) {
   A <- baS$z
   # }
   nA <- Matrix::norm(A, "1")
-  I <- if (is(A, "Matrix")) 
+  I <- if (is(A, "Matrix"))
     Matrix::Diagonal(n)
   else diag(n)
   if (nA <= 2.1) {
     t <- c(0.015, 0.25, 0.95, 2.1)
     l <- which.max(nA <= t)
-    C <- rbind(c(120, 60, 12, 1, 0, 0, 0, 0, 0, 0), 
-               c(30240, 15120, 3360, 420, 30, 1, 0, 0, 0, 0), 
-               c(17297280, 8648640, 1995840, 277200, 25200, 1512, 56, 1, 0,  0), 
+    C <- rbind(c(120, 60, 12, 1, 0, 0, 0, 0, 0, 0),
+               c(30240, 15120, 3360, 420, 30, 1, 0, 0, 0, 0),
+               c(17297280, 8648640, 1995840, 277200, 25200, 1512, 56, 1, 0,  0),
                c(17643225600, 8821612800, 2075673600, 302702400, 30270240, 2162160, 110880, 3960, 90, 1))
     A2 <- A %*% A
     P <- I
@@ -3393,19 +3393,19 @@ internal_expm <- function (x) {
       s <- ceiling(s)
       B <- B/(2^s)
     }
-    c. <- c(64764752532480000, 32382376266240000, 7771770303897600, 
-            1187353796428800, 129060195264000, 10559470521600, 
-            670442572800, 33522128640, 1323241920, 40840800, 
+    c. <- c(64764752532480000, 32382376266240000, 7771770303897600,
+            1187353796428800, 129060195264000, 10559470521600,
+            670442572800, 33522128640, 1323241920, 40840800,
             960960, 16380, 182, 1)
     B2 <- B %*% B
     B4 <- B2 %*% B2
     B6 <- B2 %*% B4
-    U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) + 
+    U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) +
                   c.[8] * B6 + c.[6] * B4 + c.[4] * B2 + c.[2] * I)
-    V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) + 
+    V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) +
       c.[7] * B6 + c.[5] * B4 + c.[3] * B2 + c.[1] * I
     X <- solve(V - U, V + U)
-    if (s > 0) 
+    if (s > 0)
       for (t in 1:s) X <- X %*% X
   }
   # if (balancing) {
@@ -3438,16 +3438,16 @@ internal_expm <- function (x) {
 
 
 internal_expmt <- function (A, t_vec) {
-  stopifnot(is.numeric(A) || (isM <- inherits(A, "dMatrix")) || 
+  stopifnot(is.numeric(A) || (isM <- inherits(A, "dMatrix")) ||
               inherits(A, "mpfrMatrix"))
-  if (length(d <- dim(A)) != 2) 
+  if (length(d <- dim(A)) != 2)
     stop("argument is not a matrix")
-  if (d[1] != d[2]) 
+  if (d[1] != d[2])
     stop("matrix not square")
   method <- "Higham08"
   preconditioning = "2bal"
   n <- d[1]
-  if (n <= 1) 
+  if (n <= 1)
     return(as.list(exp(A*t_vec)))  # force a list format return
   # if (balancing) {
   baP <- expm::balance(A, "P")
@@ -3455,19 +3455,19 @@ internal_expmt <- function (A, t_vec) {
   A <- baS$z
   # }
   nA <- Matrix::norm(A, "1")
-  I <- if (is(A, "Matrix")) 
+  I <- if (is(A, "Matrix"))
     Matrix::Diagonal(n)
   else diag(n)
   res <- as.list(numeric(length(t_vec)))
-  
-  C <- rbind(c(120, 60, 12, 1, 0, 0, 0, 0, 0, 0), 
-             c(30240, 15120, 3360, 420, 30, 1, 0, 0, 0, 0), 
-             c(17297280, 8648640, 1995840, 277200, 25200, 1512, 56, 1, 0,  0), 
+
+  C <- rbind(c(120, 60, 12, 1, 0, 0, 0, 0, 0, 0),
+             c(30240, 15120, 3360, 420, 30, 1, 0, 0, 0, 0),
+             c(17297280, 8648640, 1995840, 277200, 25200, 1512, 56, 1, 0,  0),
              c(17643225600, 8821612800, 2075673600, 302702400, 30270240, 2162160, 110880, 3960, 90, 1))
-  
-  c. <- c(64764752532480000, 32382376266240000, 7771770303897600, 
-          1187353796428800, 129060195264000, 10559470521600, 
-          670442572800, 33522128640, 1323241920, 40840800, 
+
+  c. <- c(64764752532480000, 32382376266240000, 7771770303897600,
+          1187353796428800, 129060195264000, 10559470521600,
+          670442572800, 33522128640, 1323241920, 40840800,
           960960, 16380, 182, 1)
   t <- c(0.015, 0.25, 0.95, 2.1)
   sA <- log2(nA/5.4)
@@ -3503,15 +3503,15 @@ internal_expmt <- function (A, t_vec) {
         B6 <- A6_base * t_i ^ 6 / (64^s)
       } else {
         B2 <- A2_base * t_i * t_i
-        B4 <- A4_base * t_i ^ 4 
-        B6 <- A6_base * t_i ^ 6 
+        B4 <- A4_base * t_i ^ 4
+        B6 <- A6_base * t_i ^ 6
       }
-      U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) + 
+      U <- B %*% (B6 %*% (c.[14] * B6 + c.[12] * B4 + c.[10] *  B2) +
                     c.[8] * B6 + c.[6] * B4 + c.[4] * B2 + c.[2] * I)
-      V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) + 
+      V <- B6 %*% (c.[13] * B6 + c.[11] * B4 + c.[9] * B2) +
         c.[7] * B6 + c.[5] * B4 + c.[3] * B2 + c.[1] * I
       X <- solve(V - U, V + U)
-      if (s > 0) 
+      if (s > 0)
         for (t in 1:s) X <- X %*% X
     }
     # if (balancing) {
@@ -3559,7 +3559,7 @@ internal_expAtv <- function(A, v, t=1)
     if(n == 1) return(exp(A*t)*v)
     stop("nrow(A) must be >= 1")
   }
-  m <- min(n, m.max)  
+  m <- min(n, m.max)
   # HMM constant: m <- 30
   gamma <- 0.9        # constant
   delta <- 1.2        # constant
@@ -3571,7 +3571,7 @@ internal_expAtv <- function(A, v, t=1)
     nA <- 1
   }
   rndoff <- nA * .Machine$double.eps # Varies with Q
-  
+
   t_1 <- abs(t) # Varies with phy
   sgn <- sign(t) # Varies with phy
   t_now <- 0
@@ -3594,15 +3594,15 @@ internal_expAtv <- function(A, v, t=1)
   # t_new <- myRound( (1/nA)*(nA*beta)^(-1/30)*7.48584399202831 )
   # alt constant for HMM tips, varies with Q
   # t_new <- myRound( (nA)^(-31/30)*7.12126158103164 )
-  
+
   V <- matrix(0, n, m+1)    #HMM init: V <- matrix(0,1344,31)
-  H <- matrix(0, m+2, m+2)  #HMM initt: H <- matrix(0,32,32) 
+  H <- matrix(0, m+2, m+2)  #HMM initt: H <- matrix(0,32,32)
   # use  Matrix(V[,j],nrow =n, ncol=1 ) later on?
   # nstep <- n.rej <- 0L      #irrelevant
   w <- v
   # updated in loop:
   # t_now, t_new, V, H, w, beta
-  # updated on loop break: 
+  # updated on loop break:
   # mb
   while (t_now < t_1) {
     # nstep <- nstep + 1L
@@ -3679,12 +3679,12 @@ internal_expAtv <- function(A, v, t=1)
   return(w)
 }
 
-## HMM variant of expAtv for evaluating multiple t for fixed v 
+## HMM variant of expAtv for evaluating multiple t for fixed v
 exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
 {
   #Hardcoded arguments
   tol=1e-7; btol = 1e-7; m.max = 30; mxrej = 10 #constant
-  
+
   ## R translation:  Ravi Varadhan, Johns Hopkins University
   ##		   "cosmetic", apply to sparse A: Martin Maechler, ETH Zurich
   d <- dim(A)
@@ -3702,21 +3702,21 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
     stopifnot(!is.null(v))#, "If not using codon notation, v must be provided.")
     stopifnot(length(v)==n)#, "v must be the same size as a side of A.")
     beta <- sqrt(sum(v*v))# = norm(v) = |\ v ||
-    
+
   }
   stopifnot(is.null(subset))#, "Subset notation not yet implemented.")
-  
+
   if(n <= 1) {
     if(n == 1) return(as.list(exp(A*tvec)*v))
     stop("nrow(A) must be >= 1")
   }
-  
+
   stopifnot(all(tvec>=0) || all(tvec<=0))# , "Mixed sign notation not yet implemented.")
   if( length(tvec)==0) return(list())
   if( length(tvec)==1) return(list(internal_expAtv(A=A,v=as.numeric(v),t=tvec)))
   res = rep(list(v),length(tvec))
-  
-  m <- min(n, m.max)  
+
+  m <- min(n, m.max)
   # HMM constant: m <- 30
   gamma <- 0.9        # constant
   delta <- 1.2        # constant
@@ -3736,9 +3736,9 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
     t_1 = min(tvec)
     sgn=-1
     t_1_vec=-tvec
-    
+
   } else stop("This line should be impossible to reach.")
-    
+
   t_now <- 0
   s_error <- 0
   k1 <- 2
@@ -3752,7 +3752,7 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
     return(res)
   # Next line is constant for all tips in HMM: fact <- 6.74967950018045e+33
   fact <- (((m+1)/exp(1))^(m+1))*sqrt(2*pi*(m+1))
-  
+
   myRound <- function(tt) {
     s <- 10^(floor(log10(tt)) - 1)
     ceiling(tt/s)*s
@@ -3762,13 +3762,13 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
   # t_new <- myRound( (1/nA)*(nA*beta)^(-1/30)*7.48584399202831 )
   # alt constant for HMM tips, varies with Q
   # t_new <- myRound( (nA)^(-31/30)*7.12126158103164 )
-  
+
   V <- matrix(0, n, m+1)    #HMM init: V <- matrix(0,1344,31)
-  H <- matrix(0, m+2, m+2)  #HMM initt: H <- matrix(0,32,32) 
+  H <- matrix(0, m+2, m+2)  #HMM initt: H <- matrix(0,32,32)
   w <- as.numeric(v)
   # updated in loop:
   # t_now, t_new, V, H, w, beta
-  # updated on loop break: 
+  # updated on loop break:
   # mb
   while (t_now < t_1) {
     # nstep <- nstep + 1L
@@ -3776,7 +3776,7 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
     t_step <- min(t_1_vec[subset] - t_now, t_new)  # interval length to evaluate over
     V[,1] <- (1/beta)*w
     for (j in 1:m) {
-      p <- as.vector(A %*% V[,j]) 
+      p <- as.vector(A %*% V[,j])
       for (i in 1:j) {
         H[i,j] <- s <- sum(V[,i] *  p)
         p <- p - s * V[,i]
@@ -3806,7 +3806,7 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
     while (i.rej <= mxrej) {
       #mx <- mb + k1; imx <- seq_len(mx) # = 1:mx
       F_edge <- internal_expm(sgn * t_step * H[imx1,imx1, drop=FALSE])
-      
+
       # Check for adjustment due to errors
       phi1 <- abs(beta * F_edge[m+1,1])
       phi2 <- abs(beta * F_edge[m+2,1] * avnorm)
@@ -3846,8 +3846,8 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
       F_list <- internal_expmt(A = H[imx1,imx1,drop=F],t_vec = tvec[ivec])
       res[ivec] <- lapply(F_list, function(F_mat) as.vector(V[,imx2] %*% (beta * F_mat[imx2,1,drop=F])) )
     }
-    
-    # Move on to next interval 
+
+    # Move on to next interval
     w <- as.vector(V[, imx2] %*% (beta*F_edge[imx2,1, drop=FALSE]))
     beta <- sqrt(sum(w*w))
     t_now <- t_now + t_step
@@ -3881,10 +3881,10 @@ GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
                               function(focal){
                                 which(phy$edge[,1]==focal)
                               }))
-  
+
   desNodes <- phy$edge[desRows,2]
   expQt[desNodes] <-  internal_expmt(Q.scaled,phy$edge.length[desRows])
-  
+
   return(expQt)
 }
 
@@ -4316,13 +4316,13 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     warning(paste0("You have ", n.partitions, " partition (set with the n.partitions argument) but are asking to run across ", n.cores.by.gene, " cores, so ", n.cores.by.gene - n.partitions, " cores will not be used"))
   }
 
-  
+
   #fix user-supplied branch lengths that are shorter than the prespecified minimum.
-  if(recalculate.starting.brlen==FALSE){ 
+  if(recalculate.starting.brlen==FALSE){
   phy$edge.length[phy$edge.length <= 1e-8]<-(1e-8)*1.01
     }
-  
-  
+
+
 #check that the taxon names are correctly formatted in comparison to the tree (DE)
 #{fastas=list.files(codon.data.path,pattern="*.fasta")
 #  if (identical(sort(unlist(names(read.FASTA(fastas[1])))) , sort(unlist(phy[[4]])))
@@ -4334,7 +4334,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
 #    errorStatus<-"exit"
 #  }
 #  stopifnot(errorStatus!="exit")
-  
+
   #check that the taxon names are correctly formated within all alignment files (DE)
   #  if(
   #  all(unlist(foreach(j = 1:length(fastas))%do%{                               ##makes pairwise checks of all the alignments to see if the taxon names are identical. If they are ALL identical then no error is thrown.
@@ -4353,18 +4353,18 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
   #}
   #stopifnot(errorStatus!="exit")
   #}
- 
-  
+
+
   #checks that the options being used make sense (DE)
   #  if(codon.model=="none"&optimal.aa=="none"&data.type=="codon"){
   #print("You have turned off amino-acid optimization and you're not using a codon model. Please set your data-type to 'nucleotide'. Exiting...")
   #errorStatus <- "exit"
   #}
   #stopifnot(errorStatus!="exit")
-  
+
  ##########
-  
-  
+
+
   cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
 
   cat("Initializing data and model parameters...", "\n")

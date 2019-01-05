@@ -5,17 +5,18 @@
 \title{Efficient optimization of a Hidden Markov SELAC model}
 \usage{
 SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
-  data.type = "codon", codon.model = "selac", edge.length = "optimize",
-  edge.linked = TRUE, nuc.model = "GTR", estimate.aa.importance = FALSE,
-  include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
-  numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
+  data.type = "codon", codon.model = "selac",
+  edge.length = "optimize", edge.linked = TRUE, nuc.model = "GTR",
+  estimate.aa.importance = FALSE, include.gamma = FALSE,
+  gamma.type = "quadrature", ncats = 4, numcode = 1,
+  diploid = TRUE, k.levels = 0, aa.properties = NULL,
   verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
   max.tol = 0.001, max.tol.edges = 0.001, max.evals = 1e+06,
-  max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
-  recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
-  output.restart.filename = "restartResult",
+  max.restarts = 3, user.optimal.aa = NULL,
+  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE,
+  output.by.restart = TRUE, output.restart.filename = "restartResult",
   user.supplied.starting.param.vals = NULL, tol.step = 1,
-  optimizer.algorithm = "NLOPT_LN_SBPLX")
+  optimizer.algorithm = "NLOPT_LN_SBPLX", max.iterations = 6)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}

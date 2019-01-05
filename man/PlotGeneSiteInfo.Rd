@@ -7,11 +7,11 @@
 PlotGeneSiteInfo(all.info, aa.properties = NULL, mean.width = 10)
 }
 \arguments{
+\item{all.info}{The output of GetGeneSiteInfo}
+
 \item{aa.properties}{The aa.properties you want to use; if NULL, uses Grantham}
 
 \item{mean.width}{Sliding window width}
-
-\item{info.by.site}{The output of GetGeneSiteInfo}
 }
 \description{
 Function to plot info by site in a gene

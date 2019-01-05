@@ -4,8 +4,8 @@
 \alias{GetSelacSiteLikelihoods}
 \title{Calculate site likelihoods under SelAC}
 \usage{
-GetSelacSiteLikelihoods(selac.obj, codon.data.path, aa.optim.input = NULL,
-  fasta.rows.to.keep = NULL)
+GetSelacSiteLikelihoods(selac.obj, codon.data.path,
+  aa.optim.input = NULL, fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{selac.obj}{An object of class SELAC.}

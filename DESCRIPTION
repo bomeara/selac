@@ -15,14 +15,12 @@ Description: Implements models for amino acid or codon evolution with selection.
 Suggests:
     testthat,
     igraph
-Depends:
+Imports:
     ape,
     deSolve,
     nloptr,
     nnet,
-    data.table,
-    phangorn
-Imports:
+    data.table
     expm,
     MASS,
     Matrix,
@@ -35,4 +33,4 @@ Imports:
     RColorBrewer
 License: GPL
 ByteCompile: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

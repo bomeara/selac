@@ -5,12 +5,12 @@
 \title{Optimize parameters under the SELON model}
 \usage{
 SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
-  edge.length = "optimize", edge.linked = TRUE, optimal.nuc = "majrule",
-  nuc.model = "GTR", global.nucleotide.model = TRUE, diploid = TRUE,
-  verbose = FALSE, n.cores = 1, max.tol = .Machine$double.eps^0.5,
-  max.evals = 1e+06, cycle.stage = 12, max.restarts = 3,
-  output.by.restart = TRUE, output.restart.filename = "restartResult",
-  fasta.rows.to.keep = NULL)
+  edge.length = "optimize", edge.linked = TRUE,
+  optimal.nuc = "majrule", nuc.model = "GTR",
+  global.nucleotide.model = TRUE, diploid = TRUE, verbose = FALSE,
+  n.cores = 1, max.tol = .Machine$double.eps^0.25, max.evals = 1e+06,
+  cycle.stage = 12, max.restarts = 3, output.by.restart = TRUE,
+  output.restart.filename = "restartResult", fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}

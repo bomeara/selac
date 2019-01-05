@@ -33,7 +33,7 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
 SingleSiteUpPassHMM <- function(phy, Q_codon, root.p){
     Q_codon_array_vectored <- c(t(Q_codon)) # has to be transposed
     Q_codon_array_vectored <- Q_codon_array_vectored[-which(Q_codon_array_vectored == 0)]
-    
+
     #Randomly choose starting state at root using the root.values as the probability:
     root.value <- sample.int(dim(Q_codon)[2], 1, FALSE, prob=root.p)
     #Reorder the phy:
@@ -46,13 +46,13 @@ SingleSiteUpPassHMM <- function(phy, Q_codon, root.p){
     y.vec <- rep(0, dim(Q_codon)[2])
     y.vec[root.value] <- 1
     yinit[[ROOT]] <- y.vec
-    
+
     sim.codon.data.site <- integer(ntips + phy$Nnode)
     sim.codon.data.site[ROOT] <- as.integer(root.value)
     anc <- phy$edge[,1]
     des <- phy$edge[,2]
     edge.length <- phy$edge.length
-    
+
     #browser()
     for (i in N:1) {
         times <- c(0, edge.length[i])
@@ -61,12 +61,12 @@ SingleSiteUpPassHMM <- function(phy, Q_codon, root.p){
         p[neg.vector.pos] <- 0
         #p1 <- (expm(Q_codon * edge.length[i], method="Ward77") %*% yinit[[anc[i]]])[,1]
         #yinit[[des[i]]] <- p
-        
+
         sim.codon.data.site[des[i]] <- sample.int(dim(Q_codon)[2], size = 1, FALSE, prob = p)
         y.vec <- rep(0, dim(Q_codon)[2])
         y.vec[sim.codon.data.site[des[i]]] <- 1
         yinit[[des[i]]] <- y.vec
-        
+
     }
     sim.codon.data.site <- sim.codon.data.site[1:ntips]
     return(sim.codon.data.site)
@@ -190,7 +190,7 @@ OUEvolveParameters <- function(phy, alpha, sigma.sq, mean, logspace=TRUE){
 #' Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, codon.freq.by.gene=NULL, numcode=1, aa.properties=NULL, nuc.model, include.gamma=FALSE, gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL){
     nsites <- length(aa.optim_array)
-    
+
     #Start organizing the user input parameters:
     C.q.phi.Ne <- pars[1]
     C=4
@@ -202,12 +202,12 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
-    
+
     if(include.gamma == TRUE){
         shape <- pars[length(pars)]
         pars <- pars[-length(pars)]
     }
-    
+
     if(k.levels > 0){
         if(nuc.model == "JC") {
             base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
@@ -236,20 +236,20 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[4:length(pars)], model=nuc.model, base.freqs=NULL)
         }
     }
-    
+
     #Generate our codon matrix:
     codon.index.matrix <- CreateCodonMutationMatrixIndex()
     codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
     codon_mutation_matrix[is.na(codon_mutation_matrix)] <- 0
     #Generate our fixation probability array:
     unique.aa <- GetMatrixAANames(numcode)
-    
+
     #We rescale the codon matrix only -- this is the issue!
     diag(codon_mutation_matrix) = 0
     diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
     scale.factor <- -sum(diag(codon_mutation_matrix) * codon.freq.by.gene, na.rm=TRUE)
     codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
-    
+
     if(include.gamma == TRUE){
         if(gamma.type == "median"){
             rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
@@ -301,21 +301,21 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
         }
     }
     root.p_array <- NA
-    
+
     if(is.null(codon.freq.by.aa)) {
         codon.freq.by.aa <- rep(1/1344, by=64*21)
     }
-    
+
     #Generate matrix of root frequencies for each optimal AA:
     root.p_array <- matrix(codon.freq.by.aa, nrow=dim(Q_codon_array)[2], ncol=21) #make sure user gives you root.codon.frequencies in the right order
     root.p_array <- t(root.p_array)
     root.p_array <- root.p_array / rowSums(root.p_array)
     rownames(root.p_array) <- unique.aa
     root.p_array[is.na(root.p_array)] <- 0
-    
+
     #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user-input vector of optimal AA:
     sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
-    
+
     if(include.gamma == TRUE){
         for(site in 1:nsites){
             if(is.null(site.cats.vector)){
@@ -340,7 +340,7 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
         nucleotide.data <- cbind(nucleotide.data, t(matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), 3,length(phy$tip.label))))
     }
     rownames(nucleotide.data) <- phy$tip.label
-    
+
     #Done.
     return(nucleotide.data)
 }
@@ -360,9 +360,9 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELON model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
-    
+
     nsites <- length(nuc.optim_array)
-    
+
     #Start organizing the user input parameters:
     Ne = 5e6
     scalor = pars[1]/Ne
@@ -379,7 +379,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        tmp <- selac:::CreateNucleotideMutationMatrixSpecial(pars[4:length(pars)])
+        tmp <- CreateNucleotideMutationMatrixSpecial(pars[4:length(pars)])
         base.freqs <- tmp$base.freq
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
@@ -388,7 +388,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
     }else{
         ploidy = 1
     }
-    
+
     diag(nuc.mutation.rates) = 0
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
     scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
@@ -411,7 +411,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
         nucleotide.data <- cbind(nucleotide.data, nuc.names[sim.nuc.data[,nuc.sequence]])
     }
     rownames(nucleotide.data) <- phy$tip.label
-    
+
     #Done.
     return(nucleotide.data)
 }
@@ -432,7 +432,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
 #' @details
 #' Simulates a nucleotide matrix using parameters under the GTR+G model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
-    
+
     if(nuc.model == "JC") {
         base.freqs=base.freqs
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -444,11 +444,11 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
     if(nuc.model == "UNREST") {
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars, model=nuc.model)
     }
-    
+
     Q_mat <- nuc.mutation.rates
     diag(Q_mat) = 0
     diag(Q_mat) <- -rowSums(Q_mat)
-    
+
     rate.vector <- DiscreteGamma(pars[1], ncats)
     rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=rep(1/ncats, ncats))
     # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
@@ -567,7 +567,7 @@ SelacSimulatorEvolvingRates <- function(phy, pars, aa.optim_array, root.codon.fr
         nucleotide.data <- cbind(nucleotide.data, t(matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), 3,length(phy$tip.label))))
     }
     rownames(nucleotide.data) <- phy$tip.label
-    
+
     #Done.
     return(nucleotide.data)
 }
@@ -603,11 +603,11 @@ SelacHMMSimulator <- function(phy, pars, nsites, codon.freq.by.aa=NULL, codon.fr
 aa.properties=NULL, nuc.model, include.gamma=FALSE,
 gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NULL)
 {
-    
+
     importance.of.aa.dist.in.selective.environment.change = pars[length(pars)]
     rate.for.selective.environment.change = pars[length(pars)-1]
     pars = pars[-( (length(pars) - 1):length(pars) )]
-    
+
     #Start organizing the user input parameters:
     C.q.phi.Ne <- pars[1]
     C=4
@@ -619,13 +619,13 @@ gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NUL
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- GetAADistanceStartingParameters(aa.properties)[3]
-    
-    
+
+
     if(include.gamma == TRUE){
         shape <- pars[length(pars)]
         pars <- pars[-length(pars)]
     }
-    
+
     if(k.levels > 0){
         if(nuc.model == "JC") {
             base.freqs=c(pars[4:6], 1-sum(pars[4:6]))
@@ -654,7 +654,7 @@ gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NUL
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[4:length(pars)], model=nuc.model, base.freqs=NULL)
         }
     }
-    
+
     #Generate our codon matrix:
     nuc.mutation.rates.vector <- c(nuc.mutation.rates, rate.for.selective.environment.change)
     codon.index.matrix <- CreateCodonMutationMatrixIndexEvolveAA()
@@ -662,15 +662,15 @@ gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NUL
     codon_mutation_matrix[is.na(codon_mutation_matrix)] <- 0
     #Generate our fixation probability array:
     unique.aa <- GetMatrixAANames(numcode)
-    
+
     #We rescale the codon matrix only -- this is the issue!
     diag(codon_mutation_matrix) = 0
     diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
     scale.factor <- -sum(diag(codon_mutation_matrix) * codon.freq.by.gene, na.rm=TRUE)
     codon_mutation_matrix_scaled = codon_mutation_matrix * (1/scale.factor)
-    
-    
-    
+
+
+
     Q_codon_array_vectored <- 0
     if(include.gamma == TRUE){
         Q_codon_sum <- 0
@@ -737,20 +737,20 @@ gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NUL
         Q_codon_array_vectored <- c(t(Q_codon)) # has to be transposed
         Q_codon_array_vectored <- Q_codon_array_vectored[-which(Q_codon_array_vectored == 0)]
     }
-    
+
     if(is.null(codon.freq.by.aa)) {
         codon.freq.by.aa <- rep(1/1344, by=64*21)
     }
-    
+
     root.p <- lsoda(codon.freq.by.aa, c(0,1000), func = "selacHMM", Q_codon_array_vectored, initfunc="initmod_selacHMM", dllname = "selacHMM")[-1,-1]
     root.p <- root.p/sum(root.p)
     #root.p <- rep(1, length(codon.freq.by.aa))
     # get root frequencies from "codon.freq.by.aa" to be consistent with regular SelAC
     #root.p <- codon.freq.by.aa / sum(codon.freq.by.aa)
-    
+
     #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user-input vector of optimal AA:
     sim.codon.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
-    
+
     if(include.gamma == TRUE){
         for(site in 1:nsites){
             if(is.null(site.cats.vector)){
@@ -774,7 +774,7 @@ gamma.type="quadrature", ncats=4, k.levels=0, diploid=TRUE, site.cats.vector=NUL
         nucleotide.data <- cbind(nucleotide.data, t(matrix(unlist(strsplit(codon.names[sim.codon.data[,codon.sequence]], split="")), 4,length(phy$tip.label)))[,-4])
     }
     rownames(nucleotide.data) <- phy$tip.label
-    
+
     #Done.
     return(nucleotide.data)
 }

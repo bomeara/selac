@@ -6,9 +6,9 @@
 \usage{
 GetAdequateManyReps(nreps, n.cores, model.to.reconstruct.under = "selac",
   model.to.simulate.under = "gtr", selac.obj.to.reconstruct,
-  selac.obj.to.simulate, aa.optim.input = NULL, fasta.rows.to.keep = NULL,
-  taxon.to.drop = 2, partition.number = 17, numcode = 1,
-  for.gtr.only = NULL)
+  selac.obj.to.simulate, aa.optim.input = NULL,
+  fasta.rows.to.keep = NULL, taxon.to.drop = 2,
+  partition.number = 17, numcode = 1, for.gtr.only = NULL)
 }
 \arguments{
 \item{nreps}{Specifies the number of repeated model adequact simulations.}
