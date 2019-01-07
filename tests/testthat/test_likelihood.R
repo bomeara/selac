@@ -182,60 +182,60 @@ test_that("selacHMM", {
 })
 
 
-test_that("dealing_with_missing_data", {
-    skip_on_cran()
+#test_that("dealing_with_missing_data", {
+#    skip_on_cran()
 
-    set.seed(4)
-    phy <- rcoal(20)
+#    set.seed(4)
+#    phy <- rcoal(20)
 
     #part 1 -- pruning the taxa straightup:
-    phy.pruned <- drop.tip(phy, c("t16", "t13"))
-    phy.sort <- reorder(phy.pruned, "pruningwise")
-    anc.indices <- unique(phy.sort$edge[,1])
+#    phy.pruned <- drop.tip(phy, c("t16", "t13"))
+#    phy.sort <- reorder(phy.pruned, "pruningwise")
+#    anc.indices <- unique(phy.sort$edge[,1])
 
-    traits <- data.frame(taxon=phy$tip.label, trait=rep(1, length(phy$tip.label)))
-    traits[1:7,2] = 2
-    Q <- matrix(1,4,4)
-    diag(Q) = 0
-    diag(Q) = -rowSums(Q)
-    scale.factor=1
-    expList <- GetExpQt(phy=phy.pruned, Q=Q, scale.factor=scale.factor)
-    nb.tip<-length(phy.pruned$tip.label)
-    nb.node <- phy.pruned$Nnode
-    nl <- nrow(Q)
-    liks <- matrix(0, nb.tip + nb.node, nl)
-    for(i in 1:nb.tip){
-        if(!is.na(traits[i,1+1])){
-            liks[i,traits[i,1+1]] <- 1
-        }else{
-            liks[i,] <- 1
-        }
-    }
-    pruned.ll <- FinishLikelihoodCalculation(phy=phy.sort, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
+#    traits <- data.frame(taxon=phy$tip.label, trait=rep(1, length(phy$tip.label)))
+#    traits[1:7,2] = 2
+#    Q <- matrix(1,4,4)
+#    diag(Q) = 0
+#    diag(Q) = -rowSums(Q)
+#    scale.factor=1
+#    expList <- GetExpQt(phy=phy.pruned, Q=Q, scale.factor=scale.factor)
+#    nb.tip<-length(phy.pruned$tip.label)
+#    nb.node <- phy.pruned$Nnode
+#    nl <- nrow(Q)
+#    liks <- matrix(0, nb.tip + nb.node, nl)
+#    for(i in 1:nb.tip){
+#        if(!is.na(traits[i,1+1])){
+#            liks[i,traits[i,1+1]] <- 1
+#        }else{
+#            liks[i,] <- 1
+#        }
+#    }
+#    pruned.ll <- FinishLikelihoodCalculation(phy=phy.sort, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
 
     #part 2 -- Making the taxa uncertain in their scoring:
-    traits <- data.frame(taxon=phy$tip.label, trait=rep(1, length(phy$tip.label)))
-    traits[1:7,2] = 2
-    traits[c(11,20), 2] = NA
-    Q <- matrix(1,4,4)
-    diag(Q) = 0
-    diag(Q) = -rowSums(Q)
-    scale.factor=1
-    expList <- GetExpQt(phy=phy, Q=Q, scale.factor=scale.factor)
-    nb.tip<-length(phy$tip.label)
-    nb.node <- phy$Nnode
-    nl <- nrow(Q)
-    liks <- matrix(0, nb.tip + nb.node, nl)
-    for(i in 1:nb.tip){
-        if(!is.na(traits[i,1+1])){
-            liks[i,traits[i,1+1]] <- 1
-        }else{
-            liks[i,] <- 1
-        }
-    }
-    phy.sort <- reorder(phy, "pruningwise")
-    anc.indices <- unique(phy.sort$edge[,1])
-    indicator.ll <- FinishLikelihoodCalculation(phy=phy, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
-    comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
-    expect_true(comparison)
-})
+#    traits <- data.frame(taxon=phy$tip.label, trait=rep(1, length(phy$tip.label)))
+#    traits[1:7,2] = 2
+#    traits[c(11,20), 2] = NA
+#    Q <- matrix(1,4,4)
+#    diag(Q) = 0
+#    diag(Q) = -rowSums(Q)
+#    scale.factor=1
+#    expList <- GetExpQt(phy=phy, Q=Q, scale.factor=scale.factor)
+#    nb.tip<-length(phy$tip.label)
+#    nb.node <- phy$Nnode
+#    nl <- nrow(Q)
+#    liks <- matrix(0, nb.tip + nb.node, nl)
+#    for(i in 1:nb.tip){
+#        if(!is.na(traits[i,1+1])){
+#            liks[i,traits[i,1+1]] <- 1
+#        }else{
+#            liks[i,] <- 1
+#        }
+#    }
+#    phy.sort <- reorder(phy, "pruningwise")
+#    anc.indices <- unique(phy.sort$edge[,1])
+#    indicator.ll <- FinishLikelihoodCalculation(phy=phy, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
+#    comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
+#    expect_true(comparison)
+#})
