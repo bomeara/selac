@@ -82,6 +82,8 @@ SelacHMMOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{optimizer.algorithm}{The optimizer used by nloptr.}
 
 \item{optimal.aa}{Indicates what type of optimal.aa should be used. There are four options: "none", "majrule", "optimize", or "user".}
+
+\item{max.iterations}{Sets the number of cycles to optimize the different parts of the model.}
 }
 \description{
 Efficient optimization of model parameters under a HMM SELAC model

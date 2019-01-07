@@ -24,10 +24,11 @@ PlotMutationFitnessSpectra(mutation.fitness.object.list, values,
 Plot fitness of mutations, weighted by frequency of those mutations
 }
 \examples{
-phi.vector <- c(.1, 0.5, 2)
-mutation.fitness.object.list <- list()
-for (i in sequence(length(phi.vector))) {
-   mutation.fitness.object.list[[i]] <- ComputeMutationFitnesses(Phi=phi.vector[i])
-}
-PlotMutationFitnessSpectra(mutation.fitness.object.list, values=paste("Phi =", phi.vector), optimal.aa="C")
+#phi.vector <- c(.1, 0.5, 2)
+#mutation.fitness.object.list <- list()
+#for (i in sequence(length(phi.vector))) {
+#   mutation.fitness.object.list[[i]] <- ComputeMutationFitnesses(Phi=phi.vector[i])
+#}
+#PlotMutationFitnessSpectra(mutation.fitness.object.list, values=paste("Phi =", 
+#	phi.vector), optimal.aa="C")
 }

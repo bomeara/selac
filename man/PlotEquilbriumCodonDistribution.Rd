@@ -23,11 +23,11 @@ Function to plot a distribution of frequencies of codons given a 3d array of equ
 }
 \examples{
 
-phi.vector <- c(0.01, .1, 0.5, 2)
-eq.freq.matrices <- array(dim=c(64, 20, length(phi.vector)))
-for (i in sequence(length(phi.vector))) {
-  eq.freq.matrices[,,i] <- ComputeEquilibriumCodonFrequencies(Phi=phi.vector[i])
-}
-values = paste("Phi = ", phi.vector, sep="")
-PlotEquilbriumCodonDistribution(eq.freq.matrices, values)
+#phi.vector <- c(0.01, .1, 0.5, 2)
+#eq.freq.matrices <- array(dim=c(64, 20, length(phi.vector)))
+#for (i in sequence(length(phi.vector))) {
+#  eq.freq.matrices[,,i] <- ComputeEquilibriumCodonFrequencies(Phi=phi.vector[i])
+#}
+#values = paste("Phi = ", phi.vector, sep="")
+#PlotEquilbriumCodonDistribution(eq.freq.matrices, values)
 }

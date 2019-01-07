@@ -20,7 +20,7 @@ Imports:
     deSolve,
     nloptr,
     nnet,
-    data.table
+    data.table,
     expm,
     MASS,
     Matrix,

@@ -28,6 +28,8 @@ PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa = NULL,
 
 \item{scale.x.axis.by.Ne}{if TRUE, x axis is transformed from S to S*Ne; if FALSE no scaling is done}
 
+\item{legend.title}{Sets the title of the figure legend.}
+
 \item{Ne}{used to scale x axis when scale.x.axis.by.Ne is TRUE}
 
 \item{...}{Other paramters to pass to plot()}
@@ -36,13 +38,13 @@ PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa = NULL,
 Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.
 }
 \examples{
-phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
-aa.fitness.matrices <- array(dim=c(21, 20, length(phi.vector)))
-for (i in sequence(length(phi.vector))) {
- local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
- aa.fitness.matrices[,,i] <- local.matrix
- dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
-}
-values = paste("Phi = ", phi.vector, sep="")
-PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa="L")
+#phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
+#aa.fitness.matrices <- array(dim=c(21, 20, length(phi.vector)))
+#for (i in sequence(length(phi.vector))) {
+# local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
+# aa.fitness.matrices[,,i] <- local.matrix
+# dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
+#}
+#values = paste("Phi = ", phi.vector, sep="")
+#PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa="L")
 }

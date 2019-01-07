@@ -88,6 +88,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{mle.matrix}{The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.}
 
 \item{partition.order}{Allows for a specialized order of the partitions to be gathered from the working directory.}
+
+\item{max.iterations}{Sets the number of cycles to optimize the different parts of the model.}
 }
 \description{
 Efficient optimization of model parameters under the SELAC model
@@ -98,7 +100,8 @@ Here we optimize parameters across each gene separately while keeping the shared
 \examples{
 \dontrun{
 phy <- ape::read.tree(file=system.file("extdata", "rokasYeast.tre", package="selac"))
-result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'), n.partitions=1, phy=phy, max.evals=10)
+result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/')
+	, n.partitions=1, phy=phy, max.evals=10)
 print(result)
 }
 }

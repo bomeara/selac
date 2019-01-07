@@ -1775,11 +1775,11 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
             cat("              Optimizing edge lengths", "\n")
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
-            opts.edge <- opts
-            upper.edge <- rep(log(50), length(phy$edge.length))
-            lower.edge <- rep(log(1e-8), length(phy$edge.length))
-            results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=NULL, diploid=diploid, nuc.model=nuc.model, hmm=TRUE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
-            phy$edge.length <- exp(results.edge.final$solution)
+            phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
+            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=NULL, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+            #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
+            print(results.edge.final$final.likelihood)
+            phy <- results.edge.final$phy
         }
         if(global.nucleotide.model == TRUE) {
             cat("              Optimizing model parameters", "\n")
@@ -1841,8 +1841,11 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
             cat(paste("       Finished. Iterating search -- Round", iteration.number, sep=" "), "\n")
             if(edge.length == "optimize"){
                 cat("              Optimizing edge lengths", "\n")
-                results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=NULL, diploid=diploid, nuc.model=nuc.model, hmm=TRUE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
-                phy$edge.length <- exp(results.edge.final$solution)
+                phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
+                results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=NULL, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+                #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
+                print(results.edge.final$final.likelihood)
+                phy <- results.edge.final$phy
             }
             if(global.nucleotide.model == TRUE) {
                 cat("              Optimizing model parameters", "\n")

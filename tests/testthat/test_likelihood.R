@@ -1,5 +1,7 @@
 test_that("GTR_likelihood", {
-	tree <- read.tree("rokasYeast.tre")
+    skip_on_cran()
+
+    tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
@@ -13,7 +15,9 @@ test_that("GTR_likelihood", {
 
 
 test_that("GTR+GAMMA_likelihood", {
-	tree <- read.tree("rokasYeast.tre")
+    skip_on_cran()
+
+    tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
@@ -27,6 +31,8 @@ test_that("GTR+GAMMA_likelihood", {
 
 
 test_that("GY94_likelihood", {
+    skip_on_cran()
+
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
@@ -42,7 +48,9 @@ test_that("GY94_likelihood", {
 
 
 test_that("selac_likelihood_gtr", {
-	set.seed(4)
+    skip_on_cran()
+
+    set.seed(4)
 	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
@@ -67,6 +75,8 @@ test_that("selac_likelihood_gtr", {
 
 
 test_that("selac_likelihood_unrest", {
+    skip_on_cran()
+
     set.seed(4)
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
@@ -92,6 +102,8 @@ test_that("selac_likelihood_unrest", {
 
 
 test_that("selac+GAMMA_likelihood_median", {
+    skip_on_cran()
+    
     set.seed(4)
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
@@ -117,7 +129,9 @@ test_that("selac+GAMMA_likelihood_median", {
 
 
 test_that("selac+GAMMA_likelihood_quad", {
-	set.seed(4)
+    skip_on_cran()
+
+    set.seed(4)
 	tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
@@ -142,6 +156,8 @@ test_that("selac+GAMMA_likelihood_quad", {
 
 
 test_that("selacHMM", {
+    skip_on_cran()
+
     tree <- read.tree("rokasYeast.tre")
     phy <- drop.tip(tree, "Calb")
     yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
@@ -167,6 +183,8 @@ test_that("selacHMM", {
 
 
 test_that("dealing_with_missing_data", {
+    skip_on_cran()
+
     set.seed(4)
     phy <- rcoal(20)
 
