@@ -35,19 +35,3 @@ PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values,
 \description{
 Function to plot a distribution of fitnesses based on codon equilibrium freqs
 }
-\examples{
-#phi.vector <- c(.1, 0.5, 2)
-#codon.fitnesses.matrices <- array(dim=c(64, 20, length(phi.vector)))
-#codon.eq.matrices <- array(dim=c(64, 20, length(phi.vector)))
-#for (i in sequence(length(phi.vector))) {
-#   local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])
-#   codon.fitnesses.matrices[,,i] <-  local.matrix$codon.fitnesses
-#   codon.eq.matrices[,,i] <-  local.matrix$equilibrium.codon.frequency
-#   dimnames(codon.fitnesses.matrices) <- list(rownames(local.matrix$codon.fitnesses), 
-#   	colnames(local.matrix$codon.fitnesses), NULL)
-#   dimnames(codon.eq.matrices) <- list(rownames(local.matrix$equilibrium.codon.frequency),
-#    colnames(local.matrix$equilibrium.codon.frequency), NULL)
-#}
-#values = paste("Phi = ", phi.vector, sep="")
-#PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values)
-}

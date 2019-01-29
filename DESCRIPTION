@@ -2,7 +2,7 @@ Package: selac
 Type: Package
 Title: Selection Models for Amino Acid and/or Codon Evolution
 Version: 1.7.0
-Date: 2019-01-6
+Date: 2019-01-26
 Authors@R: c(person("Jeremy", "Beaulieu", role=c("aut", "cre"),
                      email = "jbeaulieu@nimbios.org"),
                      person("JJ", "Chai", role=c("aut")),
@@ -11,7 +11,7 @@ Authors@R: c(person("Jeremy", "Beaulieu", role=c("aut", "cre"),
                      person("Graham", "Derryberry", role=c("aut")),
                      person("Brian", "O'Meara", role=c("aut")))
 Maintainer: Jeremy Beaulieu <jbeaulieu@nimbios.org>
-Description: Implements models for amino acid or codon evolution with selection.
+Description: Sets up and executes various SelAC models (Selection on Amino acids and codons) that tests for the presence of selection in amino acid or codon evolution among a set of genes and fixed phylogeny. Beaulieu et al (2019) <doi:10.1093/molbev/msy222
 Suggests:
     testthat,
     igraph
