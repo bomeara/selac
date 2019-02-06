@@ -383,6 +383,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
         base.freqs <- tmp$base.freq
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
+    
     if(diploid == TRUE){
         ploidy = 2
     }else{
@@ -400,7 +401,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
         weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
-        diag(Q_position) = 0
+        diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
         sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=base.freqs)
     }
