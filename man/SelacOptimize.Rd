@@ -97,3 +97,10 @@ Efficient optimization of model parameters under the SELAC model
 \details{
 Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
 }
+\examples{
+\donttest{
+pp <- SelonOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, data.type="codon", nuc.model="GTR", include.gamma=TRUE)
+}
+}
+
+
