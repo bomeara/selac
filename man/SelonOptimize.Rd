@@ -57,6 +57,6 @@ SELON stands for SELection On Nucleotides. This function takes a user supplied t
 }
 \examples{
 \donttest{
-pp <- SelonOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, nuc.model="GTR", n.cores=3)
+pp <- SelonOptimize(nuc.data.path="FOLDER_WITH_FASTA/", phy=phy, nuc.model="GTR", n.cores=3)
 }
 }

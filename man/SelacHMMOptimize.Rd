@@ -91,3 +91,13 @@ Efficient optimization of model parameters under a HMM SELAC model
 \details{
 A hidden Markov model which no longers optimizes the optimal amino acids, but instead allows for the optimal sequence to vary along branches, clades, taxa, etc. Like the original function, we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
 }
+\examples{
+\donttest{
+pp <- SelacHMMOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, data.type="codon", codon.model = "selac", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
+}
+}
+
+
+
+
+

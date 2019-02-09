@@ -44,3 +44,9 @@ Simulates nucleotide data based on parameters under the SELAC model
 \details{
 Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 }
+\examples{
+\donttest{
+pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, data.type="codon", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
+sim.dat <- SelacSimulator(phy=pp$phy, pars=pp$mle.pars, aa.optim_array=pp$aa.optim, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, nuc.model=pp$nuc.model)
+}
+}

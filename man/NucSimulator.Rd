@@ -25,3 +25,9 @@ Simulates nucleotide data based on parameters under the GTR+G model
 \details{
 Simulates a nucleotide matrix using parameters under the GTR+G model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 }
+\examples{
+\donttest{
+pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, data.type='nucleotide', optimal.aa='none', codon.model='none', nuc.model='GTR', include.gamma=TRUE, gamma.type='quadrature')
+sim.dat <- NucSimulator(phy=pp$phy, pars=pp$mle.pars, nsites=pp$nsites, nuc.model=pp$nuc.model)
+}
+}
