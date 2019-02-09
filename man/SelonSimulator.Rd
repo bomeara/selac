@@ -23,3 +23,9 @@ Simulates nucleotide data based on parameters under the SELAC model
 \details{
 Simulates a nucleotide matrix using parameters under the SELON model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 }
+\examples{
+\donttest{
+pp <- SelonOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, nuc.model="GTR", n.cores=3)
+sim.dat <- SelonSimulator(phy=pp$phy, pars=pp$mle.pars, nuc.optim_array=pp$nuc.optim, nuc.model=pp$nuc.model)
+}
+}

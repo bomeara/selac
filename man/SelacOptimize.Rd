@@ -99,7 +99,7 @@ Here we optimize parameters across each gene separately while keeping the shared
 }
 \examples{
 \donttest{
-pp <- SelonOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, data.type="codon", nuc.model="GTR", include.gamma=TRUE)
+pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, data.type="codon", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
 }
 }
 
