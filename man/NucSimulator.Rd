@@ -27,7 +27,9 @@ Simulates a nucleotide matrix using parameters under the GTR+G model. Note that 
 }
 \examples{
 \donttest{
-pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, data.type='nucleotide', optimal.aa='none', codon.model='none', nuc.model='GTR', include.gamma=TRUE, gamma.type='quadrature')
+pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA/", phy=phy, 
+	data.type='nucleotide', optimal.aa='none', codon.model='none', nuc.model='GTR', 
+	include.gamma=TRUE, gamma.type='quadrature')
 sim.dat <- NucSimulator(phy=pp$phy, pars=pp$mle.pars, nsites=pp$nsites, nuc.model=pp$nuc.model)
 }
 }

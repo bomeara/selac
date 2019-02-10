@@ -93,7 +93,9 @@ A hidden Markov model which no longers optimizes the optimal amino acids, but in
 }
 \examples{
 \donttest{
-pp <- SelacHMMOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, data.type="codon", codon.model = "selac", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
+pp <- SelacHMMOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, 
+	data.type="codon", codon.model = "selac", nuc.model="GTR", include.gamma=TRUE, 
+	n.cores.by.gene=3)
 }
 }
 

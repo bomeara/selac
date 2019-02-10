@@ -46,7 +46,10 @@ Simulates a nucleotide matrix using parameters under the SELAC model. Note that 
 }
 \examples{
 \donttest{
-pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, data.type="codon", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
-sim.dat <- SelacSimulator(phy=pp$phy, pars=pp$mle.pars, aa.optim_array=pp$aa.optim, codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list, nuc.model=pp$nuc.model)
+pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, 
+	data.type="codon", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
+sim.dat <- SelacSimulator(phy=pp$phy, pars=pp$mle.pars, aa.optim_array=pp$aa.optim, 
+	codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list,
+	nuc.model=pp$nuc.model)
 }
 }
