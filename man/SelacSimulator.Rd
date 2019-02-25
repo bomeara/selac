@@ -46,17 +46,12 @@ Simulates a nucleotide matrix using parameters under the SELAC model. Note that 
 }
 \examples{
 \donttest{
-<<<<<<< HEAD
 data(yeast)
 system(paste("mkdir", "fastaSet", sep=" "))
-sim.dat <- SelacSimulator(phy=phy, pars=model.fit$mle.pars[1,], aa.optim_array=model.fit$aa.optim[[1]], codon.freq.by.aa=model.fit$codon.freq.by.aa[[1]], codon.freq.by.gene=model.fit$codon.freq.by.gene[[1]], nuc.model=model.fit$nuc.model)
-write.dna(sim.dat, file=paste("fastaSet", "/gene",  "TEST", ".fasta", sep=""), format="fasta", colw=1000000)
-=======
-pp <- SelacOptimize(codon.data.path="FOLDER_WITH_FASTA_FILES/", phy=phy, 
-	data.type="codon", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
-sim.dat <- SelacSimulator(phy=pp$phy, pars=pp$mle.pars, aa.optim_array=pp$aa.optim, 
-	codon.freq.by.aa=codon.freq.by.aa.list, codon.freq.by.gene=codon.freq.by.gene.list,
-	nuc.model=pp$nuc.model)
->>>>>>> f6d29e2acd1314683a53ecd6f92934317f22f27c
+sim.dat <- SelacSimulator(phy=phy, pars=model.fit$mle.pars[1,], aa.optim_array=
+	model.fit$aa.optim[[1]], codon.freq.by.aa=model.fit$codon.freq.by.aa[[1]], 
+	codon.freq.by.gene=model.fit$codon.freq.by.gene[[1]], nuc.model=model.fit$nuc.model)
+write.dna(sim.dat, file=paste("fastaSet", "/gene",  "TEST", ".fasta", sep=""), 
+	format="fasta", colw=1000000)
 }
 }
