@@ -26,6 +26,7 @@ Simulates a nucleotide matrix using parameters under the SELON model. Note that 
 \examples{
 \donttest{
 pp <- SelonOptimize(nuc.data.path="FOLDER_WITH_FASTA/", phy=phy, nuc.model="GTR", n.cores=3)
-sim.dat <- SelonSimulator(phy=pp$phy, pars=pp$mle.pars, nuc.optim_array=pp$nuc.optim, nuc.model=pp$nuc.model)
+sim.dat <- SelonSimulator(phy=pp$phy, pars=pp$mle.pars, nuc.optim_array=pp$nuc.optim, 
+	nuc.model=pp$nuc.model)
 }
 }
