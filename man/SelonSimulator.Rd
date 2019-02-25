@@ -25,8 +25,11 @@ Simulates a nucleotide matrix using parameters under the SELON model. Note that 
 }
 \examples{
 \donttest{
-pp <- SelonOptimize(nuc.data.path="FOLDER_WITH_FASTA/", phy=phy, nuc.model="GTR", n.cores=3)
-sim.dat <- SelonSimulator(phy=pp$phy, pars=pp$mle.pars, nuc.optim_array=pp$nuc.optim, 
-	nuc.model=pp$nuc.model)
+system(paste("mkdir", "uceSet", sep=" "))
+sim.dat <- SelonSimulator(phy=phy, pars=model.fit$pars.sims[1,], 
+	nuc.optim_array=model.fit$optimal.nuc.list[[1]], nuc.model=model.fit$nuc.model, 
+	diploid=TRUE)
+write.dna(sim.dat, file=paste("uceSet", "/gene",  "TEST", ".fasta", sep=""), 
+	format="fasta", colw=1000000)
 }
 }
