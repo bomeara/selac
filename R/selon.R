@@ -1563,11 +1563,15 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("% difference from previous round", are_we_there_yet, sep=" "), "\n")
                 iteration.number <- iteration.number + 1
             }
+            #### For testing purposes ####
+            obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
+            class(obj.tmp) = "selon"
+            save(obj.tmp,file=paste(paste(nuc.data.path, "Cycle", sep=""), iteration.number, "Rsave", sep="."))
+            #### For testing purposes ####
         }
-        
         if(output.by.restart == TRUE){
             obj.tmp = list(np=max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector), loglik = results.final$objective, AIC = -2*results.final$objective+2*(max(index.matrix) + length(phy$edge.lengths) + sum(nsites.vector)), AICc = NULL, mle.pars=mle.pars.mat, partitions=partitions[1:n.partitions], opts=opts, phy=phy, nsites=nsites.vector, nuc.optim=nuc.optim.list, nuc.optim.type=optimal.nuc, nuc.model=nuc.model, diploid=diploid, empirical.base.freqs=empirical.base.freq.list, max.tol=max.tol, max.tol=max.tol, max.evals=max.evals, selon.starting.vals=ip.vector)
-            class(obj.tmp) = "selac"
+            class(obj.tmp) = "selon"
             save(obj.tmp,file=paste(paste(nuc.data.path, output.restart.filename, sep=""), number.of.current.restarts, "Rsave", sep="."))
         }
         if(results.final$objective < best.lik){
