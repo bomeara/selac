@@ -76,19 +76,22 @@ GetPairwiseNucleotideWeightSingleSite <- function(d1, d2, Ne, si, diploid){
         return(1/(2*Ne))
     }else{
         fit_ratio <- exp(-(d1-d2)*si) #f1/f2
-        if(fit_ratio==Inf) #1 is much better than 2 (the mutant)
-        return(0)
-        else if(fit_ratio==1)
-        return(1/(2*Ne))
-        else
-        return((1-fit_ratio^b)/(1-fit_ratio^(2*Ne)))
+        if(fit_ratio==Inf){ #1 is much better than 2 (the mutant)
+            return(0)
+        }else{
+            if(fit_ratio==1){
+                return(1/(2*Ne))
+            }else{
+                return((1-fit_ratio^b)/(1-fit_ratio^(2*Ne)))
+            }
+        }
     }
 }
 
 
 GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optimal.nucleotide, Ne, diploid=TRUE){
     nucleotide.set <- 0:3
-    nucleotide.distances <- CreateNucleotideDistanceMatrix()
+    nucleotide.distances <- selac:::CreateNucleotideDistanceMatrix()
     nucleotide.fitness.ratios <- matrix(data=0,4,4)
     unique.nucs <- .nucleotide.name
     for (i in sequence(4)) {
@@ -96,8 +99,8 @@ GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optima
             nuc1 <- .nucleotide.name[i]
             nuc2 <- .nucleotide.name[j]
             if(!nuc1 == nuc2){
-                d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
-                d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                d1 <- selac:::GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                d2 <- selac:::GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
                 nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
             }
         }
