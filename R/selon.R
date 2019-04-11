@@ -75,7 +75,7 @@ GetPairwiseNucleotideWeightSingleSite <- function(d1, d2, Ne, si, diploid){
     if(d1==d2){ #When the fitnesses are the same, neutral case, pure drift
         return(1/(2*Ne))
     }else{
-        fit_ratio <- exp(-(d1-d2)*si) #f1/f2
+        fit_ratio <- exp(-(d1-d2)*si*Ne) #f1/f2
         if(fit_ratio==Inf){ #1 is much better than 2 (the mutant)
             return(0)
         }else{
