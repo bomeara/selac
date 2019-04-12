@@ -89,7 +89,7 @@ GetPairwiseNucleotideWeightSingleSite <- function(d1, d2, Ne, si, diploid){
 }
 
 
-GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optimal.nucleotide, Ne, diploid=TRUE){
+GetNucleotideFixationMatrix <- function(position.multiplier, optimal.nucleotide, Ne, diploid=TRUE){
     nucleotide.set <- 0:3
     nucleotide.distances <- CreateNucleotideDistanceMatrix()
     nucleotide.fitness.ratios <- matrix(data=0,4,4)
@@ -154,7 +154,7 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
     scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
     nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
     for(site.index in sequence(nsites)) {
-        weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
+        weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
@@ -386,7 +386,7 @@ GetNucleotideFixationHMMMatrix <- function(site.number, position.multiplier, Ne,
     
     for(i in 1:4) {
         index.vec.diag.i <- (1+(i-1)*4):(4+(i-1)*4)
-        evolv.nucleotide.fixation.probs[index.vec.diag.i, index.vec.diag.i] <- GetNucleotideFixationMatrix(site.number=site.number, position.multiplier=position.multiplier, optimal.nucleotide=i, Ne=Ne, diploid=diploid)
+        evolv.nucleotide.fixation.probs[index.vec.diag.i, index.vec.diag.i] <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier, optimal.nucleotide=i, Ne=Ne, diploid=diploid)
         for(j in 1:4){
             index.vec.diag.j <- (1+(j-1)*4):(4+(j-1)*4)
             diag(evolv.nucleotide.fixation.probs[index.vec.diag.j, index.vec.diag.i]) <- 1/(2*Ne)
@@ -866,7 +866,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
         nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
-        weight.matrix <- GetNucleotideFixationMatrix(site.index, position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
+        weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
