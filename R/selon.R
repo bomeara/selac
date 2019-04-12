@@ -91,7 +91,7 @@ GetPairwiseNucleotideWeightSingleSite <- function(d1, d2, Ne, si, diploid){
 
 GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optimal.nucleotide, Ne, diploid=TRUE){
     nucleotide.set <- 0:3
-    nucleotide.distances <- selac:::CreateNucleotideDistanceMatrix()
+    nucleotide.distances <- CreateNucleotideDistanceMatrix()
     nucleotide.fitness.ratios <- matrix(data=0,4,4)
     unique.nucs <- .nucleotide.name
     for (i in sequence(4)) {
@@ -99,8 +99,8 @@ GetNucleotideFixationMatrix <- function(site.number, position.multiplier, optima
             nuc1 <- .nucleotide.name[i]
             nuc2 <- .nucleotide.name[j]
             if(!nuc1 == nuc2){
-                d1 <- selac:::GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
-                d2 <- selac:::GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
                 nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
             }
         }
@@ -1343,7 +1343,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     if(nuc.model == "JC"){
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG")
-        upper = c(log(1), log(nsites.vector[1]), log(500), 0, 0, 0)
+        upper = c(log(15), log(nsites.vector[1]), log(500), 0, 0, 0)
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 0
     }
@@ -1351,7 +1351,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 5)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
-        upper = c(log(1), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
+        upper = c(log(15), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 5
     }
@@ -1359,7 +1359,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-        upper = c(log(1), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
+        upper = c(log(15), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 11
     }
