@@ -1333,17 +1333,17 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     if(max.restarts > 1){
         selon.starting.vals <- matrix(0, max.restarts+1, 2)
-        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-20)*5e6, max = (10^-12)*5e6)
+        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-14)*5e6, max = (10^-10)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
         selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
     }else{
-        selon.starting.vals <- matrix(c(1e-13*5e6, 100),1,2)
+        selon.starting.vals <- matrix(c(1e-10*5e6, 100),1,2)
         selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
     }
     if(nuc.model == "JC"){
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG")
-        upper = c(log(15), log(nsites.vector[1]), log(500), 0, 0, 0)
+        upper = c(log(50), log(nsites.vector[1]), log(500), 0, 0, 0)
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 0
     }
@@ -1351,7 +1351,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 5)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
-        upper = c(log(15), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
+        upper = c(log(50), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 5
     }
@@ -1359,7 +1359,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-        upper = c(log(15), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
+        upper = c(log(50), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 11
     }
