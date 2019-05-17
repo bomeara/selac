@@ -356,10 +356,11 @@ SelacSimulator <- function(phy, pars, aa.optim_array, codon.freq.by.aa=NULL, cod
 #' @param nuc.optim_array A vector of optimal nucleotide for each site to be simulated.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
+#' @param start.vals_array A vector of nucleotides to be used as the starting nucleotide for each site in the simulation.
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the SELON model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
+SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, start.vals_array=NULL){
 
     nsites <- length(nuc.optim_array)
 
@@ -403,7 +404,11 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE){
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
-        sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=base.freqs)
+        if(is.null(start.vals_array)){
+            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=base.freqs)
+        }else{
+            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=start.vals_array[site.index])
+        }
     }
     nuc.names <- n2s(0:3)
     #Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
