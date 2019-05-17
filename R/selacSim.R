@@ -407,7 +407,9 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         if(is.null(start.vals_array)){
             sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=base.freqs)
         }else{
-            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=start.vals_array[site.index])
+            initial.val <- numeric(4)
+            initial.val[start.vals_array[site.index]] <- 1
+            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=initial.val)
         }
     }
     nuc.names <- n2s(0:3)
