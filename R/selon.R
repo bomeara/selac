@@ -1292,11 +1292,12 @@ GetMaxNameUCE <- function(x) {
 #' @param max.restarts Supplies the number of random restarts.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
 #' @param output.restart.filename Designates the file name for each random restart.
+#' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, output.by.restart=TRUE, output.restart.filename="restartResult", fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -1396,6 +1397,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                         upper.mat = rbind(upper.mat, upper)
                         lower.mat = rbind(lower.mat, lower)
                     }
+                }
+                if(!is.null(user.supplied.starting.param.vals)){
+                    ip.vector <- user.supplied.starting.param.vals
                 }
                 index.matrix.tmp[index.matrix.tmp==0] <- seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
                 index.matrix[partition.index,] <- index.matrix.tmp
