@@ -1290,6 +1290,7 @@ GetMaxNameUCE <- function(x) {
 #' @param max.evals Supplies the max number of iterations tried during optimization.
 #' @param cycle.stage Specifies the number of cycles per restart. Default is 12.
 #' @param max.restarts Supplies the number of random restarts.
+#' @param user.optimal.nuc If optimal.nuc is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.
 #' @param output.by.restart Logical indicating whether or not each restart is saved to a file. Default is TRUE.
 #' @param output.restart.filename Designates the file name for each random restart.
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
@@ -1297,11 +1298,16 @@ GetMaxNameUCE <- function(x) {
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL) {
     
     cat("Initializing data and model parameters...", "\n")
     
     partitions <- system(paste("ls -1 ", nuc.data.path, "*.fasta", sep=""), intern=TRUE)
+    
+    
+    if(!optimal.nuc == "optimize" & !optimal.nuc == "majrule" & !optimal.nuc == "user"){
+        stop("Check that you have a supported optimalnucleotide option. Options are optimize, majrule, or user", call.=FALSE)
+    }
     
     if(is.null(n.partitions)){
         n.partitions <- length(partitions)
@@ -1328,8 +1334,13 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         empirical.base.freq <- as.matrix(nucleotide.data[,-1])
         empirical.base.freq <- table(empirical.base.freq, deparse.level = 0) / sum(table(empirical.base.freq, deparse.level = 0))
         empirical.base.freq.list[[partition.index]] <- as.vector(empirical.base.freq[1:4])
-        nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, GetMaxNameUCE)) #starting values for all, final values for majrule
-        nuc.optim.list[[partition.index]] <- nuc.optim
+        if(optimal.nuc == "user"){
+            nuc.optim <- user.optimal.nuc[[partition.index]]
+            nuc.optim.list[[partition.index]] <- nuc.optim
+        }else{
+            nuc.optim <- as.numeric(apply(nucleotide.data[,-1], 2, GetMaxNameUCE)) #starting values for all, final values for majrule
+            nuc.optim.list[[partition.index]] <- nuc.optim
+        }
     }
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     if(max.restarts > 1){
@@ -1437,7 +1448,12 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
         }
         nuc.optim.list <- nuc.optim.list
-        cat("       Doing first pass using majority rule optimal nucleotide...", "\n")
+        if(optimal.nuc=="optimize"){
+            message.to.print <- "majority-rule"
+        }else{
+            message.to.print <- optimal.nuc
+        }
+        cat(paste("       Doing first pass using ", message.to.print, " optimal nucleotide...", sep=""), "\n")
         if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             mle.pars.mat <- index.matrix

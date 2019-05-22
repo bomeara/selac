@@ -9,7 +9,7 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
   optimal.nuc = "majrule", nuc.model = "GTR",
   global.nucleotide.model = TRUE, diploid = TRUE, verbose = FALSE,
   n.cores = 1, max.tol = .Machine$double.eps^0.25, max.evals = 1e+06,
-  cycle.stage = 12, max.restarts = 3, output.by.restart = TRUE,
+  cycle.stage = 12, max.restarts = 3, user.optimal.nuc=NULL, output.by.restart = TRUE,
   output.restart.filename = "restartResult", user.supplied.starting.param.vals=NULL, 
   fasta.rows.to.keep = NULL)
 }
@@ -43,6 +43,8 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 \item{cycle.stage}{Specifies the number of cycles per restart. Default is 12.}
 
 \item{max.restarts}{Supplies the number of random restarts.}
+
+\item{user.optimal.nuc}{If optimal.nuc is set to "user", this option allows for the user-input optimal amino acids. Must be a list. To get the proper order of the partitions see "GetPartitionOrder" documentation.}
 
 \item{output.by.restart}{Logical indicating whether or not each restart is saved to a file. Default is TRUE.}
 
