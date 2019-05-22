@@ -1427,6 +1427,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             }
         }
     }
+    print(ip.vector)
     number.of.current.restarts <- 1
     nuc.optim.original <- nuc.optim.list
     best.lik <- 1000000
