@@ -450,21 +450,30 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[2:6], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars, model=nuc.model)
+        nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[2:12], model=nuc.model)
     }
 
     Q_mat <- nuc.mutation.rates
     diag(Q_mat) = 0
     diag(Q_mat) <- -rowSums(Q_mat)
-
-    rate.vector <- DiscreteGamma(pars[1], ncats)
-    rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=rep(1/ncats, ncats))
-    # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
-    sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
-    for(site in 1:nsites){
-        Q_tmp <- Q_mat * rate.vector[rate.indicator[site]]
-        sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs)
+    
+    if(!is.null(ncats)){
+        rate.vector <- DiscreteGamma(pars[1], ncats)
+        rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=rep(1/ncats, ncats))
+        # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
+        sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
+        for(site in 1:nsites){
+            Q_tmp <- Q_mat * rate.vector[rate.indicator[site]]
+            sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs)
+        }
+    }else{
+        # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
+        sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
+        for(site in 1:nsites){
+            sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_mat, root.value=base.freqs)
+        }
     }
+
     nuc.names <- n2s(0:3)
     # Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
     nucleotide.data <- c()
