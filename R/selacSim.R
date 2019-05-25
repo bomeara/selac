@@ -453,10 +453,11 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[2:12], model=nuc.model)
     }
 
-    Q_mat <- nuc.mutation.rates
-    diag(Q_mat) = 0
-    diag(Q_mat) <- -rowSums(Q_mat)
-    
+    diag(nuc.mutation.rates) = 0
+    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+    scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
+    Q_mat <- nuc.mutation.rates * (1/scale.factor)
+
     if(!is.null(ncats)){
         rate.vector <- DiscreteGamma(pars[1], ncats)
         rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=rep(1/ncats, ncats))
