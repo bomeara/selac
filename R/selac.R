@@ -3862,13 +3862,13 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
 
 
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
+    if(!is.null(rates)){
+        Q = Q * rates
+    }
   if(!is.null(scale.factor)){
     Q.scaled = Q * (1/scale.factor)
   }else{
     Q.scaled = Q
-  }
-  if(!is.null(rates)){
-    Q.scaled = Q.scaled * rates
   }
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
