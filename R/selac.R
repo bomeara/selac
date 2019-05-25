@@ -1833,7 +1833,6 @@ GetLikelihoodNucleotideForManyCharGivenAllParams <- function(x, nuc.data, phy, r
     for(k in sequence(ncats)){
       final.likelihood.mat[k,] = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=rates.k[k], root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
     }
-    print(log(colSums(exp(final.likelihood.mat)*weights.k)))
     likelihood <- sum(log(colSums(exp(final.likelihood.mat)*weights.k)) * nuc.data$site.pattern.counts)
   }else{
     final.likelihood = GetLikelihoodNucleotideForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, rates.k=NULL, root.p_array=root.p_array, n.cores.by.gene.by.site=n.cores.by.gene.by.site)
