@@ -2938,9 +2938,15 @@ GetCAI <- function(codon.data, aa.optim, numcode=1, w){
 }
 
 
-DiscreteGamma <- function (shape, ncats){
-  quantiles <- qgamma((1:(ncats - 1))/ncats, shape = shape, rate = shape)
-  return(diff(c(0, pgamma(quantiles * shape, shape + 1, rate=shape), 1)) * ncats)
+#DiscreteGamma <- function (shape, ncats){
+#  quantiles <- qgamma((1:(ncats - 1))/ncats, shape = shape, rate = shape)
+#  return(diff(c(0, pgamma(quantiles * shape, shape + 1, rate=shape), 1)) * ncats)
+#}
+
+DiscreteGamma <- function(shape, ncats) {
+    if (k == 1) return(1)
+    quants <- qgamma( (1:(ncats - 1)) / ncats, shape = shape, rate = shape)
+    return(diff(c(0, pgamma(quants * shape, shape + 1), 1)) * ncats)
 }
 
 
@@ -3862,13 +3868,13 @@ exp_A_tvec_codon <- function(A, codon, tvec=1, v=NULL, subset=NULL )
 
 
 GetExpQt <- function(phy, Q, scale.factor, rates=NULL){
-    if(!is.null(rates)){
-        Q = Q * rates
-    }
   if(!is.null(scale.factor)){
     Q.scaled = Q * (1/scale.factor)
   }else{
     Q.scaled = Q
+  }
+  if(!is.null(rates)){
+    Q.scaled = Q.scaled * rates
   }
   nb.tip <- length(phy$tip.label)
   nb.node <- phy$Nnode
