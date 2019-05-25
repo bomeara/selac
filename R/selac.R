@@ -2944,7 +2944,7 @@ GetCAI <- function(codon.data, aa.optim, numcode=1, w){
 #}
 
 DiscreteGamma <- function(shape, ncats) {
-    if (k == 1) return(1)
+    if (ncats == 1) return(1)
     quants <- qgamma( (1:(ncats - 1)) / ncats, shape = shape, rate = shape)
     return(diff(c(0, pgamma(quants * shape, shape + 1), 1)) * ncats)
 }
