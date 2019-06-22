@@ -1,13 +1,13 @@
 # Function to plot frequency of distribution of different Wi given selac parameters
 
-ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-#To test: nuc.model="JC"; base.freqs=rep(0.25, 4); nsites=1; C=4; Phi=0.5; q=4e-7; Ne=5e6; alpha=1.83; beta=0.10; gamma=0.0003990333; include.stop.codon=TRUE; numcode=1; diploid=TRUE; flee.stop.codon.rate=0.9999999
+ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Psi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+#To test: nuc.model="JC"; base.freqs=rep(0.25, 4); nsites=1; C=4; Psi=0.5; q=4e-7; Ne=5e6; alpha=1.83; beta=0.10; gamma=0.0003990333; include.stop.codon=TRUE; numcode=1; diploid=TRUE; flee.stop.codon.rate=0.9999999
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
   codon.index.matrix = CreateCodonMutationMatrixIndex()
   codon_mutation_matrix <- matrix(nuc.mutation.rates[codon.index.matrix], dim(codon.index.matrix))
   codon_mutation_matrix[is.na(codon_mutation_matrix)]=0
   aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
-  Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+  Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
   diag(codon_mutation_matrix) = 0
   diag(codon_mutation_matrix) = -rowSums(codon_mutation_matrix)
   .unique.aa <- c("K", "N", "T", "R", "S", "I", "M", "Q", "H", "P", "L", "E", "D", "A", "G", "V", "*", "Y", "C", "W", "F")
@@ -40,7 +40,7 @@ ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.
 #' Function to plot a distribution of frequencies of codons given a 3d array of equilibrium frequency matrices
 #'
 #' @param eq.freq.matrices A 3d array of eq.freq.matrix returned from ComputeEquilibriumFrequencies
-#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param values The vector of labels for each matrix (i.e., different Psi values)
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
 #' @param ... Other paramters to pass to plot()
@@ -60,8 +60,8 @@ PlotEquilbriumCodonDistribution <- function(eq.freq.matrices, values, palette="S
   legend(x="topright", legend=values, fill=colors)
 }
 
-ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-  eq.freq.matrix <- ComputeEquilibriumCodonFrequencies(nuc.model, base.freqs, nsites, C, Phi, q, Ne, alpha, beta, gamma, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
+ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Psi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+  eq.freq.matrix <- ComputeEquilibriumCodonFrequencies(nuc.model, base.freqs, nsites, C, Psi, q, Ne, alpha, beta, gamma, include.stop.codon, numcode, diploid, flee.stop.codon.rate)
   codon.fitness.matrix <- eq.freq.matrix*NA
   aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=NULL, normalize=FALSE, poly.params=NULL, k=0)
   aa.names <- unique(sapply(rownames(eq.freq.matrix), TranslateCodon, numcode=numcode))
@@ -70,7 +70,7 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
   colnames(aa.fitnesses) <- colnames(eq.freq.matrix)
   for (col.index in sequence(dim(codon.fitness.matrix)[2])) {
     for (row.index in sequence(dim(codon.fitness.matrix)[1])) {
-      codon.fitness.matrix[row.index, col.index] <- GetFitness(focal.protein=TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Phi=Phi, q=q)
+      codon.fitness.matrix[row.index, col.index] <- GetFitness(focal.protein=TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), optimal.protein=colnames(codon.fitness.matrix)[col.index], aa.distances, nsites=nsites, C=1, Psi=Psi, q=q)
       aa.fitnesses[TranslateCodon(rownames(codon.fitness.matrix)[row.index], numcode), col.index] <- codon.fitness.matrix[row.index, col.index]
     }
   }
@@ -85,8 +85,8 @@ ComputeEquilibriumAAFitness <- function(nuc.model="JC", base.freqs=rep(0.25, 4),
 # delta.fitness.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are new codon fitness - original codon fitness
 # frequency.array: 3d array: dimensions are starting codon, optimal aa, and finishing codon; entries are frequencies that that mutation is attempted given the optimal aa (column)
 #
-ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-  equilibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
+ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Psi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+  equilibrium.values <- ComputeEquilibriumAAFitness(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
   codon.fitness.matrix <- equilibrium.values$codon.fitnesses
   equilibrium.codon.frequency <- equilibrium.values$equilibrium.codon.frequency
   nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -116,7 +116,7 @@ ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), ns
 #' Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.
 #'
 #' @param aa.fitness.matrices, A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
-#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param values The vector of labels for each matrix (i.e., different Psi values)
 #' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
@@ -213,7 +213,7 @@ add.alpha <- function(col, alpha=1){
 #'
 #' @param codon.fitnesses.matrices A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)
 #' @param codon.eq.matrices A 3d array of codon equilibrium frequencies
-#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param values The vector of labels for each matrix (i.e., different Psi values)
 #' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
@@ -299,7 +299,7 @@ LineMutationFitnessSpectra <- function(mutation.fitness.object, optimal.aa=NULL)
 #' Plot fitness of mutations, weighted by frequency of those mutations
 #'
 #' @param mutation.fitness.object.list List that contains multiple objects from ComputeMutationFitnesses() calls
-#' @param values The vector of labels for each matrix (i.e., different Phi values)
+#' @param values The vector of labels for each matrix (i.e., different Psi values)
 #' @param optimal.aa Single letter code for the optimal aa. If NULL, integrates across aa.
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
@@ -348,25 +348,25 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   get.delta <- function(x) {
     return(x-min(x))
   }
-  weights.integrating.phi <- matrix(nrow=dim(AIC.site.information)[1], ncol=dim(AIC.site.information)[2])
+  weights.integrating.psi <- matrix(nrow=dim(AIC.site.information)[1], ncol=dim(AIC.site.information)[2])
   for (site.number in sequence(dim(AIC.site.information)[2])) { #fine, I give up on the apply across three dimensions. BCO.
     local.matrix <- exp(-0.5*get.delta(AIC.site.information[,site.number,]))
     local.matrix <- local.matrix / sum(local.matrix)
-    weights.integrating.phi[,site.number] <- rowSums(local.matrix)
+    weights.integrating.psi[,site.number] <- rowSums(local.matrix)
   }
-  rownames(weights.integrating.phi) <- dimnames(AIC.site.information)[[1]]
+  rownames(weights.integrating.psi) <- dimnames(AIC.site.information)[[1]]
 
   reverse.weighted.mean <- function(w, x) {
     return(stats::weighted.mean(x, w))
   }
 
-  average.c <- apply(weights.integrating.phi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"c"])
-  average.p <- apply(weights.integrating.phi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"p"])
-  average.v <- apply(weights.integrating.phi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"v"])
+  average.c <- apply(weights.integrating.psi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"c"])
+  average.p <- apply(weights.integrating.psi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"p"])
+  average.v <- apply(weights.integrating.psi, 2, reverse.weighted.mean, x=aa.properties.reordered[,"v"])
   sliding.c <- zoo::rollmean(average.c, k=mean.width)
   sliding.p <- zoo::rollmean(average.p, k=mean.width)
   sliding.v <- zoo::rollmean(average.v, k=mean.width)
-  #average.phi <- apply()
+  #average.psi <- apply()
   par(mfcol=c(1,4))
   plot(x=sequence(length(average.c)), y=average.c, main="Composition", xlab="Site", pch=20,ylab="", bty="n", col=rgb(0,0,0,.5))
   lines(x=sequence(length(sliding.c)), y=sliding.c, lwd=2)
@@ -376,12 +376,12 @@ PlotGeneSiteInfo <- function(all.info, aa.properties=NULL, mean.width=10) {
   lines(x=sequence(length(sliding.v)), y=sliding.v, lwd=2)
 }
 
-ComputeMutationFitnessesUnderGammaRates <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Phi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999, shape.gamma=1, n.pulls=1000) {
-  Phi.vector <- Phi*rgamma(n.pulls, shape=shape.gamma, rate=shape.gamma)
-  ComputeMutationFitnessesPhiFirst <- function(Phi=0.5, nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
-    return(ComputeMutationFitnesses(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate))
+ComputeMutationFitnessesUnderGammaRates <- function(nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, Psi=0.5, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999, shape.gamma=1, n.pulls=1000) {
+  Psi.vector <- Psi*rgamma(n.pulls, shape=shape.gamma, rate=shape.gamma)
+  ComputeMutationFitnessesPsiFirst <- function(Psi=0.5, nuc.model="JC", base.freqs=rep(0.25, 4), nsites=1, C=4, q=4e-7, Ne=5e6, alpha=1.83, beta=0.10, gamma=0.0003990333, include.stop.codon=TRUE, numcode=1, diploid=TRUE, flee.stop.codon.rate=0.9999999) {
+    return(ComputeMutationFitnesses(nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate))
   }
-  results <- lapply(Phi.vector, ComputeMutationFitnessesPhiFirst, nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
+  results <- lapply(Psi.vector, ComputeMutationFitnessesPsiFirst, nuc.model=nuc.model, base.freqs=base.freqs, nsites=nsites, C=C, q=q, Ne=Ne, alpha=alpha, beta=beta, gamma=gamma, include.stop.codon=include.stop.codon, numcode=numcode, diploid=diploid, flee.stop.codon.rate=flee.stop.codon.rate)
   return(results)
 }
 
@@ -396,7 +396,7 @@ ComputeMutationFitnessesUnderGammaRates <- function(nuc.model="JC", base.freqs=r
 #
 # Do for different amino acids
 #
-# Phi*g
+# Psi*g
 #
 # X axis is log(W)*Ne
 #

@@ -425,13 +425,13 @@ GetSelacSimulateInfo <- function(selac.obj, partition.number){
         pars = pars[-length(pars)]
     }
 
-    C.Phi.q.Ne <- pars[1]
+    C.Psi.q.Ne <- pars[1]
     C <- 4
     q <- 4e-7
     Ne <- 5e6
-    Phi.q.Ne <- C.Phi.q.Ne / C
-    Phi.Ne <- Phi.q.Ne / q
-    Phi <- Phi.Ne / Ne
+    Psi.q.Ne <- C.Psi.q.Ne / C
+    Psi.Ne <- Psi.q.Ne / q
+    Psi <- Psi.Ne / Ne
     alpha <- pars[2]
     beta <- pars[3]
     gamma <- 0.0003990333
@@ -491,7 +491,7 @@ GetSelacSimulateInfo <- function(selac.obj, partition.number){
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
-            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+            rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
         }
         for(cat.index in 1:ncats){
             Q_codon_array <- rate.Q_codon.list[[cat.index]]
@@ -518,7 +518,7 @@ GetSelacSimulateInfo <- function(selac.obj, partition.number){
         }else{
             aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
         }
-        Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
+        Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
         #Finish the Q_array codon mutation matrix multiplication here:
         for(k in 1:21){
             if(diploid == TRUE){
@@ -583,20 +583,20 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
         nsites <- dim(codon.data)[2]-1
 
         interval.recon_array <- c()
-        simulated.site.phi.cat <- c()
+        simulated.site.psi.cat <- c()
 
         if(include.gamma == TRUE){
             shape = pars[length(pars)]
             pars = pars[-length(pars)]
         }
 
-        C.Phi.q.Ne <- pars[1]
+        C.Psi.q.Ne <- pars[1]
         C <- 4
         q <- 4e-7
         Ne <- 5e6
-        Phi.q.Ne <- C.Phi.q.Ne / C
-        Phi.Ne <- Phi.q.Ne / q
-        Phi <- Phi.Ne / Ne
+        Psi.q.Ne <- C.Psi.q.Ne / C
+        Psi.Ne <- Psi.q.Ne / q
+        Psi <- Psi.Ne / Ne
         alpha <- pars[2]
         beta <- pars[3]
         gamma <- 0.0003990333
@@ -655,7 +655,7 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
                 }else{
                     aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
                 }
-                rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
+                rate.Q_codon.list[[cat.index]] <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi*rates.k[cat.index], q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999999)
             }
             for(cat.index in 1:ncats){
                 Q_codon_array <- rate.Q_codon.list[[cat.index]]
@@ -687,7 +687,7 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
                     if(!is.null(simulation.model.info$gamma.rates)){
                         for(i in sequence(nsites)){
                             site.rate <- sample(1:4, 1, prob=weights.k)
-                            simulated.site.phi.cat <- c(simulated.site.phi.cat, site.rate)
+                            simulated.site.psi.cat <- c(simulated.site.psi.cat, site.rate)
                             Q_codon_array <- rate.Q_codon.list[[site.rate]]
                             Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
                             Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
@@ -730,7 +730,7 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
             }else{
                 aa.distances <- CreateAADistanceMatrix(alpha=alpha, beta=beta, gamma=gamma, aa.properties=aa.properties, normalize=FALSE, poly.params=NULL, k=k.levels)
             }
-            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Phi=Phi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
+            Q_codon_array <- FastCreateAllCodonFixationProbabilityMatrices(aa.distances=aa.distances, nsites=nsites, C=C, Psi=Psi, q=q, Ne=Ne, include.stop.codon=TRUE, numcode=numcode, diploid=diploid, flee.stop.codon.rate=0.9999)
             #Finish the Q_array codon mutation matrix multiplication here:
             for(k in 1:21){
                 if(diploid == TRUE){
@@ -759,7 +759,7 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
                     for(i in sequence(nsites)){
                         Q_codon_recon <- Q_codon_array[,,aa.optim_array[i]]
                         site.rate <- sample(1:4, 1, prob=simulation.model.info$gamma.weights)
-                        simulated.site.phi.cat <- c(simulated.site.phi.cat, site.rate)
+                        simulated.site.psi.cat <- c(simulated.site.psi.cat, site.rate)
                         Q_codon_array <- simulation.model.info$Q_matrix[[site.rate]]
                         Q_codon_sim <- Q_codon_array[,,aa.optim_array[i]]
                         interval.recon_array <- cbind(interval.recon_array, GetTipIntervalStateSingleSite(charnum=i, codon.data=codon.data, phy=phy.sort, root.p=root.p_array[aa.optim_array[i],], taxon.to.drop=taxon.to.drop, Q.to.reconstruct=Q_codon_recon, Q.to.simulate=Q_codon_sim,  model.to.reconstruct.under=model.to.reconstruct.under, model.to.simulate.under=model.to.simulate.under))
@@ -934,10 +934,10 @@ GetIntervalSequencesAllSites <- function(model.to.reconstruct.under, model.to.si
     }
     obj <- NULL
     obj$interval.recon_array <- interval.recon_array
-    if(length(simulated.site.phi.cat)==0){
+    if(length(simulated.site.psi.cat)==0){
         obj$site.gamma.indicator <- NULL
     }else{
-        obj$site.gamma.indicator <- simulated.site.phi.cat
+        obj$site.gamma.indicator <- simulated.site.psi.cat
     }
     return(obj)
 }
