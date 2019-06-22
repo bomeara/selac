@@ -1295,10 +1295,14 @@ GetMaxNameUCE <- function(x) {
 #' @param output.restart.filename Designates the file name for each random restart.
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#' @param max.a0  Upper bound for search of a0=Nes. Default is 200 although some sections of code use max.a0/4 to keep it in line with previous values. # mikeg: Not sure why. Jermey can you address?
+#' @param max.a1.factor  Factor multiplied by nsites.vector[1] and used to create upper bound for search of a2=width. Default is 1. 
+#' @param max.a2  Upper bound for search of a2=width. Default is 500.
+## A better solution would be to define max.a2.factor and use it as factor multiplied by nsites.vector[1] for determining upper bound for search of a2=width parameter. Default would be 0.5. Using max.a2 to ensure model no longer hits upper bound
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, max.a0=200, max.a1.factor=1, max.a2=500) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -1347,7 +1351,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         selon.starting.vals <- matrix(0, max.restarts+1, 2)
         selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-8)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
-        selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
+        selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = max.a2)
     }else{
         selon.starting.vals <- matrix(c(1e-10*5e6, 100),1,2)
         selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
@@ -1355,7 +1359,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     if(nuc.model == "JC"){
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG")
-        upper = c(log(200), log(nsites.vector[1]), log(500), 0, 0, 0)
+        upper = c(log(max.a0), log(nsites.vector[1]*max.a1.factor), log(max.a2), 0, 0, 0)
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 0
     }
@@ -1363,7 +1367,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 5)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
-        upper = c(log(200), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
+        upper = c(log(max.a0), log(nsites.vector[1]*max.a1.factor), log(max.a2), 0, 0, 0, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 5
     }
@@ -1371,7 +1375,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-        upper = c(log(200), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
+        upper = c(log(max.a0), log(nsites.vector[1]*max.a1.factor), log(max.a2), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 11
     }
@@ -1698,7 +1702,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
         selon.starting.vals <- matrix(0, max.restarts+1, 2)
         selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-20)*5e6, max = (10^-12)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
-        selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
+        selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = max.a2)
     }else{
         selon.starting.vals <- matrix(c(1e-13*5e6, 100),1,2)
         selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
@@ -1707,7 +1711,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
     if(nuc.model == "JC"){
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, 1)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "opt.rate")
-        upper = c(log(50), log(nsites.vector[1]), log(500), 0, 0, 0, 21)
+        upper = c(log(max.a0/4), log(nsites.vector[1]*max.a1.factor), log(max.a2), 0, 0, 0, 21)
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 1 + 0
     }
@@ -1715,7 +1719,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
         nuc.ip = rep(1, 5)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, 1, nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "opt.rate", "C_A", "G_A", "T_A", "G_C", "T_C")
-        upper = c(log(50), log(nsites.vector[1]), log(500), 0, 0, 0, 21, rep(21, length(nuc.ip)))
+        upper = c(log(max.a0/4), log(nsites.vector[1]*max.a1.factor), log(max.a2), 0, 0, 0, 21, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 1 + 5
     }
@@ -1723,7 +1727,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 1, nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "opt.rate", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
-        upper = c(log(50), log(nsites.vector[1]), log(500), 21, rep(21, length(nuc.ip)))
+        upper = c(log(max.a0/4), log(nsites.vector[1]*max.a1.factor), log(max.a2), 21, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 1 + 11
     }
