@@ -768,9 +768,8 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
     for(partition.index in 2:length(site.pattern.data.list)){
         site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
     }
-    #site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
-    #site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
-    site.pattern.data.table <- t(site.pattern.data.frame[,-1])
+    site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
+    site.pattern.data.table <- t(site.pattern.data.table)
     colnames(site.pattern.data.table) <- phy$tip.label
     return(site.pattern.data.table)
 }
