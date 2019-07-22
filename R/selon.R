@@ -1295,15 +1295,19 @@ GetMaxNameUCE <- function(x) {
 #' @param output.restart.filename Designates the file name for each random restart.
 #' @param user.supplied.starting.param.vals Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.
 #' @param fasta.rows.to.keep Indicates which rows to remove in the input fasta files.
+#' @param dt.threads Indicates how many available threads to allow data.table to use. Default is zero.
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=0) {
     
     cat("Initializing data and model parameters...", "\n")
     
     partitions <- system(paste("ls -1 ", nuc.data.path, "*.fasta", sep=""), intern=TRUE)
     
+    cat(paste("Using", n.cores, "total processors", sep=" "), "\n")
+    setDTthreads <- dt.threads
+    cat(paste("Allowing data.table to use", dt.threads, "threads", sep=" "), "\n")
     
     if(!optimal.nuc == "optimize" & !optimal.nuc == "majrule" & !optimal.nuc == "user"){
         stop("Check that you have a supported optimalnucleotide option. Options are optimize, majrule, or user", call.=FALSE)

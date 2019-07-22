@@ -18,7 +18,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
   output.by.restart = TRUE, output.restart.filename = "restartResult",
   user.supplied.starting.param.vals = NULL, tol.step = 1,
   optimizer.algorithm = "NLOPT_LN_SBPLX", start.from.mle = FALSE,
-  mle.matrix = NULL, partition.order = NULL, max.iterations = 6)
+  mle.matrix = NULL, partition.order = NULL, max.iterations = 6,
+  dt.threads=0)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -90,6 +91,8 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{partition.order}{Allows for a specialized order of the partitions to be gathered from the working directory.}
 
 \item{max.iterations}{Sets the number of cycles to optimize the different parts of the model.}
+
+\item{dt.threads}{Indicates how many available threads to allow data.table to use. Default is zero.}
 }
 \description{
 Efficient optimization of model parameters under the SELAC model
