@@ -4374,7 +4374,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
     
     
     cat(paste("Using", n.cores.by.gene * n.cores.by.gene.by.site, "total processors", sep=" "), "\n")
-    setDTthreads <- dt.threads
+    setDTthreads(dt.threads)
     cat(paste("Allowing data.table to use", dt.threads, "threads", sep=" "), "\n")
 
     cat("Initializing data and model parameters...", "\n")

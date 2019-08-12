@@ -1306,7 +1306,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     partitions <- system(paste("ls -1 ", nuc.data.path, "*.fasta", sep=""), intern=TRUE)
     
     cat(paste("Using", n.cores, "total processors", sep=" "), "\n")
-    setDTthreads <- dt.threads
+    setDTthreads(dt.threads)
     cat(paste("Allowing data.table to use", dt.threads, "threads", sep=" "), "\n")
     
     if(!optimal.nuc == "optimize" & !optimal.nuc == "majrule" & !optimal.nuc == "user"){
