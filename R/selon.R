@@ -768,7 +768,8 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
     for(partition.index in 2:length(site.pattern.data.list)){
         site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
     }
-    site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
+    #site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
+    site.pattern.data.table <- site.pattern.data.frame[,-1]
     site.pattern.data.table <- t(site.pattern.data.table)
     colnames(site.pattern.data.table) <- phy$tip.label
     return(site.pattern.data.table)
@@ -1299,7 +1300,7 @@ GetMaxNameUCE <- function(x) {
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=0) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", global.nucleotide.model=TRUE, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=1) {
     
     cat("Initializing data and model parameters...", "\n")
     
