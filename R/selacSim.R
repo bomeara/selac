@@ -439,8 +439,8 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the GTR+G model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
-
+NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma=TRUE, gamma.type="median", ncats=4){
+    
     if(nuc.model == "JC") {
         base.freqs=base.freqs
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -452,15 +452,28 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
     if(nuc.model == "UNREST") {
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[2:12], model=nuc.model)
     }
-
+    
     diag(nuc.mutation.rates) = 0
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
     scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
     Q_mat <- nuc.mutation.rates * (1/scale.factor)
-
-    if(!is.null(ncats)){
-        rate.vector <- DiscreteGamma(pars[1], ncats)
-        rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=rep(1/ncats, ncats))
+    
+    if(include.gamma == TRUE){
+        if(gamma.type == "median"){
+            #rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
+            rate.vector <- DiscreteGamma(pars[1], ncats)
+            weights.k <- rep(1/ncats, ncats)
+            rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
+        }
+        if(gamma.type == "quadrature"){
+            rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rate.vector <- rates.and.weights[1:ncats]
+            weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
+            rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
+        }
+        #    if(!is.null(ncats)){
+        #        rate.vector <- DiscreteGamma(pars[1], ncats)
+        #        rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=rep(1/ncats, ncats))
         # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
         sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
         for(site in 1:nsites){
@@ -474,7 +487,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, ncats){
             sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_mat, root.value=base.freqs)
         }
     }
-
+    
     nuc.names <- n2s(0:3)
     # Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
     nucleotide.data <- c()
