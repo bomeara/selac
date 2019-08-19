@@ -729,6 +729,38 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 
 
 
+OptimizeAllGenesGenericUCE <- function(x, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
+    
+    if(logspace) {
+        x <- exp(x)
+    }
+    
+    #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
+    if(nuc.model == "JC"){
+        max.par = 3 + 3 + 0
+    }
+    if(nuc.model == "GTR"){
+        max.par = 3 + 3 + 5
+    }
+    if(nuc.model == "UNREST"){
+        max.par = 3 + 11
+    }
+    
+    MultiCoreLikelihood <- function(partition.index){
+        nuc.data <- NULL
+        nuc.data <- site.pattern.data.list[[partition.index]]
+        likelihood.tmp <- GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
+        return(likelihood.tmp)
+    }
+    #This orders the nsites per partition in decreasing order (to increase efficiency):
+    partition.order <- 1:n.partitions
+    likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+    return(likelihood)
+}
+
+
+
+
 ######################################################################################################################################
 ######################################################################################################################################
 ### Edge Length Optimizer
