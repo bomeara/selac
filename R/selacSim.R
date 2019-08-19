@@ -466,7 +466,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
             rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
         }
         if(gamma.type == "quadrature"){
-            rates.and.weights <- LaguerreQuad(shape=shape, ncats=ncats)
+            rates.and.weights <- LaguerreQuad(shape=pars[1], ncats=ncats)
             rate.vector <- rates.and.weights[1:ncats]
             weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
             rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
