@@ -729,10 +729,10 @@ OptimizeNucAllGenesUCE <- function(x, fixed.pars, site.pattern.data.list, n.part
 
 
 
-OptimizeAllGenesGenericUCE <- function(x, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
+OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, index.matrix, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
     
     if(logspace) {
-        x <- exp(x)
+        par.mat <- exp(par.mat)
     }
     
     #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
