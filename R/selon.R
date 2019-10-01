@@ -105,7 +105,9 @@ GetNucleotideFixationMatrix <- function(position.multiplier, optimal.nucleotide,
                 nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
             } else {
                 #handles stop codon case where neutral, so could possibly go into and out of stop codons
-                nucleotide.fitness.ratios[i,j] <- 1/(2*Ne)
+                if(i == optimal.nucleotide){
+                    nucleotide.fitness.ratios[i,j] <- 1/(2*Ne)
+                }
             }
         }
     }
