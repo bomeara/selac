@@ -100,13 +100,12 @@ GetNucleotideFixationMatrix <- function(position.multiplier, optimal.nucleotide,
             nuc1 <- .nucleotide.name[i]
             nuc2 <- .nucleotide.name[j]
             if(!nuc1 == nuc2){
-                d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
-                d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
-                nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
-            } else {
-                #handles stop codon case where neutral, so could possibly go into and out of stop codons
                 if(i == optimal.nucleotide){
                     nucleotide.fitness.ratios[i,j] <- 1/(2*Ne)
+                }else{
+                    d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                    d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                    nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
                 }
             }
         }
