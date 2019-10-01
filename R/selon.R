@@ -734,18 +734,6 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     if(logspace) {
         par.mat <- exp(par.mat)
     }
-    
-    #sums the total number of parameters: 4 is the general shape pars, 3 are the base pars, and finally, the transition rates.
-    if(nuc.model == "JC"){
-        max.par = 3 + 3 + 0
-    }
-    if(nuc.model == "GTR"){
-        max.par = 3 + 3 + 5
-    }
-    if(nuc.model == "UNREST"){
-        max.par = 3 + 11
-    }
-    
     MultiCoreLikelihood <- function(partition.index){
         nuc.data <- NULL
         nuc.data <- site.pattern.data.list[[partition.index]]
@@ -1006,8 +994,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     return(sum(branchLikAllSites))
 }
 
-#out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=TRUE, lower=log(1e-8), upper=log(10), maximum=FALSE, tol = .Machine$double.eps^0.25)
-
 
 ## Go by independent generations. As we get deeper and deeper in the tree, we have to do less of the traversal. Needs: To update data matrix as we go down and to ignore edges we have already ML'd.
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
@@ -1137,6 +1123,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
     }
     else{
         loglik<- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
+        write.table(t(root.p * liks[root,]), file="test", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
         if(is.infinite(loglik)){
             return(1000000)
         }
