@@ -36,6 +36,7 @@ CreateNucleotideMutationMatrixSpecial <- function(rates) {
     index[col(index) != row(index)] <- 1:np
     nuc.mutation.rates <- matrix(0, nrow=4, ncol=4)
     nuc.mutation.rates<-matrix(rates[index], dim(index))
+    
     rownames(nuc.mutation.rates) <- .nucleotide.name
     colnames(nuc.mutation.rates) <- .nucleotide.name
     nuc.mutation.rates[3,4] = 1
@@ -102,6 +103,9 @@ GetNucleotideFixationMatrix <- function(position.multiplier, optimal.nucleotide,
                 d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
                 d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
                 nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
+            } else {
+                #handles stop codon case where neutral, so could possibly go into and out of stop codons
+                nucleotide.fitness.ratios[i,j] <- 1/(2*Ne)
             }
         }
     }
