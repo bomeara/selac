@@ -1372,10 +1372,10 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     if(max.restarts > 1){
-        selon.starting.vals <- matrix(0, 3+1, 2)
-        selon.starting.vals[,1] <- runif(n = 3+1, min = (10^-10)*5e6, max = (10^-8)*5e6)
+        selon.starting.vals <- matrix(0, max.restarts+1, 2)
+        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-8)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
-        selon.starting.vals[,2] <- runif(n = 3+1, min = 0.01, max = 500)
+        selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
     }else{
         selon.starting.vals <- matrix(c(1e-10*5e6, 100),1,2)
         selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
@@ -1467,7 +1467,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }
     }
     print(ip.vector)
-    number.of.current.restarts <- 2
+    number.of.current.restarts <- 1
     nuc.optim.original <- nuc.optim.list
     best.lik <- 1000000
     while(number.of.current.restarts < (max.restarts+1)){
