@@ -1372,7 +1372,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     if(max.restarts > 1){
-        selon.starting.vals <- matrix(0, max.restarts+1, 2)
+        selon.starting.vals <- matrix(0, 3+1, 2)
         selon.starting.vals[,1] <- runif(n = 3+1, min = (10^-10)*5e6, max = (10^-8)*5e6)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
         selon.starting.vals[,2] <- runif(n = 3+1, min = 0.01, max = 500)
