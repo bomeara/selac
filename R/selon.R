@@ -133,8 +133,6 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
         }
     }
     #The result here is just the likelihood:
-    print(Q_position)
-    print(liks)
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
     #Q_position_vectored <- c(t(Q_position)) # has to be transposed
@@ -162,7 +160,6 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
     nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
     for(site.index in sequence(nsites)) {
         weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
-        print(nuc.optim_array[site.index])
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
@@ -745,7 +742,6 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     MultiCoreLikelihood <- function(partition.index){
         nuc.data <- NULL
         nuc.data <- site.pattern.data.list[[partition.index]]
-        print(nuc.data)
         likelihood.tmp <- GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
         return(likelihood.tmp)
     }
@@ -1562,6 +1558,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
                 results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
                 phy <- results.edge.final$phy
+                print(results.edge.final$final.likelihood)
+                print(results.edge.final$phy$edge.length)
                 #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
                 #phy$edge.length <- exp(results.edge.final$solution)
             }
@@ -1585,6 +1583,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 results.final$solution <- c(t(parallelized.parameters[,-1]))
                 mle.pars.mat.red <- index.matrix.red
                 mle.pars.mat.red[] <- c(exp(results.final$solution), 0)[index.matrix.red]
+                print(results.final$objective)
+                print(mle.pars.mat.red)
                 upper.bounds.shared <- upper[c(4:max.par.model.count)]
                 lower.bounds.shared <- lower[c(4:max.par.model.count)]
                 optim.substitution.pars.by.gene <- nloptr(x0=log(substitution.pars), eval_f = OptimizeNucAllGenesUCE, ub=upper.bounds.shared, lb=lower.bounds.shared, opts=opts, fixed.pars=mle.pars.mat.red, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
@@ -1594,6 +1594,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 for(row.index in 1:dim(mle.pars.mat.red)[1]){
                     mle.pars.mat <- rbind(mle.pars.mat, c(mle.pars.mat.red[row.index,1:3], substitution.pars))
                 }
+                print(results.final$objective)
+                print(mle.pars.mat.red)
                 are_we_there_yet <- (current.likelihood - results.final$objective ) / results.final$objective
                 current.likelihood <- results.final$objective
                 cat(paste("       Current likelihood", current.likelihood, sep=" "), paste("% difference from previous round", are_we_there_yet, sep=" "), "\n")
