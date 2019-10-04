@@ -745,6 +745,7 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     MultiCoreLikelihood <- function(partition.index){
         nuc.data <- NULL
         nuc.data <- site.pattern.data.list[[partition.index]]
+        print(nuc.data)
         likelihood.tmp <- GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
         return(likelihood.tmp)
     }
