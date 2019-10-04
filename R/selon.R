@@ -134,7 +134,7 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
     }
     #The result here is just the likelihood:
     print(Q_position)
-    print(liks[i,])
+    print(liks)
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
     #Q_position_vectored <- c(t(Q_position)) # has to be transposed
