@@ -245,7 +245,7 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
     if(logspace) {
         x = exp(x)
     }
-    
+
     Ne=5e6
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
@@ -262,7 +262,7 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
         nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     
-    nsites <- dim(nuc.data)[2]-1
+    nsites <- dim(nuc.data)[2] - 1
     site.index <- 1:nsites
     optimal.vector.by.site <- rep(NA, nsites)
     #unique.aa <- GetMatrixAANames(numcode)
@@ -1016,6 +1016,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
+    print(paste("old lik", old.likelihood))
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         for(gen.index in 1:length(generations)){
@@ -1026,6 +1027,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             }
         }
         new.likelihood <- out$objective
+        print(paste("new lik", new.likelihood))
         iteration.number <- iteration.number + 1
         are_we_there_yet <- (old.likelihood - new.likelihood ) / new.likelihood
         old.likelihood <- new.likelihood
