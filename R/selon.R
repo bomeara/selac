@@ -1023,6 +1023,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
+                print(out)
                 phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
             }
         }
@@ -1399,7 +1400,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
     if(nuc.model == "UNREST"){
         nuc.ip = rep(1, 11)
-        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
+        ip = c(selon.starting.vals[2,1], ceiling(nsites.vector[1]/2), selon.starting.vals[2,2], nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
         upper = c(log(200), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
