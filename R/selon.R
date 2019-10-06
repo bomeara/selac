@@ -1019,15 +1019,19 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     print(paste("old lik", old.likelihood))
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
+        current.lik <- old.likelihood
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
                 print(out)
-                phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+                if(current.lik > out$objective){
+                    current.lik <- out$objective
+                    phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+                }
             }
         }
-        new.likelihood <- out$objective
+        new.likelihood <- current.lik
         print(paste("new lik", new.likelihood))
         iteration.number <- iteration.number + 1
         are_we_there_yet <- (old.likelihood - new.likelihood ) / new.likelihood
@@ -1071,14 +1075,20 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
     old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
+        current.lik <- old.likelihood
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
+                current.lik <- old.likelihood
                 out <- optimize(GetBranchLikeAcrossAllSitesGTR, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
-                phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+                print(out)
+                if(current.lik > out$objective){
+                    current.lik <- out$objective
+                    phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+                }
             }
         }
-        new.likelihood <- out$objective
+        new.likelihood <- current.lik
         iteration.number <- iteration.number + 1
         are_we_there_yet <- (old.likelihood - new.likelihood) / new.likelihood
         old.likelihood <- new.likelihood
@@ -1400,7 +1410,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
     if(nuc.model == "UNREST"){
         nuc.ip = rep(1, 11)
-        ip = c(selon.starting.vals[2,1], ceiling(nsites.vector[1]/2), selon.starting.vals[2,2], nuc.ip)
+        ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
         upper = c(log(200), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
