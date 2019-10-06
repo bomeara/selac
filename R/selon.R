@@ -1023,12 +1023,14 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
+                print(current.lik)
                 out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
                 print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
                     phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
                 }
+                print(current.lik)
             }
         }
         new.likelihood <- current.lik
