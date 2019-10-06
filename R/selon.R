@@ -920,6 +920,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
 GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars.array, nuc.model, include.gamma, gamma.type, ncats, n.cores, logspace) {
 
     if(logspace == TRUE){
+        print("should not be here.")
         p <- exp(p)
     }
     if(!is.null(edge.number)){
@@ -1024,7 +1025,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 print(paste("current before", current.lik))
-                out <- optimize(GetBranchLikeAcrossAllSites, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
+                out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(1e-8, 10), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
                 print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
@@ -1082,7 +1083,7 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 current.lik <- old.likelihood
-                out <- optimize(GetBranchLikeAcrossAllSitesGTR, edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
+                out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(1e-8, 10), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
                 print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
