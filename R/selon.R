@@ -920,7 +920,6 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
 GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars.array, nuc.model, include.gamma, gamma.type, ncats, n.cores, logspace) {
 
     if(logspace == TRUE){
-        print("should not be here.")
         p <- exp(p)
     }
     if(!is.null(edge.number)){
@@ -1017,21 +1016,21 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     are_we_there_yet <- 1
     iteration.number <- 1
     old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
-    print(paste("old lik", old.likelihood))
+    #print(paste("old lik", old.likelihood))
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         current.lik <- old.likelihood
         for(gen.index in 1:length(generations)){
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
-                print(paste("current before", current.lik))
+                #print(paste("current before", current.lik))
                 out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(1e-8, 10), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
-                print(out)
+                #print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
                     phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
                 }
-                print(paste("current after", current.lik))
+                #print(paste("current after", current.lik))
             }
         }
         new.likelihood <- current.lik
@@ -1084,7 +1083,7 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 current.lik <- old.likelihood
                 out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(1e-8, 10), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
-                print(out)
+                #print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
                     phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
