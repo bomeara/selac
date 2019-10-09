@@ -856,6 +856,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     if(logspace == TRUE){
         p <- exp(p)
     }
+    
     if(!is.null(edge.number)){
         phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
     }
@@ -1015,7 +1016,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, nsites.vector=nsites.vector)
     are_we_there_yet <- 1
     iteration.number <- 1
-    old.likelihood <- GetBranchLikeAcrossAllSites(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
+    old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace)
     print(paste("old lik", old.likelihood))
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
@@ -1074,7 +1075,7 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
 
     are_we_there_yet <- 1
     iteration.number <- 1
-    old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=phy$edge.length, edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace)
+    old.likelihood <- GetBranchLikeAcrossAllSitesGTR(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace)
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         current.lik <- old.likelihood
@@ -1082,11 +1083,11 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 current.lik <- old.likelihood
-                out <- optimize(f=GetBranchLikeAcrossAllSitesGTR, interval=c(1e-8, 10), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=1e-8, upper=10, maximum=FALSE, tol=tol)
+                out <- optimize(f=GetBranchLikeAcrossAllSitesGTR, interval=c(log(1e-8), log(10)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(10), maximum=FALSE, tol=tol)
                 #print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
-                    phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- out$minimum
+                    phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- exp(out$minimum)
                 }
             }
         }
@@ -1851,7 +1852,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
             mle.pars.mat <- index.matrix
             mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
             phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=NULL, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=NULL, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
             #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
             print(results.edge.final$final.likelihood)
             phy <- results.edge.final$phy
@@ -1917,7 +1918,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
             if(edge.length == "optimize"){
                 cat("              Optimizing edge lengths", "\n")
                 phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-                results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=NULL, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=FALSE, n.cores=n.cores, neglnl=TRUE)
+                results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=NULL, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
                 #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
                 print(results.edge.final$final.likelihood)
                 phy <- results.edge.final$phy
