@@ -1025,7 +1025,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 print(paste("current before", current.lik))
-                out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(log(1e-8), log(10)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(10), maximum=FALSE, tol=tol)
+                out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(log(1e-8), log(5)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(5), maximum=FALSE, tol=tol)
                 print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
@@ -1083,7 +1083,7 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
             for(index in 1:length(generations[[gen.index]])){
                 cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 current.lik <- old.likelihood
-                out <- optimize(f=GetBranchLikeAcrossAllSitesGTR, interval=c(log(1e-8), log(10)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(10), maximum=FALSE, tol=tol)
+                out <- optimize(f=GetBranchLikeAcrossAllSitesGTR, interval=c(log(1e-8), log(5)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, include.gamma=include.gamma, gamma.type=gamma.type, ncats=ncats, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(5), maximum=FALSE, tol=tol)
                 #print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
