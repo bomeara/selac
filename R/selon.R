@@ -54,6 +54,7 @@ CreateNucleotideMutationMatrixSpecial <- function(rates, get.mutation.only=FALSE
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         obj <- NULL
         obj$base.freq <- base.freqs.scaled
+        obj$nuc.mutation.rates <- nuc.mutation.rates
         return(obj)
     }
     return(nuc.mutation.rates)
@@ -116,7 +117,7 @@ GetNucleotideFixationMatrix <- function(position.multiplier, optimal.nucleotide,
 }
 
 
-GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, scale.factor, return.all=FALSE) {
+GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, Q_position, root.p=NULL, return.all=FALSE) {
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
     nl <- nrow(Q_position)
@@ -143,13 +144,9 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
 }
 
 
-GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation.rates, position.multiplier.vector, Ne, nuc.optim_array=NULL, root.p_array=NULL, diploid=TRUE) {
+GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation.rates, position.multiplier.vector, Ne, nuc.optim_array=NULL, diploid=TRUE) {
     nsites <- dim(nuc.data)[2]-1
     final.likelihood.vector <- rep(NA, nsites)
-    if(is.null(root.p_array)) {
-        #Generate matrix of equal frequencies for each site:
-        root.p_array <- rep(0.25, 4)
-    }
     if(diploid == TRUE){
         ploidy = 2
     }else{
@@ -170,7 +167,7 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
         Q_position <- Q_position * base.freqs.scaled.matrix
         scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
         Q_position_scaled <- Q_position * (1/scale.factor)
-        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position_scaled, root.p=base.freqs.scaled, scale.factor=NULL, return.all=FALSE)
+        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position_scaled, root.p=base.freqs.scaled, return.all=FALSE)
     }
     return(final.likelihood.vector)
 }
@@ -221,16 +218,16 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
-        base.freqs <- tmp$base.freq
-        nuc.mutation.rates <- tmp$nuc.mutation.rates
+        nuc.mutation.rates <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+        #base.freqs <- tmp$base.freq
+        #nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     nsites <- dim(nuc.data)[2]-1
     site.index <- 1:nsites
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
     #position.multiplier.vector <- x[1] * PositionSensitivityMultiplierSigmoid(x[2]+(-5), x[3]+(-5), x[4], nsites)
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
-    final.likelihood = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
+    final.likelihood = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, diploid=diploid)
     likelihood <- sum(final.likelihood)
     
     if(neglnl) {
@@ -264,9 +261,9 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[7:length(x)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        tmp <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
-        base.freqs <- tmp$base.freq
-        nuc.mutation.rates <- tmp$nuc.mutation.rates
+        nuc.mutation.rates <- CreateNucleotideMutationMatrixSpecial(x[4:length(x)])
+        #base.freqs <- tmp$base.freq
+        #nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     
     nsites <- dim(nuc.data)[2] - 1
@@ -276,10 +273,10 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
     optimal.nuc.likelihood.mat <- matrix(0, nrow=4, ncol=nsites)
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
     for(i in 1:4){
-        nuc.optim_array = rep(i, nsites)
-        tmp = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, root.p_array=base.freqs, diploid=diploid)
-        tmp[is.na(tmp)] = -1000000
-        final.likelihood = tmp
+        nuc.optim_array <- rep(i, nsites)
+        tmp <- GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, diploid=diploid)
+        tmp[is.na(tmp)] <- -1000000
+        final.likelihood <- tmp
         optimal.nuc.likelihood.mat[i,] <- final.likelihood
     }
     for(j in 1:nsites){
@@ -890,21 +887,26 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
             nuc.mutation.rates <- CreateNucleotideMutationMatrix(x[4:length(x)], model=nuc.model, base.freqs=base.freqs)
         }
         if(nuc.model == "UNREST") {
-            tmp <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
-            base.freqs <- tmp$base.freq
-            nuc.mutation.rates <- tmp$nuc.mutation.rates
+            nuc.mutation.rates <- CreateNucleotideMutationMatrixSpecial(x[1:length(x)])
+            #base.freqs <- tmp$base.freq
+            #nuc.mutation.rates <- tmp$nuc.mutation.rates
         }
         
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-        scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
-        nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
         weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
-        
-        liks <- matrix(0, nb.tip + nb.node, dim(Q_position)[1])
+        base.freqs <- Null(Q_position)
+        #Rescale base.freqs so that they sum to 1:
+        base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
+        Q_position <- Q_position * base.freqs.scaled.matrix
+        scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
+        Q_position_scaled <- Q_position * (1/scale.factor)
+
+        liks <- matrix(0, nb.tip + nb.node, dim(Q_position_scaled)[1])
         for(i in 1:Ntip(phy)){
             state <- data.array[site.index,phy$tip.label[i]]
             if(state < 65){
@@ -914,8 +916,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
                 liks[i,] <- 1
             }
         }
-        
-        branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=base.freqs)
+        branchLikPerSite <- GetLikelihood(phy=phy, liks=liks, Q=Q_position_scaled, root.p=base.freqs.scaled)
         return(branchLikPerSite)
     }
     site.order <- 1:dim(data.array)[1]
