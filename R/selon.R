@@ -895,7 +895,7 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier, optimal.nucleotide=optim.nuc, Ne=Ne, diploid=diploid)
-        Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
         base.freqs <- Null(Q_position)
