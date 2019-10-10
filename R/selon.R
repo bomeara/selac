@@ -164,7 +164,9 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
         #Rescale base.freqs so that they sum to 1:
         base.freqs.scaled <- c(base.freqs/sum(base.freqs))
         base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
+        diag(Q_position) <- 0
         Q_position <- Q_position * base.freqs.scaled.matrix
+        diag(Q_position) <- -rowSums(Q_position)
         scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
         Q_position_scaled <- Q_position * (1/scale.factor)
         final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position_scaled, root.p=base.freqs.scaled, return.all=FALSE)
@@ -902,7 +904,9 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         #Rescale base.freqs so that they sum to 1:
         base.freqs.scaled <- c(base.freqs/sum(base.freqs))
         base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
+        diag(Q_position) <- 0
         Q_position <- Q_position * base.freqs.scaled.matrix
+        diag(Q_position) <- -rowSums(Q_position)
         scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
         Q_position_scaled <- Q_position * (1/scale.factor)
 
