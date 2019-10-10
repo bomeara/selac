@@ -39,7 +39,7 @@ CreateNucleotideMutationMatrixSpecial <- function(rates) {
     
     rownames(nuc.mutation.rates) <- .nucleotide.name
     colnames(nuc.mutation.rates) <- .nucleotide.name
-    nuc.mutation.rates[3,4] = 1
+    #nuc.mutation.rates[3,4] <- 1
     diag(nuc.mutation.rates) <- 0
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
     #Next we take our rates and find the homogeneous solution to Q*pi=0 to determine the base freqs:
@@ -49,12 +49,12 @@ CreateNucleotideMutationMatrixSpecial <- function(rates) {
     base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
     diag(nuc.mutation.rates) <- 0
     #Rescale Q to account for base.freqs:
-    nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
+    #nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-    obj <- NULL
-    obj$base.freq <- base.freqs.scaled
-    obj$nuc.mutation.rates <- nuc.mutation.rates
-    return(obj)
+    #obj <- NULL
+    #obj$base.freq <- base.freqs.scaled
+    #nuc.mutation.rates <- nuc.mutation.rates
+    return(nuc.mutation.rates)
 }
 
 
@@ -154,16 +154,21 @@ GetLikelihoodUCEForManyCharVaryingBySite <- function(nuc.data, phy, nuc.mutation
         ploidy = 1
     }
     phy <- reorder(phy, "pruningwise")
-    diag(nuc.mutation.rates) = 0
-    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-    scale.factor <- -sum(diag(nuc.mutation.rates) * root.p_array)
-    nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
     for(site.index in sequence(nsites)) {
         weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
-        Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
+        diag(nuc.mutation.rates) = 0
+        diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
-        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position, root.p=root.p_array, scale.factor=NULL, return.all=FALSE)
+        base.freqs <- Null(Q_position)
+        #Rescale base.freqs so that they sum to 1:
+        base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
+        Q_position <- Q_position * base.freqs.scaled.matrix
+        scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
+        Q_position_scaled <- Q_position * (1/scale.factor)
+        final.likelihood.vector[site.index] <- GetLikelihoodUCEForSingleCharGivenOptimum(charnum=site.index, nuc.data=nuc.data, phy=phy, Q_position=Q_position_scaled, root.p=base.freqs.scaled, scale.factor=NULL, return.all=FALSE)
     }
     return(final.likelihood.vector)
 }
