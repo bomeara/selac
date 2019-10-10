@@ -380,9 +380,9 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[7:length(pars)], model=nuc.model, base.freqs=base.freqs)
     }
     if(nuc.model == "UNREST") {
-        tmp <- CreateNucleotideMutationMatrixSpecial(pars[4:length(pars)])
-        base.freqs <- tmp$base.freq
-        nuc.mutation.rates <- tmp$nuc.mutation.rates
+        nuc.mutation.rates <- CreateNucleotideMutationMatrixSpecial(pars[4:length(pars)])
+        #base.freqs <- tmp$base.freq
+        #nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
     
     if(diploid == TRUE){
@@ -404,12 +404,22 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
+        base.freqs <- Null(Q_position)
+        #Rescale base.freqs so that they sum to 1:
+        base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
+        diag(Q_position) <- 0
+        Q_position <- Q_position * base.freqs.scaled.matrix
+        diag(Q_position) <- -rowSums(Q_position)
+        scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
+        Q_position_scaled <- Q_position * (1/scale.factor)
+        
         if(is.null(start.vals_array)){
-            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=base.freqs)
+            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position_scaled, root.value=base.freqs.scaled)
         }else{
             initial.val <- numeric(4)
             initial.val[start.vals_array[site.index]] <- 1
-            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position, root.value=initial.val)
+            sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position_scaled, root.value=initial.val)
         }
     }
     nuc.names <- n2s(0:3)
