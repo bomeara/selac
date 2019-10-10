@@ -30,7 +30,7 @@ CreateNucleotideDistanceMatrix <- function() {
 }
 
 
-CreateNucleotideMutationMatrixSpecial <- function(rates) {
+CreateNucleotideMutationMatrixSpecial <- function(rates, get.mutation.only=FALSE) {
     index <- matrix(NA, 4, 4)
     np <- 12
     index[col(index) != row(index)] <- 1:np
@@ -39,21 +39,23 @@ CreateNucleotideMutationMatrixSpecial <- function(rates) {
     
     rownames(nuc.mutation.rates) <- .nucleotide.name
     colnames(nuc.mutation.rates) <- .nucleotide.name
-    #nuc.mutation.rates[3,4] <- 1
+    nuc.mutation.rates[3,4] <- 1
     diag(nuc.mutation.rates) <- 0
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-    #Next we take our rates and find the homogeneous solution to Q*pi=0 to determine the base freqs:
-    base.freqs <- Null(nuc.mutation.rates)
-    #Rescale base.freqs so that they sum to 1:
-    base.freqs.scaled <- c(base.freqs/sum(base.freqs))
-    base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
-    diag(nuc.mutation.rates) <- 0
-    #Rescale Q to account for base.freqs:
-    #nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
-    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-    #obj <- NULL
-    #obj$base.freq <- base.freqs.scaled
-    #nuc.mutation.rates <- nuc.mutation.rates
+    
+    if(get.mutation.only == TRUE){
+        base.freqs <- Null(nuc.mutation.rates)
+        #Rescale base.freqs so that they sum to 1:
+        base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
+        diag(nuc.mutation.rates) <- 0
+        #Rescale Q to account for base.freqs:
+        nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
+        diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+        obj <- NULL
+        obj$base.freq <- base.freqs.scaled
+        return(obj)
+    }
     return(nuc.mutation.rates)
 }
 
