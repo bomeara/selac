@@ -391,16 +391,11 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         ploidy = 1
     }
 
-    diag(nuc.mutation.rates) = 0
-    diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
-    scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
-    nuc.mutation.rates_scaled <- nuc.mutation.rates * (1/scale.factor)
-
     #Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
     sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
     for(site.index in 1:nsites){
         weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
-        Q_position <- (ploidy * Ne) * nuc.mutation.rates_scaled * weight.matrix
+        Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         diag(Q_position) <- 0
         diag(Q_position) <- -rowSums(Q_position)
