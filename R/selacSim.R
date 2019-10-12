@@ -395,6 +395,8 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
     sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
     for(site.index in 1:nsites){
         weight.matrix <- GetNucleotideFixationMatrix(position.multiplier=position.multiplier.vector[site.index], optimal.nucleotide=nuc.optim_array[site.index], Ne=Ne, diploid=diploid)
+        diag(nuc.mutation.rates) = 0
+        diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         Q_position <- (ploidy * Ne) * nuc.mutation.rates * weight.matrix
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         diag(Q_position) <- 0
