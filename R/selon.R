@@ -36,7 +36,6 @@ CreateNucleotideMutationMatrixSpecial <- function(rates) {
     index[col(index) != row(index)] <- 1:np
     nuc.mutation.rates <- matrix(0, nrow=4, ncol=4)
     nuc.mutation.rates<-matrix(rates[index], dim(index))
-    
     rownames(nuc.mutation.rates) <- .nucleotide.name
     colnames(nuc.mutation.rates) <- .nucleotide.name
     nuc.mutation.rates[3,4] <- 1
@@ -1412,7 +1411,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     if(nuc.model == "UNREST"){
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
-        parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
+        parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "T_G", "A_T", "C_T")
         upper = c(log(200), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 11
@@ -1770,7 +1769,7 @@ SelonHMMOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length=
     if(nuc.model == "UNREST"){
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 1, nuc.ip)
-        parameter.column.names <- c("s.Ne", "midpoint", "width", "opt.rate", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "A_T", "C_T", "G_T")
+        parameter.column.names <- c("s.Ne", "midpoint", "width", "opt.rate", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "T_G", "A_T", "C_T")
         upper = c(log(50), log(nsites.vector[1]), log(500), 21, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 1 + 11
