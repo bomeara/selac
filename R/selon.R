@@ -423,9 +423,6 @@ GetLikelihoodUCEHMMForSingleCharGivenOptimum <- function(charnum=1, nuc.data, ph
             liks[i,] <- 1
         }
     }
-    #print(Q_position)
-    #print(liks)
-    #print(root.p)
     #The result here is just the likelihood:
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
@@ -653,7 +650,6 @@ OptimizeModelParsUCE <- function(x, fixed.pars, site.pattern.data.list, n.partit
         }else{
             par.mat <- matrix(c(x, fixed.pars), 1, max.par)
         }
-        print(par.mat)
         nuc.data = NULL
         nuc.data = site.pattern.data.list
         likelihood.vector = GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list, nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
@@ -1001,7 +997,6 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
 ## Step 1: Send appropriate info to SingleBranch calculation to get right info based on new MLE of branch we just evaluated
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
 OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc.optim.list, nuc.model, nsites.vector, diploid, logspace, n.cores, neglnl=FALSE) {
-    print(pars.mat)
     maxit <- 11
     tol <- .Machine$double.eps^0.25
     nb.tip <- Ntip(phy)
@@ -1510,7 +1505,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             #Part 1: Optimize the shape function:
             index.matrix.red <- t(matrix(1:(n.partitions*3), 3, n.partitions))
             ParallelizedOptimizedByGene <- function(n.partition){
-                print(n.partition)
                 tmp.par.mat <- as.matrix(mle.pars.mat[,1:3])
                 upper.bounds.gene <- upper.mat[n.partition, 1:3]
                 lower.bounds.gene <- lower.mat[n.partition, 1:3]
@@ -1582,7 +1576,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
                 #Part 1: Optimize the shape function:
                 index.matrix.red <- t(matrix(1:(n.partitions*3), 3, n.partitions))
                 ParallelizedOptimizedByGene <- function(n.partition){
-                    print(n.partition)
                     tmp.par.mat <- as.matrix(mle.pars.mat[,1:3])
                     upper.bounds.gene <- upper.mat[n.partition, 1:3]
                     lower.bounds.gene <- lower.mat[n.partition, 1:3]
