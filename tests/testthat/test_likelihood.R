@@ -269,7 +269,7 @@ test_that("dealing_with_missing_data_selon", {
             liks[i,] <- 1
         }
     }
-    pruned.ll <- GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
+    pruned.ll <- selac:::GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
     
     #part 2 -- Making the taxa uncertain in their scoring:
     traits <- data.frame(taxon=phy$tip.label, trait=rep(1, length(phy$tip.label)))
@@ -287,7 +287,7 @@ test_that("dealing_with_missing_data_selon", {
         }
     }
     phy.sort <- reorder(phy, "pruningwise")
-    indicator.ll <- GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
+    indicator.ll <- selac:::GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
     
     comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
     expect_true(comparison)
