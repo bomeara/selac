@@ -1121,7 +1121,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         desRows <- which(phy$edge[,1] == focal)
         desNodes <- phy$edge[desRows,2]
         v <- 1
-        for (desIndex in sequence(length(desRows))){
+        for (desIndex in desNodes){{
             descendant.count <- 0
             if(desNodes[desIndex] <= nb.tip){
                 if(sum(liks[desNodes[desIndex],]) < 2){
