@@ -1137,7 +1137,8 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
         write.table(loglik, file="likelihoods", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
         write.table(t(root.p), file="root.p", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
-        write.table(t(liks[root,]), file="marginal_root", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
+        write.table(t(liks[root,]), file="lik_root", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
+        write.table(t((root.p * liks[root,])/sum(root.p * liks[root,])), file="margin_root", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
         if(is.infinite(loglik)){
             return(1000000)
         }
