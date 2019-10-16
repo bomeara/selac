@@ -182,7 +182,7 @@ test_that("selac+GAMMA_likelihood_quad", {
 #})
 
 
-test_that("dealing_with_missing_data", {
+test_that("dealing_with_missing_data_selac", {
     skip_on_cran()
     
     set.seed(4)
@@ -239,4 +239,58 @@ test_that("dealing_with_missing_data", {
     comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
     expect_true(comparison)
 })
+
+
+
+test_that("dealing_with_missing_data_selon", {
+    skip_on_cran()
+    
+    set.seed(4)
+    phy <- rcoal(20)
+    phy <- rcoal(3)
+    Q <- matrix(c(-0.5260703,  5.6249829, 9.6686115,  4.2297704,  0.1256628, -6.0063550,0.1426795,  0.2073022,  0.2688015,  0.1548848, -9.9806228,  0.1734889, 0.1316059,  0.2264873,  0.1693317, -4.6105616), 4,4)
+    root.p <- c(0.2641425, 0.1797327, 0.1942094, 0.3619154)
+    
+
+    #part 1 -- pruning the taxa straightup:
+    phy.pruned <- drop.tip(phy, c("t16", "t13"))
+    phy.sort <- reorder(phy.pruned, "pruningwise")
+    
+    traits <- data.frame(taxon=phy.pruned$tip.label, trait=rep(1, length(phy.pruned$tip.label)))
+    traits[1:7,2] = 2
+    nb.tip <- length(phy.pruned$tip.label)
+    nb.node <- phy.pruned$Nnode
+    nl <- nrow(Q)
+    liks <- matrix(0, nb.tip + nb.node, nl)
+    for(i in 1:nb.tip){
+        if(!is.na(traits[i,1+1])){
+            liks[i,traits[i,1+1]] <- 1
+        }else{
+            liks[i,] <- 1
+        }
+    }
+    pruned.ll <- GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
+    
+    #part 2 -- Making the taxa uncertain in their scoring:
+    traits <- data.frame(taxon=phy$tip.label, trait=rep(1, length(phy$tip.label)))
+    traits[1:7,2] = 2
+    traits[c(10,18), 2] = NA
+    nb.tip<-length(phy$tip.label)
+    nb.node <- phy$Nnode
+    nl <- nrow(Q)
+    liks <- matrix(0, nb.tip + nb.node, nl)
+    for(i in 1:nb.tip){
+        if(!is.na(traits[i,1+1])){
+            liks[i,traits[i,1+1]] <- 1
+        }else{
+            liks[i,] <- 1
+        }
+    }
+    phy.sort <- reorder(phy, "pruningwise")
+    indicator.ll <- GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
+    
+    comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
+    expect_true(comparison)
+})
+
 
