@@ -1122,11 +1122,27 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         desNodes <- phy$edge[desRows,2]
         v <- 1
         for (desIndex in sequence(length(desRows))){
-            v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+            descendant.count <- 0
+            if(desNodes[desIndex] <= nb.tip){
+                if(sum(liks[desNodes[desIndex],]) < 2){
+                    v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+                    descendant.count <- descendant.count + 1
+                }else{
+                    print("not here")
+                }
+            }else{
+                v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+                descendant.count <- descendant.count + 1
+            }
             #v <- v * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
         }
-        comp[focal] <- sum(v)
-        liks[focal,] <- v/comp[focal]
+        if(descendant.count>1){
+            comp[focal] <- sum(v)
+            liks[focal,] <- v/comp[focal]
+        }else{
+            comp[focal] <- 1
+            liks[focal,] <- v
+        }
     }
     # Specifies the root:
     root <- nb.tip + 1L

@@ -235,7 +235,7 @@ test_that("selac+GAMMA_likelihood_quad", {
 #    }
 #    phy.sort <- reorder(phy, "pruningwise")
 #    anc.indices <- unique(phy.sort$edge[,1])
-#    indicator.ll <- FinishLikelihoodCalculation(phy=phy, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
+#    indicator.ll <- FinishLikelihoodCalculation(phy=phy.sort, liks=liks, Q=expList, root.p=rep(.25,4), anc=anc.indices)
 #    comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
 #    expect_true(comparison)
 #})

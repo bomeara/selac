@@ -3952,16 +3952,24 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
         desNodes <- phy$edge[desRows,2]
         v <- 1
         for (desIndex in desNodes){
-            if(desIndex <= nb.tip){
-                if(sum(liks[desIndex,]) < 2){
+            descendant.count <- 0
+            if(desNodes[desIndex] <= nb.tip){
+                if(sum(liks[desNodes[desIndex],]) < 2){
                     v <- v * (Q[[desIndex]] %*% liks[desIndex,])
+                    descendant.count <- descendant.count + 1
                 }
             }else{
                 v <- v * (Q[[desIndex]] %*% liks[desIndex,])
+                descendant.count <- descendant.count + 1
             }
         }
-        comp[focal] <- sum(v)
-        liks[focal,] <- v/comp[focal]
+        if(descendant.count>1){
+            comp[focal] <- sum(v)
+            liks[focal,] <- v/comp[focal]
+        }else{
+            comp[focal] <- 1
+            liks[focal,] <- v
+        }
     }
     #Specifies the root:
     root <- nb.tip + 1L
