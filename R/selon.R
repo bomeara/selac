@@ -734,7 +734,8 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     }
     #This orders the nsites per partition in decreasing order (to increase efficiency):
     partition.order <- 1:n.partitions
-    likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+    #likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+    likelihood <- sum(unlist(mclapply(partition.order, MultiCoreLikelihood, mc.cores=n.cores)))
     return(likelihood)
 }
 
