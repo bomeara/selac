@@ -3954,7 +3954,7 @@ FinishLikelihoodCalculation <- function(phy, liks, Q, root.p, anc){
         for (desIndex in desNodes){
             descendant.count <- 0
             if(desIndex <= nb.tip){
-                if(sum(liks[desNodes[desIndex],]) < 2){
+                if(sum(liks[desIndex,]) < 2){
                     v <- v * (Q[[desIndex]] %*% liks[desIndex,])
                     descendant.count <- descendant.count + 1
                 }
