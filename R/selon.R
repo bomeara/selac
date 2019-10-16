@@ -1121,14 +1121,12 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         desRows <- which(phy$edge[,1] == focal)
         desNodes <- phy$edge[desRows,2]
         v <- 1
-        for (desIndex in desNodes){{
+        for (desIndex in desNodes){
             descendant.count <- 0
             if(desNodes[desIndex] <= nb.tip){
                 if(sum(liks[desNodes[desIndex],]) < 2){
                     v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
                     descendant.count <- descendant.count + 1
-                }else{
-                    print("not here")
                 }
             }else{
                 v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
