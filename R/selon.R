@@ -1121,26 +1121,26 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         desRows <- which(phy$edge[,1] == focal)
         desNodes <- phy$edge[desRows,2]
         v <- 1
-        descendant.count <- 0
+        #descendant.count <- 0
         for (desIndex in sequence(length(desRows))){
-            if(desNodes[desIndex] <= nb.tip){
-                if(sum(liks[desNodes[desIndex],]) < 2){
-                    v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
-                    descendant.count <- descendant.count + 1
-                }
-            }else{
+            #if(desNodes[desIndex] <= nb.tip){
+            #if(sum(liks[desNodes[desIndex],]) < 2){
+            #v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+            #descendant.count <- descendant.count + 1
+            #    }
+            #}else{
                 v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
-                descendant.count <- descendant.count + 1
-            }
+                #descendant.count <- descendant.count + 1
+            #}
             #v <- v * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
         }
-        if(descendant.count>1){
+        #if(descendant.count>1){
             comp[focal] <- sum(v)
             liks[focal,] <- v/comp[focal]
-        }else{
-            comp[focal] <- 1
-            liks[focal,] <- v
-        }
+            #}else{
+            #comp[focal] <- 1
+            #liks[focal,] <- v
+            #}
     }
     # Specifies the root:
     root <- nb.tip + 1L

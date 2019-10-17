@@ -247,7 +247,6 @@ test_that("dealing_with_missing_data_selon", {
     
     set.seed(4)
     phy <- rcoal(20)
-    phy <- rcoal(3)
     Q <- matrix(c(-0.5260703,  5.6249829, 9.6686115,  4.2297704,  0.1256628, -6.0063550,0.1426795,  0.2073022,  0.2688015,  0.1548848, -9.9806228,  0.1734889, 0.1316059,  0.2264873,  0.1693317, -4.6105616), 4,4)
     root.p <- c(0.2641425, 0.1797327, 0.1942094, 0.3619154)
     
@@ -287,7 +286,7 @@ test_that("dealing_with_missing_data_selon", {
         }
     }
     phy.sort <- reorder(phy, "pruningwise")
-    indicator.ll <- selac:::GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
+    indicator.ll <- GetLikelihood(phy=phy.sort, liks=liks, Q=Q, root.p=root.p)
     
     comparison <- identical(round(pruned.ll,4), round(indicator.ll, 4))
     expect_true(comparison)
