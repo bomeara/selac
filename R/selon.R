@@ -1125,11 +1125,13 @@ GetLikelihood <- function(phy, liks, Q, root.p){
             descendant.count <- 0
             if(desNodes[desIndex] <= nb.tip){
                 if(sum(liks[desNodes[desIndex],]) < 2){
-                    v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+                    v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
                     descendant.count <- descendant.count + 1
+                }else{
+                    print("deleted.")
                 }
             }else{
-                v <- v * selac:::internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+                v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
                 descendant.count <- descendant.count + 1
             }
             #v <- v * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
