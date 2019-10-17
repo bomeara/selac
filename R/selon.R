@@ -1127,8 +1127,6 @@ GetLikelihood <- function(phy, liks, Q, root.p){
                 if(sum(liks[desNodes[desIndex],]) < 2){
                     v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
                     descendant.count <- descendant.count + 1
-                }else{
-                    print("deleted.")
                 }
             }else{
                 v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
