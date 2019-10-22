@@ -1112,6 +1112,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
     comp <- numeric(nb.tip + nb.node)
     # Obtain an object of all the unique ancestors
     anc <- unique(phy$edge[,1])
+    print(Q)
     for (i  in seq(from = 1, length.out = nb.node)) {
         # The ancestral node at row i is called focal
         focal <- anc[i]
@@ -1121,7 +1122,8 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         v <- 1
         #descendant.count <- 0
         for (desIndex in sequence(length(desRows))){
-            v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+            #v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+            v <- v * expm(Q, phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
         liks[focal,] <- v/comp[focal]
