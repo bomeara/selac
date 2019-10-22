@@ -187,11 +187,14 @@ PositionSensitivityMultiplierQuadratic <- function(a0, a1, a2, site.index){
 
 
 GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.optim_array=NULL, nuc.model, diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+    
     if(logspace) {
         x = exp(x)
     }
+    
     Ne <- 5e4
     x[1] <- x[1]/Ne
+    
     if(nuc.model == "JC") {
         base.freqs=c(x[4:6], 1-sum(x[4:6]))
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -1118,24 +1121,10 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         v <- 1
         #descendant.count <- 0
         for (desIndex in sequence(length(desRows))){
-            #if(desNodes[desIndex] <= nb.tip){
-            #if(sum(liks[desNodes[desIndex],]) < 2){
-            #v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
-            #descendant.count <- descendant.count + 1
-            #    }
-            #}else{
-                v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
-                #descendant.count <- descendant.count + 1
-            #}
-            #v <- v * expm(Q * phy$edge.length[desRows[desIndex]]) %*% liks[desNodes[desIndex],]
+            v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
         }
-        #if(descendant.count>1){
-            comp[focal] <- sum(v)
-            liks[focal,] <- v/comp[focal]
-            #}else{
-            #comp[focal] <- 1
-            #liks[focal,] <- v
-            #}
+        comp[focal] <- sum(v)
+        liks[focal,] <- v/comp[focal]
     }
     # Specifies the root:
     root <- nb.tip + 1L
@@ -1495,6 +1484,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         if(edge.length == "optimize"){
             phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
         }
+        phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
         nuc.optim.list <- nuc.optim.list
         if(optimal.nuc=="optimize"){
             message.to.print <- "majority-rule"
