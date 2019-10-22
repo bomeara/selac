@@ -213,6 +213,7 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
     #position.multiplier.vector <- x[1] * PositionSensitivityMultiplierSigmoid(x[2]+(-5), x[3]+(-5), x[4], nsites)
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
+    print(position.multiplier.vector)
     final.likelihood = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, diploid=diploid)
     likelihood <- sum(final.likelihood)
     
@@ -1112,7 +1113,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
     comp <- numeric(nb.tip + nb.node)
     # Obtain an object of all the unique ancestors
     anc <- unique(phy$edge[,1])
-    print(Q)
+    #print(Q)
     for (i  in seq(from = 1, length.out = nb.node)) {
         # The ancestral node at row i is called focal
         focal <- anc[i]
