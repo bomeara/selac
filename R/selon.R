@@ -461,7 +461,7 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
     if(logspace) {
         x = exp(x)
     }
-    5e4
+    Ne=5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
 ########REMAINING ISSUE -- not clear on the frequencies under HMM. Recaled to normalize to 1, or not?
