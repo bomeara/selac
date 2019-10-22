@@ -213,7 +213,6 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     #Note that I am rescaling x[2] and x[3] so that I can optimize in log space, but also have negative slopes.
     #position.multiplier.vector <- x[1] * PositionSensitivityMultiplierSigmoid(x[2]+(-5), x[3]+(-5), x[4], nsites)
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
-    print(position.multiplier.vector)
     final.likelihood = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, diploid=diploid)
     likelihood <- sum(final.likelihood)
     
@@ -651,6 +650,7 @@ OptimizeModelParsUCE <- function(x, fixed.pars, site.pattern.data.list, n.partit
         }
         nuc.data = NULL
         nuc.data = site.pattern.data.list
+        print(par.mat)
         likelihood.vector = GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list, nuc.model=nuc.model, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
         likelihood = sum(likelihood.vector)
         return(likelihood)
@@ -733,8 +733,8 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     }
     #This orders the nsites per partition in decreasing order (to increase efficiency):
     partition.order <- 1:n.partitions
-    #likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
-    likelihood <- sum(unlist(mclapply(partition.order, MultiCoreLikelihood, mc.cores=n.cores)))
+    likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+    #likelihood <- sum(unlist(mclapply(partition.order, MultiCoreLikelihood, mc.cores=n.cores)))
     return(likelihood)
 }
 
