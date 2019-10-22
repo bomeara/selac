@@ -87,13 +87,9 @@ GetNucleotideFixationMatrix <- function(position.multiplier, optimal.nucleotide,
             nuc1 <- .nucleotide.name[i]
             nuc2 <- .nucleotide.name[j]
             if(!nuc1 == nuc2){
-                if(i == optimal.nucleotide){
-                    nucleotide.fitness.ratios[i,j] <- 1/(2*Ne)
-                }else{
-                    d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
-                    d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
-                    nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
-                }
+                d1 <- GetProteinProteinDistance(protein1=nuc1, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                d2 <- GetProteinProteinDistance(protein1=nuc2, protein2=unique.nucs[optimal.nucleotide], aa.distances=nucleotide.distances)
+                nucleotide.fitness.ratios[i,j] <- GetPairwiseNucleotideWeightSingleSite(d1=d1, d2=d2, Ne=Ne, si=position.multiplier, diploid=diploid)
             }
         }
     }
@@ -194,7 +190,7 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     if(logspace) {
         x = exp(x)
     }
-    Ne=5e6
+    Ne=5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
         base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -236,8 +232,7 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
     if(logspace) {
         x = exp(x)
     }
-
-    Ne=5e6
+    Ne=5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
         base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -466,7 +461,7 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
     if(logspace) {
         x = exp(x)
     }
-    Ne=5e6
+    5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
 ########REMAINING ISSUE -- not clear on the frequencies under HMM. Recaled to normalize to 1, or not?
@@ -790,7 +785,7 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
 
 #Goal is to make a list with all the things I need for a site.
 MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
-    Ne <- 5e6
+    Ne=5e4
     pars.array <- c()
     for(partition.index in 1:length(nsites.vector)){
         pars.site.tmp <- as.list(1:nsites.vector[partition.index])
@@ -834,10 +829,10 @@ SingleBranchCalculation <- function(Q, init.cond, edge.length, root.p) {
 GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid, n.cores, logspace) {
     if(diploid == TRUE){
         ploidy <- 2
-        Ne <- 5e6
+        Ne=5e4
     }else{
         ploidy <- 1
-        Ne <- 5e6
+        Ne=5e4
     }
     
     if(logspace == TRUE){
@@ -1398,7 +1393,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     if(max.restarts > 1){
         selon.starting.vals <- matrix(0, max.restarts+1, 2)
-        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e6, max = (10^-8)*5e6)
+        selon.starting.vals[,1] <- runif(n = max.restarts+1, min = (10^-10)*5e4, max = (10^-8)*5e4)
         #selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 10)
         selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
     }else{
@@ -1408,7 +1403,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     if(nuc.model == "JC"){
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG")
-        upper = c(log(200), log(nsites.vector[1]), log(500), 0, 0, 0)
+        upper = c(log(350), log(nsites.vector[1]), log(500), 0, 0, 0)
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 0
     }
@@ -1416,7 +1411,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 5)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], 0.25, 0.25, 0.25, nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "freqA", "freqC", "freqG", "C_A", "G_A", "T_A", "G_C", "T_C")
-        upper = c(log(200), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
+        upper = c(log(350), log(nsites.vector[1]), log(500), 0, 0, 0, rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 3 + 5
     }
@@ -1424,7 +1419,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         nuc.ip = rep(1, 11)
         ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
         parameter.column.names <- c("s.Ne", "midpoint", "width", "C_A", "G_A", "T_A", "A_C", "G_C", "T_C", "A_G", "C_G", "T_G", "A_T", "C_T")
-        upper = c(log(200), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
+        upper = c(log(350), log(nsites.vector[1]), log(500), rep(21, length(nuc.ip)))
         lower = rep(-21, length(ip))
         max.par.model.count = 3 + 11
     }

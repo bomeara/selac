@@ -985,8 +985,8 @@ FastCreateAllCodonFixationProbabilityMatricesSetToOne <- function(numcode=1) {
 
 CreateCodonFixationProbabilityMatrix <- function(aa_op, s, aa.distances, nsites, C=4, Phi=0.5, q=4e-7, Ne=5e6, include.stop.codon=TRUE, numcode=1){
     #   codon.sets <- CreateCodonSets()
-    #	.codon.sets <- expand.grid(0:3, 0:3, 0:3)
-    #	.codon.sets <- data.frame(first=.codon.sets[,3], second=.codon.sets[,2], third=.codon.sets[,1]) #reordering to group similar codons
+    #    .codon.sets <- expand.grid(0:3, 0:3, 0:3)
+    #    .codon.sets <- data.frame(first=.codon.sets[,3], second=.codon.sets[,2], third=.codon.sets[,1]) #reordering to group similar codons
     n.codons <- dim(.codon.sets)[1]
     codon.fixation.rates <- matrix(data=0, nrow=n.codons, ncol=n.codons)
     codon.names <- rep("", n.codons)
