@@ -190,7 +190,7 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     if(logspace) {
         x = exp(x)
     }
-    Ne=5e4
+    Ne <- 5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
         base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -232,7 +232,7 @@ GetOptimalNucPerSite <- function(x, nuc.data, phy, nuc.model, diploid=TRUE, logs
     if(logspace) {
         x = exp(x)
     }
-    Ne=5e4
+    Ne <- 5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
         base.freqs=c(x[4:6], 1-sum(x[4:6]))
@@ -461,7 +461,7 @@ GetLikelihoodUCEHMMForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.o
     if(logspace) {
         x = exp(x)
     }
-    Ne=5e4
+    Ne <- 5e4
     x[1] <- x[1]/Ne
     if(nuc.model == "JC") {
 ########REMAINING ISSUE -- not clear on the frequencies under HMM. Recaled to normalize to 1, or not?
@@ -785,7 +785,7 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
 
 #Goal is to make a list with all the things I need for a site.
 MakeParameterArray <- function(nuc.optim.list, pars.mat, nsites.vector) {
-    Ne=5e4
+    Ne <- 5e4
     pars.array <- c()
     for(partition.index in 1:length(nsites.vector)){
         pars.site.tmp <- as.list(1:nsites.vector[partition.index])
@@ -829,10 +829,10 @@ SingleBranchCalculation <- function(Q, init.cond, edge.length, root.p) {
 GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.array, nuc.model, diploid, n.cores, logspace) {
     if(diploid == TRUE){
         ploidy <- 2
-        Ne=5e4
+        Ne <- 5e4
     }else{
         ploidy <- 1
-        Ne=5e4
+        Ne <- 5e4
     }
     
     if(logspace == TRUE){
@@ -1501,11 +1501,11 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }else{
             message.to.print <- optimal.nuc
         }
+        mle.pars.mat <- index.matrix
+        mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
         cat(paste("       Doing first pass using ", message.to.print, " optimal nucleotide...", sep=""), "\n")
         if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
-            mle.pars.mat <- index.matrix
-            mle.pars.mat[] <- c(ip.vector, 0)[index.matrix]
             phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
             results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, nsites.vector=nsites.vector, diploid=diploid, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
             #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
