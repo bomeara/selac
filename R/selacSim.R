@@ -365,7 +365,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
     nsites <- length(nuc.optim_array)
 
     #Start organizing the user input parameters:
-    Ne = 5e6
+    Ne = 5e4
     scalor = pars[1]/Ne
     site.index <- 1:nsites
     #position.multiplier.vector <- scalor * PositionSensitivityMultiplierSigmoid(left.slope, right.slope, mid.point, nsites)
