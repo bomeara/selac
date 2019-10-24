@@ -1318,7 +1318,7 @@ GetMaxNameUCE <- function(x) {
 #' @param edge.linked A logical indicating whether or not edge lengths should be optimized separately for each gene. By default, a single set of each lengths is optimized for all genes.
 #' @param optimal.nuc Indicates what type of optimal.nuc should be used. At the moment there is only a single option: "majrule".
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
-#' @param global.nucleotide.model assumes nucleotide model is shared among all partitions
+#' @param set.Ne Indicates whether Ne is to estimated or a fixed value is to be used. Either a fixed value is supplied or "optimize" is use to indicate that it is a parameter to optimize.
 #' @param diploid A logical indicating whether or not the organism is diploid or not.
 #' @param verbose Logical indicating whether each iteration be printed to the screen.
 #' @param n.cores The number of cores to run the analyses over.
@@ -1335,7 +1335,7 @@ GetMaxNameUCE <- function(x) {
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", set.Ne=5e4, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=1) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", set.Ne=1e4, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=1) {
     
     cat("Initializing data and model parameters...", "\n")
     
