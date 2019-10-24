@@ -1398,7 +1398,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             selon.starting.vals[,2] <- runif(n = max.restarts+1, min = 0.01, max = 500)
         }
     }else{
-        if(set.Ne = "optimize"){
+        if(set.Ne == "optimize"){
             set.Ne = 1e3
             selon.starting.vals <- matrix(c(1e-9, 100),1,2)
             selon.starting.vals <- rbind(selon.starting.vals, selon.starting.vals)
@@ -1423,7 +1423,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         max.par.model.count = 3 + 3 + 5
     }
     if(nuc.model == "UNREST"){
-        if(set.Ne = "optimize"){
+        if(set.Ne == "optimize"){
             solve.for.s = FALSE
             nuc.ip = rep(1, 11)
             ip = c(selon.starting.vals[1,1], ceiling(nsites.vector[1]/2), selon.starting.vals[1,2], nuc.ip)
@@ -1537,7 +1537,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             optim.Ne <- optimize(f=OptimizeAllGenesNeUCE, interval=c(log(1), log(1e6)), par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, logspace=TRUE, n.cores=n.cores, neglnl=TRUE, lower=log(1), upper=log(1e6), maximum=FALSE, tol=.Machine$double.eps^0.25)
             set.Ne <- exp(optim.Ne$minimum)
         }
-        
+        print(paste("Ne estimate", set.Ne))
         substitution.pars <- mle.pars.mat[1,c(4:max.par.model.count)]
         #Part 1: Optimize the shape function:
         index.matrix.red <- t(matrix(1:(n.partitions*3), 3, n.partitions))
