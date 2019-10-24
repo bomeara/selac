@@ -1502,7 +1502,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         if(edge.length == "optimize"){
             cat("              Optimizing edge lengths", "\n")
             phy$edge.length[phy$edge.length < 1e-08] <- 1e-08
-            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, Ne=set.ne, solve.for.s=solve.for.s, nsites.vector=nsites.vector, diploid=diploid, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
+            results.edge.final <- OptimizeEdgeLengthsUCENew(phy=phy, pars.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, nuc.optim.list=nuc.optim.list, nuc.model=nuc.model, Ne=set.Ne, solve.for.s=solve.for.s, nsites.vector=nsites.vector, diploid=diploid, logspace=TRUE, n.cores=n.cores, neglnl=TRUE)
             #results.edge.final <- nloptr(x0=log(phy$edge.length), eval_f = OptimizeEdgeLengthsUCE, ub=upper.edge, lb=lower.edge, opts=opts.edge, par.mat=mle.pars.mat, site.pattern.data.list=site.pattern.data.list, n.partitions=n.partitions, nsites.vector=nsites.vector, index.matrix=index.matrix, phy=phy, nuc.optim.list=nuc.optim.list, diploid=diploid, nuc.model=nuc.model, hmm=FALSE, logspace=TRUE, verbose=verbose, n.cores=n.cores, neglnl=TRUE)
             print(results.edge.final$final.likelihood)
             phy <- results.edge.final$phy
