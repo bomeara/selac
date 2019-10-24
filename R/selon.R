@@ -1445,63 +1445,40 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     index.matrix[1,] = 1:ncol(index.matrix)
     ip.vector = ip
     if(n.partitions > 1){
-        if(global.nucleotide.model == TRUE) {
-            upper.mat = upper
-            lower.mat = lower
-            for(partition.index in 2:n.partitions){
-                if(nuc.model == "JC"){
+        upper.mat = upper
+        lower.mat = lower
+        for(partition.index in 2:n.partitions){
+            if(nuc.model == "JC"){
+                ip[2] = ceiling(nsites.vector[partition.index]/2)
+                upper[2] = log(nsites.vector[partition.index])
+                ip.vector = c(ip.vector, ip[1:3])
+                upper.mat = c(upper.mat, upper[1:3])
+                lower.mat = c(lower.mat, lower[1:3])
+            }else{
+                if(nuc.model == "GTR"){
+                    index.matrix.tmp = numeric(max.par.model.count)
                     ip[2] = ceiling(nsites.vector[partition.index]/2)
                     upper[2] = log(nsites.vector[partition.index])
+                    index.matrix.tmp[c(4:11)] = c(4:11)
                     ip.vector = c(ip.vector, ip[1:3])
-                    upper.mat = c(upper.mat, upper[1:3])
-                    lower.mat = c(lower.mat, lower[1:3])
+                    upper.mat = rbind(upper.mat, upper)
+                    lower.mat = rbind(lower.mat, lower)
+                    
                 }else{
-                    if(nuc.model == "GTR"){
-                        index.matrix.tmp = numeric(max.par.model.count)
-                        ip[2] = ceiling(nsites.vector[partition.index]/2)
-                        upper[2] = log(nsites.vector[partition.index])
-                        index.matrix.tmp[c(4:11)] = c(4:11)
-                        ip.vector = c(ip.vector, ip[1:3])
-                        upper.mat = rbind(upper.mat, upper)
-                        lower.mat = rbind(lower.mat, lower)
-                        
-                    }else{
-                        index.matrix.tmp = numeric(max.par.model.count)
-                        ip[2] = ceiling(nsites.vector[partition.index]/2)
-                        upper[2] = log(nsites.vector[partition.index])
-                        index.matrix.tmp[c(4:14)] = c(4:14)
-                        ip.vector = c(ip.vector, ip[1:3])
-                        upper.mat = rbind(upper.mat, upper)
-                        lower.mat = rbind(lower.mat, lower)
-                    }
-                }
-                if(!is.null(user.supplied.starting.param.vals)){
-                    ip.vector <- user.supplied.starting.param.vals
-                }
-                index.matrix.tmp[index.matrix.tmp==0] <- seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-                index.matrix[partition.index,] <- index.matrix.tmp
-            }
-        }else{
-            upper.vector = upper
-            lower.vector = lower
-            for(partition.index in 2:n.partitions){
-                if(nuc.model == "JC"){
+                    index.matrix.tmp = numeric(max.par.model.count)
                     ip[2] = ceiling(nsites.vector[partition.index]/2)
                     upper[2] = log(nsites.vector[partition.index])
-                    ip.vector = c(ip.vector, ip[1:3], ip[4], ip[5], ip[6])
-                    upper.vector = c(upper.vector, c(upper[1:3], upper[4], upper[5], upper[6]))
-                    lower.vector = c(lower.vector, c(lower[1:3], lower[4], lower[5], lower[6]))
-                }else{
-                    ip[2] = ceiling(nsites.vector[partition.index]/2)
-                    upper[2] = log(nsites.vector[partition.index])
-                    ip.vector = c(ip.vector, ip[1:3], ip[4], ip[5], ip[6], nuc.ip)
-                    upper.vector = c(upper.vector, c(upper[1:3], upper[4], upper[5], upper[6], rep(21, length(nuc.ip))))
-                    lower.vector = c(lower.vector, c(lower[1:3], lower[4], lower[5], lower[6], rep(-21, length(nuc.ip))))
+                    index.matrix.tmp[c(4:14)] = c(4:14)
+                    ip.vector = c(ip.vector, ip[1:3])
+                    upper.mat = rbind(upper.mat, upper)
+                    lower.mat = rbind(lower.mat, lower)
                 }
-                index.matrix.tmp = numeric(max.par.model.count)
-                index.matrix.tmp[index.matrix.tmp==0] = seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
-                index.matrix[partition.index,] <- index.matrix.tmp
             }
+            if(!is.null(user.supplied.starting.param.vals)){
+                ip.vector <- user.supplied.starting.param.vals
+            }
+            index.matrix.tmp[index.matrix.tmp==0] <- seq(max(index.matrix)+1, length.out=length(index.matrix.tmp[index.matrix.tmp==0]))
+            index.matrix[partition.index,] <- index.matrix.tmp
         }
     }
     print(ip.vector)
