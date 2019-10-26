@@ -403,11 +403,8 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         base.freqs <- Null(Q_position)
         #Rescale base.freqs so that they sum to 1:
         base.freqs.scaled <- c(base.freqs/sum(base.freqs))
-        #base.freqs.scaled.matrix <- rep.row(base.freqs.scaled, 4)
-        #diag(Q_position) <- 0
-        #Q_position <- Q_position * base.freqs.scaled.matrix
-        #diag(Q_position) <- -rowSums(Q_position)
         scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
+        
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         Q_position_scaled <- Q_position * (1/scale.factor)
         
