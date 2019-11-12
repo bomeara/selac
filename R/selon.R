@@ -718,7 +718,7 @@ OptimizeAllGenesNeUCE <- function(x, par.mat, site.pattern.data.list, n.partitio
 
 
 
-OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, solve.for.s, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
+OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, Ne, solve.for.s, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
     
     if(logspace) {
         par.mat <- exp(par.mat)
