@@ -3,6 +3,7 @@ test_that("GTR_likelihood", {
 
     tree <- read.tree("rokasYeast.tre")
 	phy <- drop.tip(tree, "Calb")
+    phy <- midpoint.root(p)
 	yeast.gene <- read.dna("gene1Yeast.fasta", format="fasta")
 	yeast.gene <- as.list(as.matrix(cbind(yeast.gene))[1:7,])
     chars <- selac:::DNAbinToNucleotideNumeric(yeast.gene)

@@ -846,7 +846,8 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     }
     
     if(!is.null(edge.number)){
-        phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
+        #phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
+        phy$edge.length[which(phy$edge[,2] %in% edge.number)] <- p
     }
     
     phy <- reorder(phy, "pruningwise")
@@ -1007,23 +1008,30 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     pars.array <- MakeParameterArray(nuc.optim.list=nuc.optim.list, pars.mat=pars.mat, Ne=Ne, solve.for.s=solve.for.s, nsites.vector=nsites.vector)
     are_we_there_yet <- 1
     iteration.number <- 1
+    
     old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
     print(paste("old lik", old.likelihood))
+    
+    opts <- list("algorithm" = "NLOPT_LN_NELDERMEAD", "maxeval" = 1000000, "ftol_rel" = tol)
+    
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         current.lik <- old.likelihood
         for(gen.index in 1:length(generations)){
-            for(index in 1:length(generations[[gen.index]])){
-                cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
+            #for(index in 1:length(generations[[gen.index]])){
+                #cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
+                cat("                        Optimizing edge generation number", gen.index,"\n")
                 print(paste("current before", current.lik))
-                out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(log(1e-8), log(5)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(5), maximum=FALSE, tol=tol)
+                #out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(log(1e-8), log(5)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(5), maximum=FALSE, tol=tol)
+                out <- nloptr(x0=log(phy$edge.length[which(phy$edge[,2] %in% generations[[gen.index]])]), eval_f = GetBranchLikeAcrossAllSites, lb=rep(log(5), length(generations[[gen.index]])), ub=rep(log(5), length(generations[[gen.index]])),  opts=opts, edge.number=generations[[gen.index]], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
                 print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
-                    phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- exp(out$minimum)
+                    #phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- exp(out$minimum)
+                    phy$edge.length[which(phy$edge[,2] %in% generations[[gen.index]])] <- exp(out$minimum)
                 }
                 print(paste("current after", current.lik))
-            }
+            #}
         }
         new.likelihood <- current.lik
         print(paste("new lik", new.likelihood))
