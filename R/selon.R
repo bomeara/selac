@@ -1023,7 +1023,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
                 cat("                        Optimizing edge generation number", gen.index,"\n")
                 print(paste("current before", current.lik))
                 #out <- optimize(f=GetBranchLikeAcrossAllSites, interval=c(log(1e-8), log(5)), edge.number=generations[[gen.index]][index], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace, lower=log(1e-8), upper=log(5), maximum=FALSE, tol=tol)
-                out <- nloptr(x0=log(phy$edge.length[which(phy$edge[,2] %in% generations[[gen.index]])]), eval_f = GetBranchLikeAcrossAllSites, lb=rep(log(5), length(generations[[gen.index]])), ub=rep(log(5), length(generations[[gen.index]])),  opts=opts, edge.number=generations[[gen.index]], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
+                out <- nloptr(x0=log(phy$edge.length[which(phy$edge[,2] %in% generations[[gen.index]])]), eval_f = GetBranchLikeAcrossAllSites, lb=rep(log(1e-8), length(generations[[gen.index]])), ub=rep(log(5), length(generations[[gen.index]])),  opts=opts, edge.number=generations[[gen.index]], phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
                 print(out)
                 if(current.lik > out$objective){
                     current.lik <- out$objective
