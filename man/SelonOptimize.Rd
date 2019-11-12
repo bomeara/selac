@@ -7,7 +7,7 @@
 SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
   edge.length = "optimize", edge.linked = TRUE,
   optimal.nuc = "majrule", nuc.model = "GTR",
-  global.nucleotide.model = TRUE, diploid = TRUE, verbose = FALSE,
+  set.Ne = 1e4, diploid = TRUE, verbose = FALSE,
   n.cores = 1, max.tol = .Machine$double.eps^0.25, max.evals = 1e+06,
   cycle.stage = 12, max.restarts = 3, user.optimal.nuc=NULL, output.by.restart = TRUE,
   output.restart.filename = "restartResult", user.supplied.starting.param.vals=NULL, 
@@ -28,7 +28,7 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
 
-\item{global.nucleotide.model}{assumes nucleotide model is shared among all partitions}
+\item{set.Ne}{Indicates whether Ne is to estimated or a fixed value is to be used. Either a fixed value is supplied or "optimize" is use to indicate that it is a parameter to optimize.}
 
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
 
