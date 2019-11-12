@@ -22,7 +22,7 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
     des <- phy$edge[,2]
     edge.length <- phy$edge.length
     for (i in N:1) {
-        p <- expm(Q_codon * edge.length[i], method="Ward77")[sim.codon.data.site[anc[i]], ]
+        p <- internal_expmt(Q_codon, edge.length[i])[[1]][sim.codon.data.site[anc[i]], ]
         sim.codon.data.site[des[i]] <- sample.int(dim(Q_codon)[2], size = 1, FALSE, prob = p)
     }
     sim.codon.data.site <- sim.codon.data.site[1:ntips]
