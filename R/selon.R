@@ -1030,7 +1030,8 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
                 if(current.lik > out$objective){
                     current.lik <- out$objective
                     #phy$edge.length[which(phy$edge[,2]==generations[[gen.index]][index])] <- exp(out$minimum)
-                    phy$edge.length[which(phy$edge[,2] %in% generations[[gen.index]])] <- exp(out$solution)
+                    #phy$edge.length[which(phy$edge[,2] %in% generations[[gen.index]])] <- exp(out$solution)
+                    phy$edge.length <- exp(out$solution)
                 }
                 print(paste("current after", current.lik))
             #}
