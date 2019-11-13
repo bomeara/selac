@@ -22,7 +22,8 @@ SingleSiteUpPass <- function(phy, Q_codon, root.value){
     des <- phy$edge[,2]
     edge.length <- phy$edge.length
     for (i in N:1) {
-        p <- internal_expmt(Q_codon, edge.length[i])[[1]][sim.codon.data.site[anc[i]], ]
+        #p <- internal_expmt(Q_codon, edge.length[i])[[1]][sim.codon.data.site[anc[i]], ]
+        p <- expm_squaring(Q_codon, edge.length[i], m=30)[sim.codon.data.site[anc[i]], ]
         sim.codon.data.site[des[i]] <- sample.int(dim(Q_codon)[2], size = 1, FALSE, prob = p)
     }
     sim.codon.data.site <- sim.codon.data.site[1:ntips]
@@ -403,6 +404,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         base.freqs <- Null(Q_position)
         #Rescale base.freqs so that they sum to 1:
         base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        
         scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
         
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
