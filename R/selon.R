@@ -1164,7 +1164,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
 expm_squaring <- function(Q, t, m){
     identity.mat <- matrix(0,4,4)
     diag(identity.mat) <- 1
-    probMat <- (identity.mat + ((Q*t)/m) + (((Qt*t)/m)^2/2)) %^% m
+    probMat <- (identity.mat + ((Q*t)/m) + (((Q*t)/m)^2/2)) %^% m
     return(probMat)
 }
 
