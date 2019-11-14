@@ -1000,7 +1000,7 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
 ## Step 2: Replace row info, across each site. Issue though is that we'd have to regenerate data.array after we're done? Actually no because basically once we done a single round we're done here.
 OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc.optim.list, nuc.model, Ne, solve.for.s, nsites.vector, diploid, logspace, n.cores, neglnl=FALSE) {
     maxit <- 11
-    tol <- 0.001
+    tol <- .Machine$double.eps^0.25
     nb.tip <- Ntip(phy)
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
@@ -1013,7 +1013,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     old.likelihood <- GetBranchLikeAcrossAllSites(p=log(phy$edge.length), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
     print(paste("old lik", old.likelihood))
     
-    opts <- list("algorithm" = "NLOPT_LN_NELDERMEAD", "maxeval" = 1000000, "ftol_abs" =  tol)
+    opts <- list("algorithm" = "NLOPT_LN_NELDERMEAD", "maxeval" = 1000000, "ftol_rel" =  tol)
     
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
@@ -1355,7 +1355,7 @@ GetMaxNameUCE <- function(x) {
 #'
 #' @details
 #' SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", set.Ne=1e4, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=0.001, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=1) {
+SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="optimize", edge.linked=TRUE, optimal.nuc="majrule", nuc.model="GTR", set.Ne=1e4, diploid=TRUE, verbose=FALSE, n.cores=1, max.tol=.Machine$double.eps^0.25, max.evals=1000000, cycle.stage=12, max.restarts=3, user.optimal.nuc=NULL, output.by.restart=TRUE, output.restart.filename="restartResult", user.supplied.starting.param.vals=NULL, fasta.rows.to.keep=NULL, dt.threads=1) {
     
     cat("Initializing data and model parameters...", "\n")
     
@@ -1404,7 +1404,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }
     }
     
-    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_abs" = max.tol)
+    opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     
     if(max.restarts > 1){
         if(set.Ne == "optimize"){
