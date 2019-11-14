@@ -1392,7 +1392,7 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
         }else{
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
         }
-        starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
+        starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
         nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
         nucleotide.data <- nucleotide.data[phy$tip.label,]
         site.pattern.data.list[[partition.index]] = nucleotide.data
@@ -1408,6 +1408,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             nuc.optim.list[[partition.index]] <- nuc.optim
         }
     }
+    
+    print(starting.branch.lengths)
     
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     
