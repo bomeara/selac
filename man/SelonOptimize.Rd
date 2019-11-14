@@ -11,7 +11,7 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
   n.cores = 1, max.tol = .Machine$double.eps^0.25, max.evals = 1e+06,
   cycle.stage = 12, max.restarts = 3, user.optimal.nuc=NULL, output.by.restart = TRUE,
   output.restart.filename = "restartResult", user.supplied.starting.param.vals=NULL, 
-  fasta.rows.to.keep = NULL, dt.threads=0)
+  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE, dt.threads=0)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}
@@ -53,6 +53,8 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 \item{user.supplied.starting.param.vals}{Designates user-supplied starting values. Default is NULL.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
+
+\item{recalculate.starting.brlen}{Whether to use given branch lengths in the starting tree or recalculate them.}
 
 \item{dt.threads}{Indicates how many available threads to allow data.table to use. Default is zero.}
 }
