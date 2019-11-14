@@ -1134,8 +1134,8 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         v <- 1
         #descendant.count <- 0
         for (desIndex in sequence(length(desRows))){
-            v <- v * expm_squaring(Q, phy$edge.length[desRows[desIndex]], m=30) %*% liks[desNodes[desIndex],]
-            #v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
+            #v <- v * expm_squaring(Q, phy$edge.length[desRows[desIndex]], m=30) %*% liks[desNodes[desIndex],]
+            v <- v * internal_expmt(Q, phy$edge.length[desRows[desIndex]])[[1]] %*% liks[desNodes[desIndex],]
             #v <- v * expm(Q, phy$edge.length[desRows[desIndex]], method=c("Ward77")) %*% liks[desNodes[desIndex],]
         }
         comp[focal] <- sum(v)
