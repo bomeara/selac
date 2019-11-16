@@ -1018,7 +1018,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
     while (are_we_there_yet > tol && iteration.number < maxit) {
         cat("                   Round number",  iteration.number, "\n")
         current.lik <- old.likelihood
-        for(gen.index in length(generations):1){
+        for(gen.index in 1:length(generations)){
             #for(index in 1:length(generations[[gen.index]])){
                 #cat("                        Optimizing edge number",  generations[[gen.index]][index],"\n")
                 cat("                        Optimizing edge generation number", gen.index,"\n")
