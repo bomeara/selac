@@ -104,10 +104,12 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
     #Now we need to build the matrix of likelihoods to pass to dev.raydisc:
     liks <- matrix(0, nb.tip + nb.node, nl)
     #Now loop through the tips.
+    pattern.counts <- numeric(4)
     for(i in 1:nb.tip){
         #The codon at a site for a species is not NA, then just put a 1 in the appropriate column.
         #Note: We add charnum+1, because the first column in the data is the species labels:
         state <- nuc.data[i,charnum+1]
+        pattern.counts[state] <- pattern.counts[state] + 1
         if(state < 65){
             liks[i,state] <- 1
         }else{
@@ -115,6 +117,7 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
             liks[i,] <- 1
         }
     }
+    root.p <- pattern.counts/sum(pattern.counts)
     #The result here is just the likelihood:
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
