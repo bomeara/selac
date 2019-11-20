@@ -848,11 +848,11 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
         p <- exp(p)
     }
     
-    #if(!is.null(edge.number)){
+    if(!is.null(edge.number)){
         #phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
         phy$edge.length[which(phy$edge[,2] %in% edge.number)] <- p
         #phy$edge.length <- p
-    #}
+    }
     
     phy <- reorder(phy, "pruningwise")
     nb.tip <- length(phy$tip.label)
