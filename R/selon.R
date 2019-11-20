@@ -117,7 +117,7 @@ GetLikelihoodUCEForSingleCharGivenOptimum <- function(charnum=1, nuc.data, phy, 
             liks[i,] <- 1
         }
     }
-    root.p <- pattern.counts/sum(pattern.counts)
+    #root.p <- pattern.counts/sum(pattern.counts)
     #The result here is just the likelihood:
     result <- -GetLikelihood(phy=phy, liks=liks, Q=Q_position, root.p=root.p)
     #ODE way is commented out
@@ -1151,6 +1151,7 @@ GetLikelihood <- function(phy, liks, Q, root.p){
         return(1000000)
     }
     else{
+        root.p = liks[root,] / sum(liks[root,])
         loglik <- -(sum(log(comp[-TIPS])) + log(sum(root.p * liks[root,])))
         #write.table(loglik, file="likelihoods", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
         #write.table(t(root.p), file="root.p", quote=FALSE, sep="\t", col.names=FALSE, row.names=FALSE, append=TRUE)
