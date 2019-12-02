@@ -1041,6 +1041,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
                 #}
         }
         
+        #Giving this a try:
         out.sann <- GenSA(log(phy$edge.length), fn=GetBranchLikeAcrossAllSites, lower=rep(log(1e-8), length(phy$edge.length)), upper=rep(log(5), length(phy$edge.length)),  control=list(max.call=5000), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
         if(current.lik > out.sann$value){
             new.likelihood <- out.sann$value
@@ -1397,15 +1398,24 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     nuc.optim.list <- as.list(numeric(n.partitions))
     nsites.vector <- c()
     empirical.base.freq.list <- as.list(numeric(n.partitions))
-    starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge[,1]))
+    #starting.branch.lengths <- matrix(0, n.partitions, length(phy$edge[,1]))
+    gene.tmp1 <- read.dna(partitions[1], format='fasta')
+    gene.tmp2 <- read.dna(partitions[2], format='fasta')
+    concat.seq <- cbind(gene.tmp1, gene.tmp2)
+
     for (partition.index in sequence(n.partitions)) {
         gene.tmp <- read.dna(partitions[partition.index], format='fasta')
         if(!is.null(fasta.rows.to.keep)){
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
+            if(partition.index != 1 | partition.index != 2){
+                concat.seq <- cbind(concat.seq, gene.tmp)
+            }
         }else{
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
+            if(partition.index != 1 | partition.index != 2){
+                concat.seq <- cbind(concat.seq, gene.tmp)
+            }
         }
-        starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, gene.tmp, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
         nucleotide.data <- DNAbinToNucleotideNumeric(gene.tmp)
         nucleotide.data <- nucleotide.data[phy$tip.label,]
         site.pattern.data.list[[partition.index]] = nucleotide.data
@@ -1421,8 +1431,9 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             nuc.optim.list[[partition.index]] <- nuc.optim
         }
     }
-    
-    print(starting.branch.lengths)
+
+    cat("Initializing starting branch lengths...", "\n")
+    starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, concat.seq, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
     
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     
@@ -1523,7 +1534,6 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
             index.matrix[partition.index,] <- index.matrix.tmp
         }
     }
-    print(ip.vector)
     number.of.current.restarts <- 1
     nuc.optim.original <- nuc.optim.list
     best.lik <- 1000000

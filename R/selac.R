@@ -2896,7 +2896,10 @@ ComputeStartingBranchLengths <- function(phy, data, data.type="codon", recalcula
             mpr.tre$edge.length <- mpr.tre$edge.length/dim(dats.mat[,third.position])[2]
         }else{
             dat <- phyDat(dats.mat, type="DNA")
-            mpr.tre <- phangorn::nnls.phylo(phy.with.outgroup, dist.ml(dat))
+            #mpr.tre <- phangorn::nnls.phylo(phy.with.outgroup, dist.ml(dat))
+            fitJC <- pml(phy.with.outgroup, dat)
+            fitJC <- optim.pml(fitJC, optBf=TRUE)
+            mpr.tre <- fitJC$tree
         }
         mpr.tre.pruned <- drop.tip(mpr.tre, "FAKEY_MCFAKERSON")
         mpr.tre.pruned$edge.length[mpr.tre.pruned$edge.length == 0] <- 1e-7
