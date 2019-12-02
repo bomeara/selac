@@ -1433,8 +1433,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
 
     cat("Initializing starting branch lengths...", "\n")
+    concat.seq <- as.list(as.matrix(cbind(concat.seq)))
     starting.branch.lengths <- ComputeStartingBranchLengths(phy, concat.seq, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
-    
     
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     
