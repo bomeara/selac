@@ -1406,12 +1406,12 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     for (partition.index in sequence(n.partitions)) {
         gene.tmp <- read.dna(partitions[partition.index], format='fasta')
         if(!is.null(fasta.rows.to.keep)){
-            if(partition.index != 1 | partition.index != 2){
+            if(partition.index != 1 & partition.index != 2){
                 concat.seq <- cbind(concat.seq, gene.tmp)
             }
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp))[fasta.rows.to.keep,])
         }else{
-            if(partition.index != 1 | partition.index != 2){
+            if(partition.index != 1 & partition.index != 2){
                 concat.seq <- cbind(concat.seq, gene.tmp)
             }
             gene.tmp <- as.list(as.matrix(cbind(gene.tmp)))
