@@ -1041,7 +1041,7 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
                 #}
         }
         
-        out.sann <- GenSA(log(phy$edge.length), fn=GetBranchLikeAcrossAllSites, lower=rep(log(1e-8), length(phy$edge.length)), upper=rep(log(5), length(phy$edge.length)), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
+        out.sann <- GenSA(log(phy$edge.length), fn=GetBranchLikeAcrossAllSites, control=list(max.call=1000), lower=rep(log(1e-8), length(phy$edge.length)), upper=rep(log(5), length(phy$edge.length)), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
         if(current.lik > out.sann){
             new.likelihood <- out.sann$value
             phy$edge.length <- exp(out.sann$par)
