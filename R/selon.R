@@ -1433,7 +1433,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     }
 
     cat("Initializing starting branch lengths...", "\n")
-    starting.branch.lengths[partition.index,] <- ComputeStartingBranchLengths(phy, concat.seq, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
+    starting.branch.lengths <- ComputeStartingBranchLengths(phy, concat.seq, data.type="dna", recalculate.starting.brlen=recalculate.starting.brlen)$edge.length
+    
     
     opts <- list("algorithm" = "NLOPT_LN_SBPLX", "maxeval" = max.evals, "ftol_rel" = max.tol)
     
@@ -1540,7 +1541,8 @@ SelonOptimize <- function(nuc.data.path, n.partitions=NULL, phy, edge.length="op
     while(number.of.current.restarts < (max.restarts+1)){
         cat(paste("Finished. Performing random restart ", number.of.current.restarts,"...", sep=""), "\n")
         if(edge.length == "optimize"){
-            phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
+            #phy$edge.length <- apply(starting.branch.lengths, 2, weighted.mean, nsites.vector)
+            phy$edge.length <- starting.branch.lengths
         }
         nuc.optim.list <- nuc.optim.list
         if(optimal.nuc=="optimize"){
