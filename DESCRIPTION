@@ -30,7 +30,8 @@ Imports:
     seqinr,
     statmod,
     zoo,
-    RColorBrewer
+    RColorBrewer,
+    GenSA
 License: GPL
 ByteCompile: TRUE
 RoxygenNote: 6.1.1

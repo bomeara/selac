@@ -851,7 +851,8 @@ GetBranchLikeAcrossAllSites <- function(p, edge.number, phy, data.array, pars.ar
     if(!is.null(edge.number)){
         #phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
         phy$edge.length[which(phy$edge[,2] %in% edge.number)] <- p
-        #phy$edge.length <- p
+    }else{
+        phy$edge.length <- p
     }
     
     phy <- reorder(phy, "pruningwise")
@@ -1039,7 +1040,15 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
                 print(paste("current after", current.lik))
                 #}
         }
-        new.likelihood <- current.lik
+        
+        out.sann <- GenSA(x0=log(phy$edge.length), fn=GetBranchLikeAcrossAllSites, lower=rep(log(1e-8), length(phy$edge.length)), upper=rep(log(5), length(phy$edge.length)), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
+        if(current.lik > out.sann){
+            new.likelihood <- out.sann$value
+            phy$edge.length <- exp(out.sann$par)
+        }else{
+            new.likelihood <- current.lik
+        }
+        
         print(paste("new lik", new.likelihood))
         iteration.number <- iteration.number + 1
         are_we_there_yet <- (old.likelihood - new.likelihood ) / new.likelihood
