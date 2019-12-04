@@ -721,7 +721,7 @@ OptimizeAllGenesNeUCE <- function(x, par.mat, site.pattern.data.list, n.partitio
 
 
 
-OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, Ne, solve.for.s, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE) {
+OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, Ne, solve.for.s, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE, get.sum=TRUE) {
     
     if(logspace) {
         par.mat <- exp(par.mat)
@@ -734,7 +734,11 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     }
     #This orders the nsites per partition in decreasing order (to increase efficiency):
     partition.order <- 1:n.partitions
-    likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+    if(get.sum == TRUE){
+        likelihood <- sum(unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores)))
+    }else{
+        likelihood <- unlist(mclapply(partition.order[order(nsites.vector, decreasing=TRUE)], MultiCoreLikelihood, mc.cores=n.cores))
+    }
     #likelihood <- sum(unlist(mclapply(partition.order, MultiCoreLikelihood, mc.cores=n.cores)))
     return(likelihood)
 }
