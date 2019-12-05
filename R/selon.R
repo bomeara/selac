@@ -925,10 +925,14 @@ GetBranchLikeAcrossAllSitesGTR <- function(p, edge.number, phy, data.array, pars
     if(logspace == TRUE){
         p <- exp(p)
     }
-    if(!is.null(edge.number)){
-        phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
-    }
     
+    if(!is.null(edge.number)){
+        #phy$edge.length[which(phy$edge[,2]==edge.number)] <- p
+        phy$edge.length[which(phy$edge[,2] %in% edge.number)] <- p
+    }else{
+        phy$edge.length <- p
+    }
+
     phy <- reorder(phy, "pruningwise")
     nb.tip <- length(phy$tip.label)
     nb.node <- phy$Nnode
@@ -1046,14 +1050,14 @@ OptimizeEdgeLengthsUCENew <- function(phy, pars.mat, site.pattern.data.list, nuc
         }
         
         #Giving this a try:
-        cat("                        Simulated annealing for 5000 iterations", "\n")
-        out.sann <- GenSA(log(phy$edge.length), fn=GetBranchLikeAcrossAllSites, lower=rep(log(1e-8), length(phy$edge.length)), upper=rep(log(5), length(phy$edge.length)),  control=list(max.call=5000), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
-        if(current.lik > out.sann$value){
-            new.likelihood <- out.sann$value
-            phy$edge.length <- exp(out.sann$par)
-        }else{
+        #cat("                        Simulated annealing for 5000 iterations", "\n")
+        #out.sann <- GenSA(log(phy$edge.length), fn=GetBranchLikeAcrossAllSites, lower=rep(log(1e-8), length(phy$edge.length)), upper=rep(log(5), length(phy$edge.length)),  control=list(max.call=5000), edge.number=NULL, phy=phy, data.array=data.array, pars.array=pars.array, nuc.model=nuc.model, Ne=Ne, diploid=diploid, n.cores=n.cores, logspace=logspace)
+        #if(current.lik > out.sann$value){
+        #    new.likelihood <- out.sann$value
+        #    phy$edge.length <- exp(out.sann$par)
+        #}else{
             new.likelihood <- current.lik
-        }
+        #}
         
         print(paste("new lik", new.likelihood))
         iteration.number <- iteration.number + 1
