@@ -342,14 +342,15 @@ CreateNucleotideMutationMatrix <- function(rates, model="JC", base.freqs=NULL) {
         diag(nuc.mutation.rates) <- 0
         diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
         #Next we take our rates and find the homogeneous solution to Q*pi=0 to determine the base freqs:
-        base.freqs <- Null(nuc.mutation.rates)
+        #base.freqs <- Null(nuc.mutation.rates)
         #Rescale base.freqs so that they sum to 1:
-        base.freqs.scaled <- c(base.freqs/sum(base.freqs))
-        base.freqs.scaled.matrix <- rbind(base.freqs.scaled, base.freqs.scaled, base.freqs.scaled, base.freqs.scaled)
-        diag(nuc.mutation.rates) <- 0
+        #base.freqs.scaled <- c(base.freqs/sum(base.freqs))
+        #base.freqs.scaled.matrix <- rbind(base.freqs.scaled, base.freqs.scaled, base.freqs.scaled, base.freqs.scaled)
+        #diag(nuc.mutation.rates) <- 0
         #Rescale Q to account for base.freqs:
-        nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
-        diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+        #nuc.mutation.rates <- nuc.mutation.rates * base.freqs.scaled.matrix
+        #diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
+        
         return(nuc.mutation.rates)
     }
 }
