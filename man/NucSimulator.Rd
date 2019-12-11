@@ -4,7 +4,7 @@
 \alias{NucSimulator}
 \title{Simulate DNA under General-Time Reversible model}
 \usage{
-NucSimulator(phy, pars, nsites, nuc.model, base.freqs, ncats)
+NucSimulator(phy, pars, nsites, nuc.model, base.freqs, ncats, user.rate.cats)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -18,6 +18,8 @@ NucSimulator(phy, pars, nsites, nuc.model, base.freqs, ncats)
 \item{base.freqs}{The base frequencies for A C G T (in that order).}
 
 \item{ncats}{The number of discrete gamma categories.}
+
+\item{user.rate.cats}{The user supplied gamma categories to use instead of choosing at random.}
 }
 \description{
 Simulates nucleotide data based on parameters under the GTR+G model
