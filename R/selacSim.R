@@ -442,11 +442,12 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param base.freqs The base frequencies for A C G T (in that order).
 #' @param ncats The number of discrete gamma categories.
+#' @param start.vals_array A vector of nucleotides to be used as the starting nucleotide for each site in the simulation.
 #' @param user.rate.cats The user supplied gamma categories to use instead of choosing at random.
 #'
 #' @details
 #' Simulates a nucleotide matrix using parameters under the GTR+G model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma=TRUE, gamma.type="median", ncats=4, user.rate.cats=NULL){
+NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma=TRUE, gamma.type="median", ncats=4, start.vals_array=NULL, user.rate.cats=NULL){
     
     if(nuc.model == "JC") {
         base.freqs=base.freqs
@@ -467,7 +468,6 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
     
     if(include.gamma == TRUE){
         if(gamma.type == "median"){
-            #rates.k <- DiscreteGamma(shape=shape, ncats=ncats)
             rate.vector <- DiscreteGamma(pars[1], ncats)
             weights.k <- rep(1/ncats, ncats)
             rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
@@ -491,22 +491,22 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
         sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
         for(site in 1:nsites){
             Q_tmp <- Q_mat * rate.vector[rate.indicator[site]]
-            if(!is.null(dim(base.freqs))){
-                base.freqs.site <- base.freqs[site,]
-                sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs.site)
-            }else{
+            if(is.null(start.vals_array)){
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs)
+            }else{
+                start.site <- base.freqs[site,]
+                sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=start.site)
             }
         }
     }else{
         # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
         sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
         for(site in 1:nsites){
-            if(!is.null(dim(base.freqs))){
-                base.freqs.site <- base.freqs[site,]
-                sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs.site)
-            }else{
+            if(is.null(start.vals_array)){
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_mat, root.value=base.freqs)
+            }else{
+                start.site <- base.freqs[site,]
+                sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=start.site)
             }
         }
     }
