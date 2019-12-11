@@ -472,7 +472,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
             weights.k <- rep(1/ncats, ncats)
             rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
             if(!is.null(rate.cats)){
-                rate.indicator <- rate.cats
+                rate.indicator <- user.rate.cats
             }else{
                 rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
             }
@@ -482,7 +482,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
             rate.vector <- rates.and.weights[1:ncats]
             weights.k <- rates.and.weights[(ncats+1):(ncats*2)]
             if(!is.null(rate.cats)){
-                rate.indicator <- rate.cats
+                rate.indicator <- user.rate.cats
             }else{
                 rate.indicator <- sample.int(dim(Q_mat)[2], nsites, TRUE, prob=weights.k)
             }
