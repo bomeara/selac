@@ -491,7 +491,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
         sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
         for(site in 1:nsites){
             Q_tmp <- Q_mat * rate.vector[rate.indicator[site]]
-            if(!is.null(dim(base.freqs)){
+            if(!is.null(dim(base.freqs))){
                 base.freqs.site <- base.freqs[site,]
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs.site)
             }else{
@@ -502,7 +502,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
         # Perform simulation by looping over desired number of sites. The optimal aa for any given site is based on the user input vector of optimal AA:
         sim.nuc.data <- matrix(0, nrow=Ntip(phy), ncol=nsites)
         for(site in 1:nsites){
-            if(!is.null(dim(base.freqs)){
+            if(!is.null(dim(base.freqs))){
                 base.freqs.site <- base.freqs[site,]
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs.site)
             }else{
