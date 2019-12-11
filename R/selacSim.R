@@ -494,7 +494,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
             if(is.null(start.vals_array)){
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=base.freqs)
             }else{
-                start.site <- base.freqs[site,]
+                start.site <- start.vals_array[site,]
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=start.site)
             }
         }
@@ -505,7 +505,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
             if(is.null(start.vals_array)){
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_mat, root.value=base.freqs)
             }else{
-                start.site <- base.freqs[site,]
+                start.site <- start.vals_array[site,]
                 sim.nuc.data[,site] = SingleSiteUpPass(phy, Q_codon=Q_tmp, root.value=start.site)
             }
         }
