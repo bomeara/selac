@@ -4505,6 +4505,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                 ip = c(1,nuc.ip)
                 upper = c(5, rep(21, length(ip)-1))
                 lower = rep(-21, length(ip))
+                lower[1] <- log(0.1)
                 max.par.model.count = max.par.model.count + 1
                 parameter.column.names <- c("shape.gamma", parameter.column.names)
             }else{
