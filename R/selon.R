@@ -189,7 +189,7 @@ PositionSensitivityMultiplierQuadratic <- function(a0, a1, a2, site.index){
 }
 
 
-GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.optim_array=NULL, nuc.model, Ne, solve.for.s, diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE) {
+GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.optim_array=NULL, nuc.model, Ne, solve.for.s, diploid=TRUE, logspace=FALSE, verbose=TRUE, neglnl=FALSE, get.site.liks.only=FALSE) {
     
     if(logspace) {
         x = exp(x)
@@ -217,6 +217,10 @@ GetLikelihoodUCEForManyCharGivenAllParams <- function(x, nuc.data, phy, nuc.opti
     position.multiplier.vector <- PositionSensitivityMultiplierNormal(x[1], x[2], x[3], site.index)
     final.likelihood = GetLikelihoodUCEForManyCharVaryingBySite(nuc.data=nuc.data, phy=phy, nuc.mutation.rates=nuc.mutation.rates, position.multiplier.vector=position.multiplier.vector, Ne=Ne, nuc.optim_array=nuc.optim_array, diploid=diploid)
     likelihood <- sum(final.likelihood)
+    
+    if(get.site.liks.only == TRUE){
+        return(final.likelihood)
+    }
     
     if(neglnl) {
         likelihood <- -1 * likelihood
@@ -721,7 +725,7 @@ OptimizeAllGenesNeUCE <- function(x, par.mat, site.pattern.data.list, n.partitio
 
 
 
-OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, Ne, solve.for.s, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE, get.sum=TRUE) {
+OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partitions, nsites.vector, phy, nuc.optim.list=NULL, diploid=TRUE, nuc.model, Ne, solve.for.s, logspace=FALSE, verbose=TRUE, n.cores=NULL, neglnl=FALSE, get.sum=TRUE, get.site.liks.only=FALSE) {
     
     if(logspace) {
         par.mat <- exp(par.mat)
@@ -729,7 +733,7 @@ OptimizeAllGenesGenericUCE <- function(par.mat, site.pattern.data.list, n.partit
     MultiCoreLikelihood <- function(partition.index){
         nuc.data <- NULL
         nuc.data <- site.pattern.data.list[[partition.index]]
-        likelihood.tmp <- GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, Ne=Ne, solve.for.s=solve.for.s, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl)
+        likelihood.tmp <- GetLikelihoodUCEForManyCharGivenAllParams(x=log(par.mat[partition.index,]), nuc.data=nuc.data, phy=phy, nuc.optim_array=nuc.optim.list[[partition.index]], nuc.model=nuc.model, Ne=Ne, solve.for.s=solve.for.s, diploid=diploid, logspace=logspace, verbose=verbose, neglnl=neglnl, get.site.liks.only=get.site.liks.only)
         return(likelihood.tmp)
     }
     #This orders the nsites per partition in decreasing order (to increase efficiency):
