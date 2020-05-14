@@ -126,7 +126,8 @@ Here we optimize parameters across each gene separately while keeping the shared
 \examples{
 \dontrun{
 phy <- ape::read.tree(file=system.file("extdata", "rokasYeast.tre", package="selac"))
-result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'), n.partitions=1, phy=phy, max.evals=10)
+result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'),
+n.partitions=1, phy=phy, max.evals=10)
 print(result)
 }
 }
