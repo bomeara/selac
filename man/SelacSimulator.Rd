@@ -4,10 +4,22 @@
 \alias{SelacSimulator}
 \title{Simulate DNA under the SELAC model}
 \usage{
-SelacSimulator(phy, pars, aa.optim_array, codon.freq.by.aa = NULL,
-  codon.freq.by.gene = NULL, numcode = 1, aa.properties = NULL,
-  nuc.model, include.gamma = FALSE, gamma.type = "quadrature",
-  ncats = 4, k.levels = 0, diploid = TRUE, site.cats.vector = NULL)
+SelacSimulator(
+  phy,
+  pars,
+  aa.optim_array,
+  codon.freq.by.aa = NULL,
+  codon.freq.by.gene = NULL,
+  numcode = 1,
+  aa.properties = NULL,
+  nuc.model,
+  include.gamma = FALSE,
+  gamma.type = "quadrature",
+  ncats = 4,
+  k.levels = 0,
+  diploid = TRUE,
+  site.cats.vector = NULL
+)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -43,15 +55,4 @@ Simulates nucleotide data based on parameters under the SELAC model
 }
 \details{
 Simulates a nucleotide matrix using parameters under the SELAC model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-}
-\examples{
-\donttest{
-data(yeast)
-system(paste("mkdir", "fastaSet", sep=" "))
-sim.dat <- SelacSimulator(phy=phy, pars=model.fit$mle.pars[1,], aa.optim_array=
-	model.fit$aa.optim[[1]], codon.freq.by.aa=model.fit$codon.freq.by.aa[[1]], 
-	codon.freq.by.gene=model.fit$codon.freq.by.gene[[1]], nuc.model=model.fit$nuc.model)
-write.dna(sim.dat, file=paste("fastaSet", "/gene",  "TEST", ".fasta", sep=""), 
-	format="fasta", colw=1000000)
-}
 }

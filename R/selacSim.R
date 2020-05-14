@@ -385,7 +385,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         #base.freqs <- tmp$base.freq
         #nuc.mutation.rates <- tmp$nuc.mutation.rates
     }
-    
+
     if(diploid == TRUE){
         ploidy = 2
     }else{
@@ -404,12 +404,12 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
         base.freqs <- Null(Q_position)
         #Rescale base.freqs so that they sum to 1:
         base.freqs.scaled <- c(base.freqs/sum(base.freqs))
-        
+
         scale.factor <- -sum(diag(Q_position) * base.freqs.scaled)
-        
+
         #Rescaling Q matrix in order to have a 1 nucleotide change per site if the branch length was 1:
         Q_position_scaled <- Q_position * (1/scale.factor)
-        
+
         if(is.null(start.vals_array)){
             sim.nuc.data[,site.index] = SingleSiteUpPass(phy, Q_codon=Q_position_scaled, root.value=base.freqs.scaled)
         }else{
@@ -441,6 +441,8 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
 #' @param nsites The number of sites to simulate.
 #' @param nuc.model Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".
 #' @param base.freqs The base frequencies for A C G T (in that order).
+#' @param include.gamma Boolean on whether to use a gamma model
+#' @param gamma.type How the gamma bins are used
 #' @param ncats The number of discrete gamma categories.
 #' @param start.vals_array A vector of nucleotides to be used as the starting nucleotide for each site in the simulation.
 #' @param user.rate.cats The user supplied gamma categories to use instead of choosing at random.
@@ -449,7 +451,7 @@ SelonSimulator <- function(phy, pars, nuc.optim_array, nuc.model, diploid=TRUE, 
 #' @details
 #' Simulates a nucleotide matrix using parameters under the GTR+G model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
 NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma=TRUE, gamma.type="median", ncats=4, start.vals_array=NULL, user.rate.cats=NULL, user.rates=NULL){
-    
+
     if(nuc.model == "JC") {
         base.freqs=base.freqs
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(1, model=nuc.model, base.freqs=base.freqs)
@@ -461,12 +463,12 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
     if(nuc.model == "UNREST") {
         nuc.mutation.rates <- CreateNucleotideMutationMatrix(pars[2:12], model=nuc.model)
     }
-    
+
     diag(nuc.mutation.rates) = 0
     diag(nuc.mutation.rates) <- -rowSums(nuc.mutation.rates)
     scale.factor <- -sum(diag(nuc.mutation.rates) * base.freqs)
     Q_mat <- nuc.mutation.rates * (1/scale.factor)
-    
+
     if(include.gamma == TRUE){
         if(gamma.type == "median"){
             rate.vector <- DiscreteGamma(pars[1], ncats)
@@ -515,7 +517,7 @@ NucSimulator <- function(phy, pars, nsites, nuc.model, base.freqs, include.gamma
             }
         }
     }
-    
+
     nuc.names <- n2s(0:3)
     # Finally, translate this information into a matrix of nucleotides -- this format allows for write.dna() to write a fasta formatted file:
     nucleotide.data <- c()

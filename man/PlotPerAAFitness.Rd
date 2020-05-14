@@ -4,10 +4,20 @@
 \alias{PlotPerAAFitness}
 \title{Function to plot a distribution of fitnesses W or selection coefficients S for a given optimal aa and other terms.}
 \usage{
-PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa = NULL,
-  palette = "Set1", lwd = 2, include.stop.codon = FALSE,
-  type = "histogram", fitness = TRUE, scale.x.axis.by.Ne = FALSE,
-  legend.title = NULL, Ne = 10^6, ...)
+PlotPerAAFitness(
+  aa.fitness.matrices,
+  values,
+  optimal.aa = NULL,
+  palette = "Set1",
+  lwd = 2,
+  include.stop.codon = FALSE,
+  type = "histogram",
+  fitness = TRUE,
+  scale.x.axis.by.Ne = FALSE,
+  legend.title = NULL,
+  Ne = 10^6,
+  ...
+)
 }
 \arguments{
 \item{aa.fitness.matrices, }{A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)}

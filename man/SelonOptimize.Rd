@@ -4,14 +4,30 @@
 \alias{SelonOptimize}
 \title{Optimize parameters under the SELON model}
 \usage{
-SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
-  edge.length = "optimize", edge.linked = TRUE,
-  optimal.nuc = "majrule", nuc.model = "GTR",
-  set.Ne = 1e4, diploid = TRUE, verbose = FALSE,
-  n.cores = 1, max.tol = .Machine$double.eps^0.25, max.evals = 1e+06,
-  cycle.stage = 12, max.restarts = 3, user.optimal.nuc=NULL, output.by.restart = TRUE,
-  output.restart.filename = "restartResult", user.supplied.starting.param.vals=NULL, 
-  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE, dt.threads=0)
+SelonOptimize(
+  nuc.data.path,
+  n.partitions = NULL,
+  phy,
+  edge.length = "optimize",
+  edge.linked = TRUE,
+  optimal.nuc = "majrule",
+  nuc.model = "GTR",
+  set.Ne = 10000,
+  diploid = TRUE,
+  verbose = FALSE,
+  n.cores = 1,
+  max.tol = .Machine$double.eps^0.25,
+  max.evals = 1e+06,
+  cycle.stage = 12,
+  max.restarts = 3,
+  user.optimal.nuc = NULL,
+  output.by.restart = TRUE,
+  output.restart.filename = "restartResult",
+  user.supplied.starting.param.vals = NULL,
+  fasta.rows.to.keep = NULL,
+  recalculate.starting.brlen = TRUE,
+  dt.threads = 1
+)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}
@@ -50,7 +66,7 @@ SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
 
 \item{output.restart.filename}{Designates the file name for each random restart.}
 
-\item{user.supplied.starting.param.vals}{Designates user-supplied starting values. Default is NULL.}
+\item{user.supplied.starting.param.vals}{Designates user-supplied starting values for C.q.phi.Ne, Grantham alpha, and Grantham beta. Default is NULL.}
 
 \item{fasta.rows.to.keep}{Indicates which rows to remove in the input fasta files.}
 
@@ -63,15 +79,4 @@ Optimizes model parameters under the SELON model
 }
 \details{
 SELON stands for SELection On Nucleotides. This function takes a user supplied topology and a set of fasta formatted sequences and optimizes the parameters in the SELON model. Selection is based on selection towards an optimal nucleotide at each site, which is based simply on the majority rule of the observed data. The strength of selection is then varied along sites based on a Taylor series, which scales the substitution rates. Still a work in development, but so far, seems very promising.
-}
-\examples{
-\donttest{
-system(paste("mkdir", "uceSet", sep=" "))
-sim.dat <- SelonSimulator(phy=phy, pars=model.fit$pars.sims[1,], 
-	nuc.optim_array=model.fit$optimal.nuc.list[[1]], nuc.model=model.fit$nuc.model, 
-	diploid=TRUE)
-write.dna(sim.dat, file=paste("uceSet", "/gene",  "TEST", ".fasta", sep=""), 
-	format="fasta", colw=1000000)
-pp <- SelonOptimize(nuc.data.path="uceSet/", phy=phy, nuc.model="GTR", n.cores=3)
-}
 }

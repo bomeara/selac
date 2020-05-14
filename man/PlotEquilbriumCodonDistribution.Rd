@@ -4,8 +4,13 @@
 \alias{PlotEquilbriumCodonDistribution}
 \title{Function to plot a distribution of frequencies of codons given a 3d array of equilibrium frequency matrices}
 \usage{
-PlotEquilbriumCodonDistribution(eq.freq.matrices, values,
-  palette = "Set1", lwd = 2, ...)
+PlotEquilbriumCodonDistribution(
+  eq.freq.matrices,
+  values,
+  palette = "Set1",
+  lwd = 2,
+  ...
+)
 }
 \arguments{
 \item{eq.freq.matrices}{A 3d array of eq.freq.matrix returned from ComputeEquilibriumFrequencies}

@@ -5,21 +5,44 @@
 \alias{selac}
 \title{Efficient optimization of the SELAC model}
 \usage{
-SelacOptimize(codon.data.path, n.partitions = NULL, phy,
-  data.type = "codon", codon.model = "selac",
-  edge.length = "optimize", edge.linked = TRUE,
-  optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE,
-  gamma.type = "quadrature", ncats = 4, numcode = 1,
-  diploid = TRUE, k.levels = 0, aa.properties = NULL,
-  verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
-  max.tol = 0.001, max.tol.edges = 0.001, max.evals = 1e+06,
-  max.restarts = 3, user.optimal.aa = NULL,
-  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE,
-  output.by.restart = TRUE, output.restart.filename = "restartResult",
-  user.supplied.starting.param.vals = NULL, tol.step = 1,
-  optimizer.algorithm = "NLOPT_LN_SBPLX", start.from.mle = FALSE,
-  mle.matrix = NULL, partition.order = NULL, max.iterations = 6,
-  dt.threads=0)
+SelacOptimize(
+  codon.data.path,
+  n.partitions = NULL,
+  phy,
+  data.type = "codon",
+  codon.model = "selac",
+  edge.length = "optimize",
+  edge.linked = TRUE,
+  optimal.aa = "optimize",
+  nuc.model = "GTR",
+  include.gamma = FALSE,
+  gamma.type = "quadrature",
+  ncats = 4,
+  numcode = 1,
+  diploid = TRUE,
+  k.levels = 0,
+  aa.properties = NULL,
+  verbose = FALSE,
+  n.cores.by.gene = 1,
+  n.cores.by.gene.by.site = 1,
+  max.tol = 0.001,
+  max.tol.edges = 0.001,
+  max.evals = 1e+06,
+  max.restarts = 3,
+  user.optimal.aa = NULL,
+  fasta.rows.to.keep = NULL,
+  recalculate.starting.brlen = TRUE,
+  output.by.restart = TRUE,
+  output.restart.filename = "restartResult",
+  user.supplied.starting.param.vals = NULL,
+  tol.step = 1,
+  optimizer.algorithm = "NLOPT_LN_SBPLX",
+  start.from.mle = FALSE,
+  mle.matrix = NULL,
+  partition.order = NULL,
+  max.iterations = 6,
+  dt.threads = 1
+)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -101,17 +124,9 @@ Efficient optimization of model parameters under the SELAC model
 Here we optimize parameters across each gene separately while keeping the shared parameters, alpha, beta, edge lengths, and nucleotide substitution parameters constant across genes. We then optimize alpha, beta, gtr, and the edge lengths while keeping the rest of the parameters for each gene fixed. This approach is potentially more efficient than simply optimizing all parameters simultaneously, especially if fitting models across 100's of genes.
 }
 \examples{
-\donttest{
-data(yeast)
-system(paste("mkdir", "fastaSet", sep=" "))
-sim.dat <- SelacSimulator(phy=phy, pars=model.fit$mle.pars[1,], aa.optim_array=
-	model.fit$aa.optim[[1]], codon.freq.by.aa=model.fit$codon.freq.by.aa[[1]], 
-	codon.freq.by.gene=model.fit$codon.freq.by.gene[[1]], nuc.model=model.fit$nuc.model)
-write.dna(sim.dat, file=paste("fastaSet", "/gene",  "TEST", ".fasta", sep=""), 
-	format="fasta", colw=1000000)
-pp <- SelacOptimize(codon.data.path="fastaSet/", phy=phy, 
-	data.type="codon", nuc.model="GTR", include.gamma=TRUE, n.cores.by.gene=3)
+\dontrun{
+phy <- ape::read.tree(file=system.file("extdata", "rokasYeast.tre", package="selac"))
+result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'), n.partitions=1, phy=phy, max.evals=10)
+print(result)
 }
 }
-
-

@@ -4,10 +4,18 @@
 \alias{GetAdequateSelac}
 \title{Model adequacy simulation}
 \usage{
-GetAdequateSelac(model.to.reconstruct.under, model.to.simulate.under,
-  selac.obj.to.reconstruct, selac.obj.to.simulate, aa.optim.input = NULL,
-  fasta.rows.to.keep = NULL, taxon.to.drop = 4,
-  partition.number = 55, numcode = 1, for.gtr.only = NULL)
+GetAdequateSelac(
+  model.to.reconstruct.under,
+  model.to.simulate.under,
+  selac.obj.to.reconstruct,
+  selac.obj.to.simulate,
+  aa.optim.input = NULL,
+  fasta.rows.to.keep = NULL,
+  taxon.to.drop = 4,
+  partition.number = 55,
+  numcode = 1,
+  for.gtr.only = NULL
+)
 }
 \arguments{
 \item{model.to.reconstruct.under}{Specifies the model that the internal nodes are to be reconstructed under assuming a single tip is pruned from the tree.}

@@ -4,8 +4,14 @@
 \alias{SelonSimulator}
 \title{Simulate DNA under the SELON model}
 \usage{
-SelonSimulator(phy, pars, nuc.optim_array, nuc.model, diploid = TRUE, 
-start.vals_array=NULL)
+SelonSimulator(
+  phy,
+  pars,
+  nuc.optim_array,
+  nuc.model,
+  diploid = TRUE,
+  start.vals_array = NULL
+)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -25,14 +31,4 @@ Simulates nucleotide data based on parameters under the SELAC model
 }
 \details{
 Simulates a nucleotide matrix using parameters under the SELON model. Note that the output can be written to a fasta file using the write.dna() function in the \code{ape} package.
-}
-\examples{
-\donttest{
-system(paste("mkdir", "uceSet", sep=" "))
-sim.dat <- SelonSimulator(phy=phy, pars=model.fit$pars.sims[1,], 
-	nuc.optim_array=model.fit$optimal.nuc.list[[1]], nuc.model=model.fit$nuc.model, 
-	diploid=TRUE)
-write.dna(sim.dat, file=paste("uceSet", "/gene",  "TEST", ".fasta", sep=""), 
-	format="fasta", colw=1000000)
-}
 }
