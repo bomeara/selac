@@ -4,14 +4,8 @@
 \alias{SelonSimulator}
 \title{Simulate DNA under the SELON model}
 \usage{
-SelonSimulator(
-  phy,
-  pars,
-  nuc.optim_array,
-  nuc.model,
-  diploid = TRUE,
-  start.vals_array = NULL
-)
+SelonSimulator(phy, pars, nuc.optim_array, nuc.model, diploid = TRUE,
+  start.vals_array = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}

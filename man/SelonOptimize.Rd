@@ -4,30 +4,15 @@
 \alias{SelonOptimize}
 \title{Optimize parameters under the SELON model}
 \usage{
-SelonOptimize(
-  nuc.data.path,
-  n.partitions = NULL,
-  phy,
-  edge.length = "optimize",
-  edge.linked = TRUE,
-  optimal.nuc = "majrule",
-  nuc.model = "GTR",
-  set.Ne = 10000,
-  diploid = TRUE,
-  verbose = FALSE,
-  n.cores = 1,
-  max.tol = .Machine$double.eps^0.25,
-  max.evals = 1e+06,
-  cycle.stage = 12,
-  max.restarts = 3,
-  user.optimal.nuc = NULL,
-  output.by.restart = TRUE,
-  output.restart.filename = "restartResult",
-  user.supplied.starting.param.vals = NULL,
-  fasta.rows.to.keep = NULL,
-  recalculate.starting.brlen = TRUE,
-  dt.threads = 1
-)
+SelonOptimize(nuc.data.path, n.partitions = NULL, phy,
+  edge.length = "optimize", edge.linked = TRUE,
+  optimal.nuc = "majrule", nuc.model = "GTR", set.Ne = 10000,
+  diploid = TRUE, verbose = FALSE, n.cores = 1,
+  max.tol = .Machine$double.eps^0.25, max.evals = 1e+06,
+  cycle.stage = 12, max.restarts = 3, user.optimal.nuc = NULL,
+  output.by.restart = TRUE, output.restart.filename = "restartResult",
+  user.supplied.starting.param.vals = NULL, fasta.rows.to.keep = NULL,
+  recalculate.starting.brlen = TRUE, dt.threads = 1)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}

@@ -4,14 +4,8 @@
 \alias{PlotMutationFitnessSpectra}
 \title{Plot fitness of mutations, weighted by frequency of those mutations}
 \usage{
-PlotMutationFitnessSpectra(
-  mutation.fitness.object.list,
-  values,
-  optimal.aa = NULL,
-  palette = "Set1",
-  lwd = 2,
-  ...
-)
+PlotMutationFitnessSpectra(mutation.fitness.object.list, values,
+  optimal.aa = NULL, palette = "Set1", lwd = 2, ...)
 }
 \arguments{
 \item{mutation.fitness.object.list}{List that contains multiple objects from ComputeMutationFitnesses() calls}

@@ -4,22 +4,10 @@
 \alias{SelacHMMSimulator}
 \title{Simulate DNA under the SELAC model}
 \usage{
-SelacHMMSimulator(
-  phy,
-  pars,
-  nsites,
-  codon.freq.by.aa = NULL,
-  codon.freq.by.gene = NULL,
-  numcode = 1,
-  aa.properties = NULL,
-  nuc.model,
-  include.gamma = FALSE,
-  gamma.type = "quadrature",
-  ncats = 4,
-  k.levels = 0,
-  diploid = TRUE,
-  site.cats.vector = NULL
-)
+SelacHMMSimulator(phy, pars, nsites, codon.freq.by.aa = NULL,
+  codon.freq.by.gene = NULL, numcode = 1, aa.properties = NULL,
+  nuc.model, include.gamma = FALSE, gamma.type = "quadrature",
+  ncats = 4, k.levels = 0, diploid = TRUE, site.cats.vector = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}

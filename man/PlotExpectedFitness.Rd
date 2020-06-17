@@ -4,19 +4,10 @@
 \alias{PlotExpectedFitness}
 \title{Function to plot a distribution of fitnesses based on codon equilibrium freqs}
 \usage{
-PlotExpectedFitness(
-  codon.fitnesses.matrices,
-  codon.eq.matrices,
-  values,
-  optimal.aa = NULL,
-  palette = "Set1",
-  lwd = 2,
-  include.stop.codon = FALSE,
-  type = "histogram",
-  fitness = TRUE,
-  numcode = 1,
-  ...
-)
+PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values,
+  optimal.aa = NULL, palette = "Set1", lwd = 2,
+  include.stop.codon = FALSE, type = "histogram", fitness = TRUE,
+  numcode = 1, ...)
 }
 \arguments{
 \item{codon.fitnesses.matrices}{A 3d array of aa.fitness.matrix returned from ComputeEquilibriumAAFitness (first element in return)}

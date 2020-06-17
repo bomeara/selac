@@ -4,16 +4,8 @@
 \alias{GetFunctionality}
 \title{Calculate functionality}
 \usage{
-GetFunctionality(
-  gene.length,
-  aa.data,
-  optimal.aa,
-  alpha,
-  beta,
-  gamma,
-  gp = NULL,
-  aa.properties = NULL
-)
+GetFunctionality(gene.length, aa.data, optimal.aa, alpha, beta, gamma,
+  gp = NULL, aa.properties = NULL)
 }
 \arguments{
 \item{gene.length}{Indicates the length of the gene used to calculate functionality.}

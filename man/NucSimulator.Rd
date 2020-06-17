@@ -4,19 +4,9 @@
 \alias{NucSimulator}
 \title{Simulate DNA under General-Time Reversible model}
 \usage{
-NucSimulator(
-  phy,
-  pars,
-  nsites,
-  nuc.model,
-  base.freqs,
-  include.gamma = TRUE,
-  gamma.type = "median",
-  ncats = 4,
-  start.vals_array = NULL,
-  user.rate.cats = NULL,
-  user.rates = NULL
-)
+NucSimulator(phy, pars, nsites, nuc.model, base.freqs,
+  include.gamma = TRUE, gamma.type = "median", ncats = 4,
+  start.vals_array = NULL, user.rate.cats = NULL, user.rates = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}

@@ -4,25 +4,12 @@
 \alias{SelonHMMOptimize}
 \title{Optimize parameters under the HMM SELON model}
 \usage{
-SelonHMMOptimize(
-  nuc.data.path,
-  n.partitions = NULL,
-  phy,
-  edge.length = "optimize",
-  edge.linked = TRUE,
-  nuc.model = "GTR",
-  global.nucleotide.model = TRUE,
-  diploid = TRUE,
-  verbose = FALSE,
-  n.cores = 1,
-  max.tol = .Machine$double.eps^0.5,
-  max.evals = 1e+06,
-  cycle.stage = 12,
-  max.restarts = 10,
-  output.by.restart = TRUE,
-  output.restart.filename = "restartResult",
-  fasta.rows.to.keep = NULL
-)
+SelonHMMOptimize(nuc.data.path, n.partitions = NULL, phy,
+  edge.length = "optimize", edge.linked = TRUE, nuc.model = "GTR",
+  global.nucleotide.model = TRUE, diploid = TRUE, verbose = FALSE,
+  n.cores = 1, max.tol = .Machine$double.eps^0.5, max.evals = 1e+06,
+  cycle.stage = 12, max.restarts = 10, output.by.restart = TRUE,
+  output.restart.filename = "restartResult", fasta.rows.to.keep = NULL)
 }
 \arguments{
 \item{nuc.data.path}{Provides the path to the directory containing the gene specific fasta files that contains the nucleotide data.}

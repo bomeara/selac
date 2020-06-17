@@ -4,21 +4,10 @@
 \alias{SelacSimulatorEvolvingRates}
 \title{Simulate DNA under the SELAC model and evolving rates}
 \usage{
-SelacSimulatorEvolvingRates(
-  phy,
-  pars,
-  aa.optim_array,
-  root.codon.frequencies,
-  numcode = 1,
-  aa.properties = NULL,
-  nuc.model,
-  k.levels = 0,
-  diploid = TRUE,
-  pars.to.evolve = "phi",
-  evolve.type = "BM",
-  evolve.pars = c(1, 0),
-  Ne.vals.evolved = NULL
-)
+SelacSimulatorEvolvingRates(phy, pars, aa.optim_array,
+  root.codon.frequencies, numcode = 1, aa.properties = NULL, nuc.model,
+  k.levels = 0, diploid = TRUE, pars.to.evolve = "phi",
+  evolve.type = "BM", evolve.pars = c(1, 0), Ne.vals.evolved = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
