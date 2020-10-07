@@ -786,8 +786,10 @@ MakeDataArray <- function(site.pattern.data.list, phy, nsites.vector) {
     #liks.array <- array(data=0, dim=c(nb.tip+nb.node, nl, sum(nsites.vector)))
     site.pattern.data.frame <- site.pattern.data.list[[1]]
     #Now loop through the tips.
-    for(partition.index in 2:length(site.pattern.data.list)){
-        site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
+    if(length(site.pattern.data.list) > 1){
+        for(partition.index in 2:length(site.pattern.data.list)){
+            site.pattern.data.frame <- cbind(site.pattern.data.frame, site.pattern.data.list[[partition.index]][,2:(nsites.vector[partition.index]+1)])
+        }
     }
     site.pattern.data.table <- as.data.table(site.pattern.data.frame[,-1])
     site.pattern.data.table <- t(site.pattern.data.table)
@@ -1092,12 +1094,11 @@ OptimizeEdgeLengthsGTRNew <- function(phy, pars.mat, site.pattern.data.list, sit
     nb.node <- Nnode(phy)
     TIPS <- 1:nb.tip
     generations <- FindBranchGenerations(phy)
-
     nsites.vector.update <- c()
     for(partition.index in 1:length(site.pattern.data.list)){
         nsites.vector.update <- c(nsites.vector.update, length(site.pattern.count.list[[partition.index]]))
     }
-    
+
     data.array <- MakeDataArray(site.pattern.data.list=site.pattern.data.list, phy=phy, nsites.vector=nsites.vector.update)
     pars.array <- MakeParameterArrayGTR(site.pattern.count.list=site.pattern.count.list, empirical.base.freq.list=empirical.base.freq.list, pars.mat=pars.mat, nsites.vector=nsites.vector.update)
 

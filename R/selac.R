@@ -4529,6 +4529,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     index.matrix[partition.index,] <- index.matrix.tmp
                 }
             }
+
             number.of.current.restarts <- 1
             best.lik <- 1000000
             while(number.of.current.restarts < (max.restarts+1)){
@@ -4762,7 +4763,7 @@ SelacOptimize <- function(codon.data.path, n.partitions=NULL, phy, data.type="co
                     }
                 }
             }
-
+            
             number.of.current.restarts <- 1
             best.lik <- 10000000
             while(number.of.current.restarts < (max.restarts+1)){
