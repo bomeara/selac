@@ -44,15 +44,6 @@ ComputeEquilibriumCodonFrequencies <- function(nuc.model="JC", base.freqs=rep(0.
 #' @param palette Color palette to use from RColorBrewer
 #' @param lwd Line width
 #' @param ... Other paramters to pass to plot()
-#' @examples
-#'
-#' phi.vector <- c(0.01, .1, 0.5, 2)
-#' eq.freq.matrices <- array(dim=c(64, 20, length(phi.vector)))
-#' for (i in sequence(length(phi.vector))) {
-#'   eq.freq.matrices[,,i] <- ComputeEquilibriumCodonFrequencies(Phi=phi.vector[i])
-#' }
-#' values = paste("Phi = ", phi.vector, sep="")
-#' PlotEquilbriumCodonDistribution(eq.freq.matrices, values)
 PlotEquilbriumCodonDistribution <- function(eq.freq.matrices, values, palette="Set1", lwd=2, ...) {
   colors <- RColorBrewer::brewer.pal(dim(eq.freq.matrices)[3],palette)
   distributions <- list()
@@ -133,19 +124,10 @@ ComputeMutationFitnesses <- function(nuc.model="JC", base.freqs=rep(0.25, 4), ns
 #' @param type If "histogram", do a histogram plot; if "density", do a density plot
 #' @param fitness If TRUE, plot fitness W; if FALSE, plot selection coefficient S (= W- 1)
 #' @param scale.x.axis.by.Ne if TRUE, x axis is transformed from S to S*Ne; if FALSE no scaling is done
+#' @param legend.title Sets the title of the figure legend.
 #' @param Ne used to scale x axis when scale.x.axis.by.Ne is TRUE
 #' @param ... Other paramters to pass to plot()
-#' @examples
-#' phi.vector <- c(0.0000000001, 0.01, .1, 0.5, 2)
-#' aa.fitness.matrices <- array(dim=c(21, 20, length(phi.vector)))
-#' for (i in sequence(length(phi.vector))) {
-#'  local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])$aa.fitness.matrix
-#'  aa.fitness.matrices[,,i] <- local.matrix
-#'  dimnames(aa.fitness.matrices) <- list(rownames(local.matrix), colnames(local.matrix), NULL)
-#' }
-#' values = paste("Phi = ", phi.vector, sep="")
-#' PlotPerAAFitness(aa.fitness.matrices, values, optimal.aa="L")
-PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, scale.x.axis.by.Ne=FALSE, legend.title=NULL,Ne=10^6, ...) {
+PlotPerAAFitness <- function(aa.fitness.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, scale.x.axis.by.Ne=FALSE, legend.title=NULL, Ne=10^6, ...) {
   colors <- RColorBrewer::brewer.pal(dim(aa.fitness.matrices)[3],palette)
   distributions <- list()
   y.range <- c()
@@ -240,19 +222,6 @@ add.alpha <- function(col, alpha=1){
 #' @param fitness If TRUE, plot W; if FALSE, plot S (= 1 - W)
 #' @param numcode The genetic code
 #' @param ... Other paramters to pass to plot()
-#' @examples
-#' phi.vector <- c(.1, 0.5, 2)
-#' codon.fitnesses.matrices <- array(dim=c(64, 20, length(phi.vector)))
-#' codon.eq.matrices <- array(dim=c(64, 20, length(phi.vector)))
-#' for (i in sequence(length(phi.vector))) {
-#'    local.matrix <- ComputeEquilibriumAAFitness(Phi=phi.vector[i])
-#'    codon.fitnesses.matrices[,,i] <-  local.matrix$codon.fitnesses
-#'    codon.eq.matrices[,,i] <-  local.matrix$equilibrium.codon.frequency
-#'    dimnames(codon.fitnesses.matrices) <- list(rownames(local.matrix$codon.fitnesses), colnames(local.matrix$codon.fitnesses), NULL)
-#'    dimnames(codon.eq.matrices) <- list(rownames(local.matrix$equilibrium.codon.frequency), colnames(local.matrix$equilibrium.codon.frequency), NULL)
-#' }
-#' values = paste("Phi = ", phi.vector, sep="")
-#' PlotExpectedFitness(codon.fitnesses.matrices, codon.eq.matrices, values)
 PlotExpectedFitness <- function(codon.fitnesses.matrices, codon.eq.matrices, values, optimal.aa=NULL, palette="Set1", lwd=2, include.stop.codon=FALSE, type="histogram", fitness=TRUE, numcode=1, ...) {
   colors <- RColorBrewer::brewer.pal(dim(codon.fitnesses.matrices)[3],palette)
   distributions <- list()
@@ -336,13 +305,6 @@ LineMutationFitnessSpectra <- function(mutation.fitness.object, optimal.aa=NULL)
 #' @param lwd Line width
 #' @param ... other arguments to pass to plot()
 #'
-#' @examples
-#' phi.vector <- c(.1, 0.5, 2)
-#' mutation.fitness.object.list <- list()
-#' for (i in sequence(length(phi.vector))) {
-#'    mutation.fitness.object.list[[i]] <- ComputeMutationFitnesses(Phi=phi.vector[i])
-#' }
-#' PlotMutationFitnessSpectra(mutation.fitness.object.list, values=paste("Phi =", phi.vector), optimal.aa="C")
 PlotMutationFitnessSpectra <- function(mutation.fitness.object.list, values, optimal.aa=NULL, palette="Set1", lwd=2, ...) {
   colors <- add.alpha(RColorBrewer::brewer.pal(length(mutation.fitness.object.list),palette),0.5)
   results.to.plot <- lapply(mutation.fitness.object.list, LineMutationFitnessSpectra, optimal.aa=optimal.aa)

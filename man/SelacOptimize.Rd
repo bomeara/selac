@@ -6,18 +6,20 @@
 \title{Efficient optimization of the SELAC model}
 \usage{
 SelacOptimize(codon.data.path, n.partitions = NULL, phy,
-  data.type = "codon", codon.model = "selac", edge.length = "optimize",
-  edge.linked = TRUE, optimal.aa = "optimize", nuc.model = "GTR",
-  include.gamma = FALSE, gamma.type = "quadrature", ncats = 4,
-  numcode = 1, diploid = TRUE, k.levels = 0, aa.properties = NULL,
+  data.type = "codon", codon.model = "selac",
+  edge.length = "optimize", edge.linked = TRUE,
+  optimal.aa = "optimize", nuc.model = "GTR", include.gamma = FALSE,
+  gamma.type = "quadrature", ncats = 4, numcode = 1,
+  diploid = TRUE, k.levels = 0, aa.properties = NULL,
   verbose = FALSE, n.cores.by.gene = 1, n.cores.by.gene.by.site = 1,
   max.tol = 0.001, max.tol.edges = 0.001, max.evals = 1e+06,
-  max.restarts = 3, user.optimal.aa = NULL, fasta.rows.to.keep = NULL,
-  recalculate.starting.brlen = TRUE, output.by.restart = TRUE,
-  output.restart.filename = "restartResult",
+  max.restarts = 3, user.optimal.aa = NULL,
+  fasta.rows.to.keep = NULL, recalculate.starting.brlen = TRUE,
+  output.by.restart = TRUE, output.restart.filename = "restartResult",
   user.supplied.starting.param.vals = NULL, tol.step = 1,
   optimizer.algorithm = "NLOPT_LN_SBPLX", start.from.mle = FALSE,
-  mle.matrix = NULL, partition.order = NULL, max.iterations = 6)
+  mle.matrix = NULL, partition.order = NULL, max.iterations = 6,
+  dt.threads = 1)
 }
 \arguments{
 \item{codon.data.path}{Provides the path to the directory containing the gene specific fasta files of coding data. Must have a ".fasta" line ending.}
@@ -87,6 +89,10 @@ SelacOptimize(codon.data.path, n.partitions = NULL, phy,
 \item{mle.matrix}{The user-supplied matrix of parameter values for when start.from.mle is set to TRUE.}
 
 \item{partition.order}{Allows for a specialized order of the partitions to be gathered from the working directory.}
+
+\item{max.iterations}{Sets the number of cycles to optimize the different parts of the model.}
+
+\item{dt.threads}{Indicates how many available threads to allow data.table to use. Default is zero.}
 }
 \description{
 Efficient optimization of model parameters under the SELAC model
@@ -97,7 +103,8 @@ Here we optimize parameters across each gene separately while keeping the shared
 \examples{
 \dontrun{
 phy <- ape::read.tree(file=system.file("extdata", "rokasYeast.tre", package="selac"))
-result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'), n.partitions=1, phy=phy, max.evals=10)
+result <- SelacOptimize(codon.data.path = paste0(find.package("selac"), '/extdata/'),
+n.partitions=1, phy=phy, max.evals=10)
 print(result)
 }
 }

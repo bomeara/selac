@@ -4,7 +4,8 @@
 \alias{SelonSimulator}
 \title{Simulate DNA under the SELON model}
 \usage{
-SelonSimulator(phy, pars, nuc.optim_array, nuc.model, diploid = TRUE)
+SelonSimulator(phy, pars, nuc.optim_array, nuc.model, diploid = TRUE,
+  start.vals_array = NULL)
 }
 \arguments{
 \item{phy}{The phylogenetic tree with branch lengths.}
@@ -16,6 +17,8 @@ SelonSimulator(phy, pars, nuc.optim_array, nuc.model, diploid = TRUE)
 \item{nuc.model}{Indicates what type nucleotide model to use. There are three options: "JC", "GTR", or "UNREST".}
 
 \item{diploid}{A logical indicating whether or not the organism is diploid or not.}
+
+\item{start.vals_array}{A vector of nucleotides to be used as the starting nucleotide for each site in the simulation.}
 }
 \description{
 Simulates nucleotide data based on parameters under the SELAC model

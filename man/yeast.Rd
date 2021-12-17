@@ -1,10 +1,11 @@
-\name{examples}
+\name{selac example}
 \docType{data}
 \alias{yeast}
-\alias{phy}
 \alias{yeast.gene}
-\title{Example datasets}
+\alias{model.fit}
+\alias{phy}
+\title{Example yeast dataset}
 \description{
-Example gene and tree file.
+Example gene, tree, and model output file.
 }
 \keyword{datasets}
